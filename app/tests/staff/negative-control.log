@@ -1,0 +1,128 @@
+
+=== staff negative:kitchen-sort — 2026-09-14T23:18:30.320Z
+break: the kitchen page sorts children by first name only, ignoring the allergy flag
+patched: app/public/kitchen/kitchen.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "allergy rows come first with the red edge" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-kitchen-sort/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:45:1 › allergy rows come first with the red edge (662ms)
+    Error: children order: Liam (conflict) first, Noah (allergy on file) next
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 3
+    + Received  + 3
+    .negative/staff-kitchen-sort/results/staff-kitchen-allergy-rows-come-first-with-the-red-edge-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:label-allergen — 2026-09-14T23:18:35.007Z
+break: the kitchen label no longer renders the ALLERGY line for a conflict
+patched: app/public/kitchen/labels/labels.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "one label per active line and Liam's names Milk" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-label-allergen/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:97:1 › one label per active line and Liam's names Milk (8.8s)
+    Error: Liam's label-allergen
+    expect(locator).toHaveText(expected) failed
+    Locator: locator('.label[data-line="ln_5c3dc140ed4523bb"] .label-allergen')
+    Expected: "ALLERGY: Milk. Contains Milk."
+    Error: element(s) not found
+    .negative/staff-label-allergen/results/staff-kitchen-one-label-pe-317bb--line-and-Liam-s-names-Milk-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:teacher-counts — 2026-09-14T23:18:47.868Z
+break: the teacher page bumps its own counts after a tap instead of showing the API answer's counts
+patched: app/public/teacher/teacher.js
+run: npx playwright test tests/staff/teacher.spec.mjs --project chromium-390 --grep "Given out and Absent update the counts from the answer and survive a reload" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-teacher-counts/worker)
+  ✘  1 [chromium-390] › tests/staff/teacher.spec.mjs:23:1 › Given out and Absent update the counts from the answer and survive a reload (9.0s)
+    Error: count-delivered after Liam given out
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#count-delivered')
+    Expected: "1"
+    Received: "2"
+           - unexpected value "2"
+    .negative/staff-teacher-counts/results/staff-teacher-Given-out-an-b91ac-answer-and-survive-a-reload-chromium-390/test-failed-1.png
+  1 failed
+RESULT: NOT RED — the check measured nothing (exit 1; named test failed: true; missing: count-waiting after Liam given out)
+
+=== staff negative:office-balance — 2026-09-14T23:19:00.943Z
+break: the office family panel ignores the payment answer's balance_cents and keeps the old balance
+patched: app/public/office/office.js
+run: npx playwright test tests/staff/office.spec.mjs --project chromium-1280 --grep "record a payment by typing, then undo it" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-office-balance/worker)
+  ✘  1 [chromium-1280] › tests/staff/office.spec.mjs:25:1 › record a payment by typing, then undo it (8.8s)
+    Error: #family-balance after the payment
+    expect(locator).toHaveAttribute(expected) failed
+    Locator:  locator('#family-balance')
+    Expected: "625"
+    Received: "1050"
+           - unexpected value "1050"
+    .negative/staff-office-balance/results/staff-office-record-a-payment-by-typing-then-undo-it-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:closure-confirm — 2026-09-14T23:19:13.779Z
+break: the no-school confirm counts the kitchen's order lines instead of the preview's item_count
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/admin.spec.mjs --project chromium-1280 --grep "storm closure: confirm numbers equal the preview, credits to the cent" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-closure-confirm/worker)
+  ✘  1 [chromium-1280] › tests/staff/admin.spec.mjs:25:1 › storm closure: confirm numbers equal the preview, credits to the cent (8.9s)
+    Error: confirm-lunches = preview item_count
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#confirm-lunches')
+    Expected: "13 lunches"
+    Received: "11 lunches"
+           - unexpected value "11 lunches"
+    .negative/staff-closure-confirm/results/staff-admin-storm-closure--da5fe-preview-credits-to-the-cent-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:teacher-cover — 2026-09-14T23:19:26.752Z
+break: a transparent fixed layer sits over the teacher's list, so Given out / Absent cannot be tapped
+patched: app/public/teacher/index.html
+run: npx playwright test tests/staff/teacher.spec.mjs --project webkit-390 --grep "teacher marks are 56 px, not covered, no sideways scroll" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-teacher-cover/worker)
+  ✘  1 [webkit-390] › tests/staff/teacher.spec.mjs:70:1 › teacher marks are 56 px, not covered, no sideways scroll (1.8s)
+    Error: teacher mark button: something else is on top
+    expect(received).toBe(expected) // Object.is equality
+    Expected: ""
+    Received: "<div style=\"position:fixed;inset:0;z-index:50;background:transparent\"></div>"
+    > 213 |   expect(await hitTest(locator, box.x + box.width / 2, box.y + box.height / 2), `${label}: something else is on top`).toBe('')
+    .negative/staff-teacher-cover/results/staff-teacher-teacher-mark-c9d91--covered-no-sideways-scroll-webkit-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:teacher-counts — 2026-09-14T23:19:58.918Z
+break: the teacher page bumps its own counts after a tap instead of showing the API answer's counts
+patched: app/public/teacher/teacher.js
+run: npx playwright test tests/staff/teacher.spec.mjs --project chromium-390 --grep "Given out and Absent update the counts from the answer and survive a reload" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-teacher-counts/worker)
+  ✘  1 [chromium-390] › tests/staff/teacher.spec.mjs:23:1 › Given out and Absent update the counts from the answer and survive a reload (9.0s)
+    Error: count-delivered after Liam given out
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#count-delivered')
+    Expected: "1"
+    Received: "2"
+           - unexpected value "2"
+    .negative/staff-teacher-counts/results/staff-teacher-Given-out-an-b91ac-answer-and-survive-a-reload-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:kitchen-sort — 2026-09-14T23:26:52.811Z
+break: the kitchen page sorts children by first name only, ignoring the allergy flag
+patched: app/public/kitchen/kitchen.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "allergy rows come first with the red edge" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-kitchen-sort/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:48:1 › allergy rows come first with the red edge (730ms)
+    Error: children order: Liam (conflict) first, Noah (allergy on file) next
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 3
+    + Received  + 3
+    .negative/staff-kitchen-sort/results/staff-kitchen-allergy-rows-come-first-with-the-red-edge-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:label-allergen — 2026-09-14T23:26:57.564Z
+break: the kitchen label no longer renders the ALLERGY line for a conflict
+patched: app/public/kitchen/labels/labels.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "one label per active line and Liam's names Milk" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-label-allergen/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:100:1 › one label per active line and Liam's names Milk (8.9s)
+    Error: Liam's label-allergen
+    expect(locator).toHaveText(expected) failed
+    Locator: locator('.label[data-line="ln_f141d277b87ba652"] .label-allergen')
+    Expected: "ALLERGY: Milk. Contains Milk."
+    Error: element(s) not found
+    .negative/staff-label-allergen/results/staff-kitchen-one-label-pe-317bb--line-and-Liam-s-names-Milk-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended

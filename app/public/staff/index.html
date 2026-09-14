@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Staff sign-in · School Lunch Orders</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/staff/staff.css">
+  <script type="module" src="/staff/pin.js"></script>
+</head>
+<body class="staff pin-page">
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="staff-header" data-sticky-header></header>
+  <main class="pin-main">
+    <section class="card pin-card" aria-labelledby="pin-title">
+      <h1 id="pin-title">Staff sign-in</h1>
+      <p class="hint">Tap your PIN. The kitchen, each teacher and the office have their own.</p>
+      <div id="pin-dots" class="pin-dots" role="status" aria-label="No digits yet"></div>
+      <p id="pin-error" class="error" role="alert" hidden></p>
+      <div class="keypad" role="group" aria-label="PIN keypad">
+        <button type="button" class="key" data-key="1">1</button>
+        <button type="button" class="key" data-key="2">2</button>
+        <button type="button" class="key" data-key="3">3</button>
+        <button type="button" class="key" data-key="4">4</button>
+        <button type="button" class="key" data-key="5">5</button>
+        <button type="button" class="key" data-key="6">6</button>
+        <button type="button" class="key" data-key="7">7</button>
+        <button type="button" class="key" data-key="8">8</button>
+        <button type="button" class="key" data-key="9">9</button>
+        <button type="button" class="key key-word" data-key="clear">Clear</button>
+        <button type="button" class="key" data-key="0">0</button>
+        <button type="button" class="key key-word" data-key="back" aria-label="Delete the last digit">Back</button>
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="pin-submit">Sign in</button>
+      <p class="hint">Parents sign in with their family code on <a href="/">the family page</a>.</p>
+    </section>
+  </main>
+</body>
+</html>

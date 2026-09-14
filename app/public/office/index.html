@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Office · School Lunch Orders</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/staff/staff.css">
+  <link rel="stylesheet" href="/office/office.css">
+  <script type="module" src="/office/office.js"></script>
+</head>
+<body class="staff">
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="staff-header" data-sticky-header></header>
+  <main class="staff-main" id="main">
+    <div class="page-head">
+      <div>
+        <h1>Office</h1>
+        <p class="page-sub">Balances and payments. The app takes no payments: record what arrived.</p>
+      </div>
+      <div class="toolbar">
+        <button type="button" class="btn" id="ledger-csv">Ledger CSV</button>
+        <button type="button" class="btn" id="balances-csv">Balances CSV</button>
+      </div>
+    </div>
+
+    <p id="office-error" class="banner banner-warn" role="alert" hidden></p>
+
+    <section class="stats" aria-label="Totals">
+      <div class="card stat"><span class="stat-label">Families owe</span><span class="stat-value money" id="owing-total">–</span></div>
+      <div class="card stat"><span class="stat-label">Credits held</span><span class="stat-value money" id="credit-total">–</span></div>
+      <div class="card stat"><span class="stat-label">Families</span><span class="stat-value" id="family-count">–</span></div>
+    </section>
+
+    <div class="office-grid">
+      <section class="card families-card" aria-labelledby="families-title">
+        <h2 id="families-title">Families</h2>
+        <div class="add-family">
+          <label class="field"><span>Add a family</span><input type="text" id="add-family-label" maxlength="60" autocomplete="off" placeholder="Liam and Ava"></label>
+          <button type="button" class="btn btn-primary" id="add-family">Add</button>
+        </div>
+        <p id="add-family-error" class="error" role="alert" hidden></p>
+        <div id="add-family-code"></div>
+        <ul id="families" class="families"></ul>
+      </section>
+
+      <section class="card family-panel" id="family-panel" aria-live="polite" hidden></section>
+    </div>
+  </main>
+</body>
+</html>

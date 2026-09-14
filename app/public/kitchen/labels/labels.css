@@ -1,0 +1,47 @@
+/* Kitchen labels: white paper cards on screen, Avery 5160-style sheet at print (2 5/8 x 1 inch, 3 across, 30 a sheet).
+   The allergen line is bold with a border and the word ALLERGY, so it reads in black and white. sl2-owned. */
+.labels-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+.labels-toolbar h1 { margin: 0; font-size: 28px; }
+
+.sheet { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.label {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 1px;
+  min-height: 118px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #000000;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  break-inside: avoid;
+}
+.label-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.label-name { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.label-sample { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; border: 1px solid #000000; border-radius: 999px; padding: 0 5px; }
+.label-class { font-size: 13px; color: #333333; }
+.label-item { font-size: 15px; font-weight: 600; }
+.label-allergen { margin-top: 3px; padding: 2px 6px; border: 2px solid #b00000; border-radius: 4px; color: #b00000; font-weight: 800; font-size: 13px; }
+.label-unconfirmed { font-weight: 600; }
+.label-allergies { margin-top: 2px; font-size: 12px; font-weight: 700; color: #000000; }
+
+@media (max-width: 899px) { .sheet { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 559px) { .sheet { grid-template-columns: minmax(0, 1fr); } }
+
+@page { size: letter; margin: 0.5in 0.1875in; }
+@media print {
+  .labels-main { padding: 0; margin: 0; max-width: none; }
+  .sheet { grid-template-columns: repeat(3, 2.625in); column-gap: 0.125in; row-gap: 0; gap: 0 0.125in; }
+  .label {
+    width: 2.625in; height: 1in; min-height: 0; padding: 0.05in 0.1in; gap: 0;
+    border-radius: 0; box-shadow: none; background: #ffffff; color: #000000;
+  }
+  .label-name { font-size: 13pt; }
+  .label-class { font-size: 7.5pt; color: #000000; }
+  .label-item { font-size: 8.5pt; }
+  .label-allergen { margin-top: 1px; padding: 0 3px; font-size: 7.5pt; border: 1.5pt solid #000000; color: #000000; }
+  .label-allergies { margin-top: 0; font-size: 7pt; }
+  .label-sample { font-size: 6pt; }
+}
