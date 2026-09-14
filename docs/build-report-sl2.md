@@ -180,6 +180,35 @@ Nothing blocks sl2. No changes asked of the lead's shared files.
   36 passed; storm closure 4/4 after the wording change; settings 24/24 after adding the row check; negatives (e) and (g) red.
   Every changed spec ran in all four projects. I did not rerun the whole suite in one go on the final sha.
 
+## Cross-review of sl1 parent pages (0cc9e24)
+
+Read-only: order.js, cart.js, family.js, home.js, history.js, family.css, layout.spec, and the Worker's orders.js, family.js,
+lines.js and allergens.js at 0cc9e24; sl1's WebKit-390 screenshots of the order warning, cart and home. Real mismatches:
+
+- Words (my side, the lead to decide): the label's "ALLERGY:" part lists all of the child's allergies, while the parent's warning
+  names only the conflicting ones. Chloe (eggs, sesame) with a cookie: the parent sees "Chloe is allergic to Eggs. Oatmeal raisin
+  cookie contains Eggs."; the label says "ALLERGY: Eggs and Sesame seeds. Contains Eggs." Aligning would be "ALLERGY: Eggs.
+  Contains Eggs." with the rest under "Allergies on file".
+- Words (contract level): the Worker's refusal is "Liam is allergic to Milk, and Macaroni and cheese contains it. Tick "I
+  understand" to order it anyway." (docs/API.md), and the order and cart warning is "Liam is allergic to Milk. Macaroni and
+  cheese contains Milk." (PLAN). A parent can see both, one after the other. Same child, allergen and item; two sentence forms.
+- Flags (contract gap): an allergy ticked after ordering shows on the kitchen, labels and teacher pages as a conflict, "Not
+  confirmed by the parent". The parent's "Coming up" list shows no warning on that line and has no way to confirm; they see red
+  only by reopening the order page for that day. A Line carries `ack_allergens` but not the item's allergens, so home can't
+  work it out without a contract change (e.g. `conflicts` on Line).
+- Numbers (minor): the order page's cart bar and the cart's `#cart-total` use the menu price fetched when the page loaded. If the
+  office changes a price while the cart is open, `#cart-total` differs from `#placed-total` (the Worker charges the price at
+  placing). After placing, the office's order entry equals `#placed-total`.
+
+Checked and matching: the same `money()` on both sides; "You owe $12.50" / "Owes $12.50" and "You have a $3.00 credit" / "Credit
+$3.00" from the same sign rule; negative ledger amounts "-$4.00" and the word "Undone" on both sides; the closure credit entry and
+its note; allergen labels from `/api/info`, and conflicts computed the same way (item allergens in the child's own allergies, in
+list order) in order.js, cart.js, the Worker and the kitchen. Can't happen: a removed child can't be ordered for (404), nor removed
+while it has lunches still to come; over_max is enforced by the page and the Worker; "I understand" on a line with no conflict
+stores [], so the kitchen shows no flag; cancelled and closed lines never reach the kitchen or teacher pages. Tap and layout: sl1's
+layout spec hit-tests 48/56 px in all four projects, including the last stepper at the page bottom against `#cart-bar`. In the
+WebKit-390 screenshots, items showed through the glass cart bar; sl1 has since made it solid (5850220).
+
 ## Cross-review of sl1 M1 (c0ec703), for the routes the staff pages use
 
 Nothing blocking; all 78 staff e2e tests pass against it. Notes (sent to sl-lead):
