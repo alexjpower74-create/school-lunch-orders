@@ -115,9 +115,9 @@ test('a parent orders, the kitchen sees it, a storm closure credits it to the ce
   await expect(o.locator('#no-school-kind')).toHaveValue('closure')
   await type(o, o.locator('#no-school-note'), 'Storm closure (SAMPLE)')
   await tap(o, o.locator('#add-no-school'), 'Add')
-  await expect(o.locator('#no-school-preview')).toHaveText('This cancels 7 lunches for 3 families and credits $20.00 to their balances.')
+  await expect(o.locator('#no-school-preview')).toHaveText('This cancels 7 items for 3 families and credits $20.00 to their balances.')
   await tap(o, o.locator('#confirm-no-school'), 'Yes, add the no-school day')
-  await expect(o.locator('#no-school-result')).toHaveText('Thu Sep 17 is now a no-school day. Cancelled 7 lunches for 3 families. Credited $20.00.')
+  await expect(o.locator('#no-school-result')).toHaveText('Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $20.00.')
   await shot(o, testInfo, 'journey', '4-closure')
 
   const admin = await staffToken(request, PIN.admin, { now: THU_7AM })
