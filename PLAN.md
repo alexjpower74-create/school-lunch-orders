@@ -150,6 +150,10 @@ Plain English for Newfoundland parents: "Order by 9:00 AM Fri Sep 18", "You owe 
 - Never grade the shared tree. No visible Chrome; `pwshot` or Playwright screenshots into your own `app/tests/<dir>/shots/`.
 - **REAL input** in Playwright: `tap()` / `type()` / `keypad()` from helpers. `page.evaluate` only reads. Setting up data through the
   API is fine; the thing under test is always driven through the page. Hit-test with `elementFromPoint`, never rects alone.
+  Two documented exceptions, because headless engines draw their own pickers that no real input can reach: a native `<select>`
+  is hit-tested with `expectTapTarget()` and then set with `selectOption()`; an `<input type="date">` is hit-tested and then set
+  with `fill('YYYY-MM-DD')`. Prefer defaults that avoid them (the no-school form's date starts at today; the kitchen has
+  "Next school day" and "Today" buttons).
 - A check that cannot fail measured nothing: every important check has a negative control that breaks a **copy** (worker/.negative
   or app/.negative), goes red for the right reason, and is appended to the matching `negative-control.log`. No switch in shipped
   code turns a guard off.
