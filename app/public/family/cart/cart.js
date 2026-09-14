@@ -59,6 +59,9 @@ async function render() {
 function cartLine({ line, item, child, day, conflicts, index }) {
   const words = state.tools.words(conflicts)
   const problem = !item ? 'This item is no longer on the menu for that day.' : day && day.status !== 'open' ? day.cutoff_label || day.status_label : ''
+  // Prices come from the menu as it is now; say so when it changed after the item went in the cart.
+  const priceChanged = item && Number.isInteger(line.price_cents) && line.price_cents !== item.price_cents
+    ? `Price changed: now ${money(item.price_cents)} each (was ${money(line.price_cents)}).` : ''
   return h('article', { class: 'card cart-line', dataset: { child: line.child_id, date: line.date, item: line.item_id, index: String(index) } },
     h('div', { class: 'line-main' },
       h('span', { class: 'what' }, `${item?.name || line.item_id} ×${line.qty}`),
@@ -78,6 +81,7 @@ function cartLine({ line, item, child, day, conflicts, index }) {
       } }),
       h('span', { class: 'box' }, icon('check')),
       h('span', {}, `I understand ${child.first_name} is allergic to ${words}`)) : null,
+    priceChanged ? h('p', { class: 'line-problem price-changed' }, priceChanged) : null,
     problem ? h('p', { class: 'line-problem' }, problem) : null)
 }
 

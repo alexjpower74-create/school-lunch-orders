@@ -32,7 +32,8 @@ function change(c, d, item, delta, ack) {
   const key = { child_id: c.id, date: d.date, item_id: item.id }
   const i = state.cart.findIndex((l) => sameLine(l, key))
   if (i < 0) {
-    if (delta > 0) state.cart.push({ ...key, qty: delta, allergen_ack: ack === true })
+    // The price seen when it was added, so the cart can say when the school changed it since.
+    if (delta > 0) state.cart.push({ ...key, qty: delta, allergen_ack: ack === true, price_cents: item.price_cents })
   } else {
     const line = state.cart[i]
     line.qty += delta

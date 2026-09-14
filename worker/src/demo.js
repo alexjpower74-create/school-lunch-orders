@@ -4,7 +4,7 @@ import { conflicts } from './allergens.js'
 import { randomId } from './auth.js'
 import { isSchoolDay } from './calendar.js'
 import { loadCal } from './db.js'
-import { closureLabel, insertEntry, orderLabel, paymentLabel, cancelLabel } from './ledger.js'
+import { balanceOf, closureLabel, insertEntry, orderLabel, paymentLabel, cancelLabel } from './ledger.js'
 import { FAMILIES } from './seed.js'
 import { addDays, localInstant, localParts } from './time.js'
 import { parseList } from './text.js'
@@ -75,14 +75,7 @@ export async function seedDemo(c) {
       label: orderLabel(lines.length, lines.map((l) => l.date)) }))
   }
 
-  // Payments: fam-1 pays its first week by e-Transfer; fam-3 sends part in cash; fam-4 has not paid.
-  const fam1 = linesByFamily.get('fam-1') || []
-  const firstWeekEnd = fam1.length ? addDays(fam1[0].date, 6) : null
-  const fam1Week = fam1.filter((l) => l.date <= firstWeekEnd).reduce((s, l) => s + l.item.price_cents, 0)
-  if (fam1Week > 0) {
-    stmts.push(insertEntry(db, { id: randomId('ent'), family_id: 'fam-1', at: hoursLater(placedAt, 14), kind: 'payment', amount_cents: -fam1Week,
-      label: paymentLabel('etransfer'), method: 'etransfer', note: 'SAMPLE e-Transfer' }))
-  }
+  // Payments: fam-3 sends part in cash here; fam-1 and fam-2 pay by e-Transfer at the end (below); fam-4 has not paid.
   const fam3 = linesByFamily.get('fam-3') || []
   if (fam3.length) {
     const half = Math.round(fam3.reduce((s, l) => s + l.item.price_cents, 0) / 200) * 100
@@ -115,6 +108,22 @@ export async function seedDemo(c) {
         amount_cents: -cents, label: closureLabel('closure', past), note })),
     ])
   }
+
+  // So the office shows every kind of balance: fam-1 sends a round e-Transfer that is more than it owes (a credit), fam-2 pays
+  // exactly what it owes (paid up), fam-3 keeps its part payment (owes) and fam-4 has paid nothing (owes).
+  const paid = hoursLater(placedAt, 14)
+  const fam1Owes = await balanceOf(db, 'fam-1')
+  const fam2Owes = await balanceOf(db, 'fam-2')
+  const payments = []
+  if (fam1Owes > 0) {
+    payments.push(insertEntry(db, { id: randomId('ent'), family_id: 'fam-1', at: paid, kind: 'payment', amount_cents: -((Math.floor(fam1Owes / 1000) + 2) * 1000),
+      label: paymentLabel('etransfer'), method: 'etransfer', note: 'SAMPLE e-Transfer' }))
+  }
+  if (fam2Owes > 0) {
+    payments.push(insertEntry(db, { id: randomId('ent'), family_id: 'fam-2', at: paid, kind: 'payment', amount_cents: -fam2Owes,
+      label: paymentLabel('etransfer'), method: 'etransfer', note: 'SAMPLE e-Transfer' }))
+  }
+  if (payments.length) await db.batch(payments)
 
   // After noon on a school day, about half of Room 4's lunches are already given out.
   if (days[0] === c.today && localParts(c.now).hour >= 12) {

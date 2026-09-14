@@ -216,6 +216,9 @@ input.code { font-family: var(--mono); font-size: 24px; letter-spacing: 0.12em; 
 .line-row .what { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
 .line-row .money { font-weight: 650; }
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; }
+.late-allergy { width: 100%; }
+.late-allergy .allergen-warning { margin-top: 2px; }
+.late-note { margin: 6px 0 0; color: var(--allergen-text); font-weight: 650; font-size: 15px; }
 .confirm p { width: 100%; margin: 0; }
 
 .child-card .where, .child-row .where { color: var(--muted); font-size: 15px; margin: 2px 0 8px; }

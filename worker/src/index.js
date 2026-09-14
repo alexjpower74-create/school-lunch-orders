@@ -7,7 +7,7 @@ import { ApiError, json } from './http.js'
 import { info } from './info.js'
 import { kitchenDay, kitchenLabels } from './kitchen.js'
 import * as office from './office.js'
-import { cancelLine, placeOrder } from './orders.js'
+import { ackLine, cancelLine, placeOrder } from './orders.js'
 import { teacherClasses, teacherDay, teacherMark } from './teacher.js'
 import { testReset, testSeed } from './testroutes.js'
 import { localDate } from './time.js'
@@ -29,6 +29,7 @@ const ROUTES = [
   route('GET', '/api/family/orders', 'family', family.familyOrders),
   route('POST', '/api/family/orders', 'family', placeOrder),
   route('POST', '/api/family/lines/:id/cancel', 'family', cancelLine),
+  route('POST', '/api/family/lines/:id/ack', 'family', ackLine),
   route('GET', '/api/family/ledger', 'family', family.familyLedger),
 
   route('POST', '/api/staff/signin', null, staffSignIn),

@@ -1,5 +1,5 @@
-// `npm run negative`: the 13 Worker negative controls from PLAN.md. Each breaks one rule in a COPY of worker/ (worker/.negative),
-// runs only the tests that guard it on port 8605 (NEG_PORT), and must go red for exactly the named tests. Results are appended to
+// `npm run negative`: the 13 Worker negative controls from PLAN.md, plus 14 (the late allergy acknowledgement). Each breaks one
+// rule in a COPY of worker/ (worker/.negative), runs only the tests that guard it on port 8605 (NEG_PORT), and must go red for exactly the named tests. Results are appended to
 // tests/negative-control.log. Exit 0 only when every control went red.
 //   node tests/negative-all.mjs            all of them
 //   node tests/negative-all.mjs 3 11       only controls 3 and 11
@@ -23,6 +23,7 @@ const T = {
   apiCsv: 'office CSV: ledger and balances, header, -3.00 and the formula guard on a family label =SUM(A1)',
   rate: 'family sign-in rate limit: 10 wrong codes from one IP, then 429 even for the right code',
   snapshot: 'price snapshot: a later price change never changes a placed line',
+  lateAck: 'allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both',
 }
 
 const CONTROLS = [
@@ -92,6 +93,11 @@ const CONTROLS = [
     name: '13-current-price', why: "a line takes the item's current price instead of its snapshot",
     patches: [{ file: 'src/lines.js', from: 'l.qty, l.unit_price_cents, l.total_cents,', to: 'l.qty, i.price_cents AS unit_price_cents, l.qty * i.price_cents AS total_cents,' }],
     args: ['--api-only', ...only([T.snapshot, T.storm])], expectRed: [T.snapshot, T.storm],
+  },
+  {
+    name: '14-ack-writes-nothing', why: 'confirming an allergy ticked after ordering stores [] instead of the current conflicts',
+    patches: [{ file: 'src/orders.js', from: '.bind(JSON.stringify(line.conflicts), c.nowIso, id)', to: '.bind(JSON.stringify([]), c.nowIso, id)' }],
+    args: ['--api-only', ...only([T.lateAck])], expectRed: [T.lateAck],
   },
 ]
 
