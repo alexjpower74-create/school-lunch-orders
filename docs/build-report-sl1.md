@@ -123,6 +123,24 @@ A bug the suite caught before commit: a missing `)` in `cart.js` left the cart p
 element → the warning locator not found; (c) ack without the acknowledgement → the stepper never showed qty 1; (d) refusal shown as
 "Order placed" → `#order-error` empty; (e) a transparent cover above the cart bar → the hit-test found `#cart-bar` on top.
 
+## Cross-review of sl2 staff pages
+
+Read-only, against main at 17e6466 (sl2's pages) and ebce23e, checked against what the Worker actually sends. Real mismatches:
+
+- admin School: a blank "Order cut-off: school days before" saves **0** (`Number('')`), so the parents' rule silently becomes "on the day" instead of a refusal; the same `Number('')` turns a blank class "Order in lists" into 0.
+- admin School: "Parents see: …" (`#cutoff-rule`) comes from `/api/info` at page load and is not refreshed after Save, so it keeps showing the old rule.
+- admin No-school confirm and result: "This cancels N lunches" uses `item_count` (Σ qty), so Liam's mac + milk ×2 reads "3 lunches" for one child's lunch; the numbers match the API, the word does not (say "items", or use `lines`).
+- office Adjustment: the form has no `busy()` guard (payments have one), so a double tap records two adjustments.
+- office (minor): a refused Undo or New code shows its words in the payment form's `#payment-error`, not next to the entry or button that was tapped.
+
+Checked and matching: `parseDollars` ("4.5" → 450, "4.05" → 405, "$4" → 400, "4.999" refused, "-4" → -400 on adjustments and refused
+for payments); balance pills (owing / credit / paid up) and "Credits held" as a positive amount; Undo only on payments and
+adjustments; the one-time code box; CSV download with the Worker's filename; kitchen conflict vs "Allergy on file" rows,
+"Not confirmed by the parent" when `acknowledged` is false, off-menu ordered items listed, weekend / no-school / outside-year
+banners, `orders_open` wording; labels' ALLERGY line and "Allergies on file"; teacher buttons only today on a school day, counts
+from the answer; menu refusal message shown and the tick put back; last-admin and `pin_taken` refusals shown with the Worker's
+words; the PIN page shows the 429 words. Red is used only for allergen rows, pills and label lines.
+
 ## For the lead
 
 - Nothing needed from sl2. No changes asked of lead-owned files.
