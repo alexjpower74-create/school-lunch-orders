@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Order lunches · School lunches</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <script type="module" src="/family/order/order.js"></script>
+</head>
+<body>
+  <div class="wrap with-cart-bar">
+    <header class="top" id="top"></header>
+    <main>
+      <p><a class="btn quiet" href="/family/">Back to your lunches</a></p>
+      <h1>Order lunches</h1>
+      <p id="loading" class="muted">Loading…</p>
+      <p id="page-error" class="error box" role="alert" hidden></p>
+
+      <section id="no-children" class="card lead-callout" hidden>
+        <h2 style="margin-top:0">Add your children first</h2>
+        <p>Add each child's first name, class and allergies, then come back to order.</p>
+        <a class="btn primary big block" href="/family/children/">Add a child</a>
+      </section>
+
+      <div id="ordering" hidden>
+        <p class="muted small" id="rule"></p>
+        <div id="child-tabs" class="tabs" role="group" aria-label="Choose a child"></div>
+
+        <div class="week-nav">
+          <button id="prev-week" class="btn" type="button" aria-label="The week before"></button>
+          <span id="week-label" aria-live="polite"></span>
+          <button id="next-week" class="btn" type="button" aria-label="The week after"></button>
+        </div>
+        <div id="days" class="days" role="group" aria-label="Choose a day"></div>
+        <p id="day-status" aria-live="polite"></p>
+        <p class="allergen-note">The red warning uses the allergens the school listed for each item. Ask the school about anything else.</p>
+        <div id="items" class="items"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="cart-bar" data-sticky-footer hidden>
+    <div class="inner">
+      <div class="sum">
+        <span id="cart-count" aria-live="polite">0 items</span>
+        <span id="cart-total" class="money">$0.00</span>
+      </div>
+      <a id="view-cart" class="btn primary big" href="/family/cart/">View cart</a>
+    </div>
+  </div>
+</body>
+</html>

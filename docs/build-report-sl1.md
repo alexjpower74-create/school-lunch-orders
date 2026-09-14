@@ -87,4 +87,69 @@ log keeps the assertion under each red test):
 - A closure re-added at the same test instant after a DELETE would count lines closed by the first one in its answer (the money is
   still right). Only possible with a pinned test clock.
 
-(The parent pages section follows as the work lands.)
+**DONE (lead request): `worker/tools/first-setup.mjs`.** Writes SQL for the school row (sample 0, cut-off 1 / 09:00) and one
+office PIN (PBKDF2 with auth.js's parameters), nothing else; refuses a PIN that is not 4–6 digits and never prints it. `npm test`
+now starts its no-TEST_MODE Worker from that SQL: the name shows with `sample: false`, the PIN signs in as admin, no classes or
+items exist, `/api/test/reset` is 404. With it the suite is **67 tests** (18 unit, 2 empty, 38 API, 4 plain), all green.
+
+## The parent pages
+
+**DONE.** `/` sign-in (`app/public/index.html` + `family/signin.js`), `/family/` home, `/family/children/`, `/family/order/`,
+`/family/cart/`, `/family/history/`, with shared `family/family.js` (session, 401 → sign-in, header, allergen words, the cart in
+`localStorage` `school-lunch:cart:<family id>`, menu weeks) and `family/family.css`. Plain HTML/JS/CSS on the lead's tokens and
+`common/` helpers; no emoji, inline SVG icons; red only for allergens (a solid block, white words); "closed" and refusals in orange.
+Dates, times and labels come from the API. Checkbox rows put the real input over the whole row, so the row is the tap target.
+
+### Verified: Playwright `tests/family` on 8604, all four projects (chromium and webkit, 390 and 1280)
+
+**56 passed (14 tests × 4 projects).** Sign-in by typing `KQ7M-4RTX`, `kq7m4rtx` (shown as `KQ7M-4RTX`), a wrong code in
+`#code-error`, sign out. Add a child with two allergies (the `<select>` hit-tested then `selectOption`, per PLAN), edit, removal
+refused by the Worker while Owen has a lunch ordered. **Liam gets the warning, Ava does not** (data-conflict, the exact words,
+`button.ack` and no `.qty-plus`; for Ava no warning, no ack, `.qty-plus` adds it; contrast ≥ 4.5). "I understand" required: ack →
+qty 1, the cart survives a reload, the tick shows in the cart, unticking disables Place order, the placed order stores `["milk"]`
+for Liam and `[]` for Ava, payment instructions and "You owe $8.00" after. Wed Sep 16 closed with the exact label and no steppers;
+Thu open; clock moved to Thu's cut-off → `#order-error` "Ordering for Thu Sep 17 closed at 9:00 AM Wed Sep 16.", the line marked
+`cutoff_passed`, nothing stored, the cart kept. max_per_child stops the +. Cancel before the cut-off: the balance changes by exactly
+the line total and matches the API; no Cancel on the closed Wednesday line. Balance phrases (owe / all paid up / credit). A storm
+closure through the API shows as a credit in history. Tap targets (48, 56 for steppers, ack, Place order, View cart) hit-tested on
+every page; the last item's action at the bottom of a scrolled page is not under `#cart-bar`; no sideways scroll. 32 screenshots
+(8 pages × 4 projects) in `app/tests/family/shots/`, looked at on chromium-390, webkit-390 and webkit-1280.
+
+A bug the suite caught before commit: a missing `)` in `cart.js` left the cart page on "Loading…" (seen in the trace's page error).
+
+### Verified: the 5 page negative controls (`npm run negative:family`, port 8606, `app/tests/family/negative-control.log`)
+
+**5 of 5 red, each for the right reason:** (a) every child's allergies → Ava's card had `data-conflict="true"`; (b) no warning
+element → the warning locator not found; (c) ack without the acknowledgement → the stepper never showed qty 1; (d) refusal shown as
+"Order placed" → `#order-error` empty; (e) a transparent cover above the cart bar → the hit-test found `#cart-bar` on top.
+
+### DONE (lead's visual review): a solid cart bar and a real Ingredients disclosure
+
+`#cart-bar` now has a solid `--surface` background with its top hairline and an upward shadow (card text no longer reads
+through it). The order-page layout test adds: at the bottom of the page, elementFromPoint at the bar's centre is inside the bar,
+the last item's action is wholly above the bar's top, the bar's computed background alpha is 1 (or a backdrop blur is set), and the
+Ingredients summary is a 48 px target. "Ingredients" is a native `<details>` summary in muted normal weight with an inline SVG
+chevron that turns when open. Re-run: **56 passed** in all four projects, screenshots re-shot. Page negative control **(f)** makes
+the bar transparent again: red on "cart bar background is solid (alpha 0) or blurred". **6 of 6** page controls red.
+
+## Cross-review of sl2 staff pages
+
+Read-only, against main at 17e6466 (sl2's pages) and ebce23e, checked against what the Worker actually sends. Real mismatches:
+
+- admin School: a blank "Order cut-off: school days before" saves **0** (`Number('')`), so the parents' rule silently becomes "on the day" instead of a refusal; the same `Number('')` turns a blank class "Order in lists" into 0.
+- admin School: "Parents see: …" (`#cutoff-rule`) comes from `/api/info` at page load and is not refreshed after Save, so it keeps showing the old rule.
+- admin No-school confirm and result: "This cancels N lunches" uses `item_count` (Σ qty), so Liam's mac + milk ×2 reads "3 lunches" for one child's lunch; the numbers match the API, the word does not (say "items", or use `lines`).
+- office Adjustment: the form has no `busy()` guard (payments have one), so a double tap records two adjustments.
+- office (minor): a refused Undo or New code shows its words in the payment form's `#payment-error`, not next to the entry or button that was tapped.
+
+Checked and matching: `parseDollars` ("4.5" → 450, "4.05" → 405, "$4" → 400, "4.999" refused, "-4" → -400 on adjustments and refused
+for payments); balance pills (owing / credit / paid up) and "Credits held" as a positive amount; Undo only on payments and
+adjustments; the one-time code box; CSV download with the Worker's filename; kitchen conflict vs "Allergy on file" rows,
+"Not confirmed by the parent" when `acknowledged` is false, off-menu ordered items listed, weekend / no-school / outside-year
+banners, `orders_open` wording; labels' ALLERGY line and "Allergies on file"; teacher buttons only today on a school day, counts
+from the answer; menu refusal message shown and the tick put back; last-admin and `pin_taken` refusals shown with the Worker's
+words; the PIN page shows the 429 words. Red is used only for allergen rows, pills and label lines.
+
+## For the lead
+
+- Nothing needed from sl2. No changes asked of lead-owned files.

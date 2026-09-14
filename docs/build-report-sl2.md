@@ -45,7 +45,7 @@ DONE, all under `app/public/`:
   - School form.
   - Menu grid: `input.menu-cell` at 44 px and `.ordered` counts. A change saves that day; a refusal shows in `#menu-error` and
     the tick goes back. Also `#fill-week`.
-  - No-school days: the date starts at today, per PLAN. Preview → `#no-school-confirm` (`#confirm-lunches`,
+  - No-school days: the date starts at today, per PLAN. Preview → `#no-school-confirm` (`#confirm-items`,
     `#confirm-families`, `#confirm-credit`) → `#confirm-no-school` → `#no-school-result`. The list has a two-step remove.
   - Items, classes and staff: list plus form; field errors mark the input named by `field`.
 
@@ -83,7 +83,7 @@ them.
   - Ledger and balances CSVs downloaded by real clicks (`download` event): the headers, `,10.50,`, `,-5.00,` and `5.50`.
   - Tap targets and screenshots.
 - **admin.spec**:
-  - Storm closure: the confirm's numbers = the API preview = the hand numbers. The result reads "Cancelled 13 lunches for 4
+  - Storm closure: the confirm's numbers = the API preview = the hand numbers. The result reads "Cancelled 13 items for 4
     families. Credited $34.25.". Each family's balance drops by exactly its own credit. The kitchen for Thu shows the no-school
     banner, 0 items and no rows, and the office rows show the new balances.
   - Menu grid: unticking cookie on Fri Sep 18 saves (API agrees). Unticking mac on Thu Sep 17 → `#menu-error` and the tick
@@ -93,7 +93,7 @@ them.
   - Tab tap targets, 44 px menu cells, screenshots.
 
 **Negative controls** (`node tests/staff/negative-all.mjs`, copies on 8607, logged in `tests/staff/negative-control.log`). All
-six went red for the named test:
+seven went red for the named test:
 
 | | break | went red on |
 |---|---|---|
@@ -101,8 +101,9 @@ six went red for the named test:
 | b | the label's ALLERGY line is not rendered | "Liam's label-allergen" |
 | c | teacher bumps its own counts instead of the answer's | "count-delivered after Liam given out" (1 expected, 2 shown) |
 | d | office panel ignores the payment answer's balance | "#family-balance after the payment" (625 expected, 1050 shown) |
-| e | the closure confirm uses the kitchen's `line_count` | "confirm-lunches" ("13 lunches" expected, "11 lunches" shown) |
+| e | the closure confirm uses the kitchen's `line_count` | "confirm-items" ("13 items" expected, "11 items" shown; it said "lunches" before the wording change) |
 | f | a transparent fixed layer over the teacher's list | "teacher mark button: something else is on top" (webkit-390) |
+| g | the items form stores `Math.round(price / 10)` as cents (3.75 typed → 38, accepted by the Worker) | "the new item row price" ("$3.75" expected, "$0.38" shown) |
 
 Control (c) first ran red on `count-delivered` rather than the string I had named (`count-waiting`). The break leaves
 `day.counts` set from the answer and then adds 1, so the delivered counter shows the error first. I widened the expect string to
@@ -113,8 +114,9 @@ and labels.
 
 ## Choices worth knowing
 
-- **"lunches" in the no-school confirm and result = `item_count`**, not `lines`. Jack's 2 milks count as 2. That keeps "13
-  lunches" matching the kitchen's "Items to make", and makes negative (e) able to fail (11 lines vs 13 items).
+- **The no-school confirm and result count items (`item_count`)**, not lines: "This cancels 13 items for 4 families and credits
+  $34.25 to their balances." Jack's 2 milks count as 2, matching the kitchen's "Items to make", and negative (e) can fail
+  (11 lines vs 13 items). They said "lunches" until the lead asked for "items".
 - **Kitchen stat "Allergy rows"** = children with any flag (conflict or allergy on file). A red sub-line counts the conflicts.
 - **The cut-off test signs in with the later clock** (Wed 8:00 AM), so the 12-hour staff session is still good once the clock
   moves to Wed 9:00 AM. This relies on the Worker checking only `expires_at > now` (see the cross-review, item 7).
@@ -128,9 +130,8 @@ and labels.
 
 ## Not done
 
-- REJECTED for now: no e2e tests for the items, classes, staff PIN and school forms (P2/P3), or for the office adjustment
-  form. The pages are built and wired to the routes, and the settings screenshot test opens every tab, but nothing checks that
-  a save round-trips.
+- DONE in the third pass (below): save round-trip tests for the school, items, classes and staff PIN forms and the office
+  adjustment.
 - Not checked on paper: the label sheet's physical size (2⅝ × 1 inch, 3 across on Letter). Print emulation checks colours and
   visibility, not millimetres.
 - No office search box, no date range for the ledger CSV (it uses the API defaults), and no family rename (the
@@ -153,6 +154,31 @@ Nothing blocks sl2. No changes asked of the lead's shared files.
   all 5 kitchen tests that open Thursday (a touch tap on text does not move focus in WebKit), so the assertion was removed.
   The kitchen spec then passed 24/24 in all four projects, and negatives (a) and (b) went red again against the changed spec
   (logged).
+
+## Third pass (the lead's next steps)
+
+- DONE: `tests/staff/settings.spec.mjs`. Each form saves through the page, reloads, and checks both the page and
+  `GET /api/admin/settings`:
+  - School: a year end before the start is refused and marked on `#year-end`; then the name, payment words, cut-off (2 school
+    days, 08:30) and year end save, and the header and "Parents see" line show the new values after the reload.
+  - A new item typed in dollars (3.75) with two allergens, Mon and Wed, max 2 and vegetarian: the row shows $3.75 straight after
+    saving, the API stores 375, and the form shows the same values after the reload.
+  - Editing mac: price 4.25, mustard added, Tuesday off, no max. The API agrees, and so does the form after the reload.
+  - A new class, then an edit of its grade and order.
+  - A new staff member: Ms. Oldford's PIN is refused and marked on `#staff-pin` with nothing saved; then 5566 saves, signs in
+    through the API as a teacher in Room 5, and the row reads "Teacher · Room 5".
+  - Switching off the only office PIN is refused with "The school needs at least one office PIN." and stays active.
+- DONE: `office.spec` adjustment test. +2.50 moves `#family-balance` from 1050 to 1300 and -4.00 to 900, the row and the API
+  agree, and both adjustments are still there after a reload.
+- DONE: the settings inputs now use PLAN's ids `#school-name` and `#staff-name`. The shared header used those same ids, so it
+  dropped them (it keeps `.brand-name` and `.staff-who`), and the pin spec reads the header by class.
+- DONE: the no-school confirm and result say "items" (`#confirm-items`), as the lead asked.
+- DONE: negative (g), redone. My first version sent 3.75 / 100, which the Worker refused with a 400. That red (`#item-saved`
+  empty) only proved a refused save shows no "Saved"; the lead caught it. The break now stores `Math.round(price / 10)`
+  (3.75 → 38 cents, accepted), and the red is the row showing $0.38 instead of $3.75. Both runs are in the log.
+- Runs: settings, office, pin and admin specs 70 passed, 6 skipped (menu grid and settings shots at 390); kitchen and teacher
+  36 passed; storm closure 4/4 after the wording change; settings 24/24 after adding the row check; negatives (e) and (g) red.
+  Every changed spec ran in all four projects. I did not rerun the whole suite in one go on the final sha.
 
 ## Cross-review of sl1 M1 (c0ec703), for the routes the staff pages use
 
