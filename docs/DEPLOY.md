@@ -19,10 +19,13 @@ and is Alexander's call.
 1. `cd worker && wrangler d1 create school-lunch-orders` → copy the `database_id` into `worker/wrangler.toml` (it holds a
    placeholder of zeros).
 2. `wrangler d1 migrations apply school-lunch-orders --remote`
-3. First setup, the school's own name and the first office PIN (no SAMPLE data):
+3. First setup, the school's own name and the first office PIN (no SAMPLE data), still in `worker/`:
    `node tools/first-setup.mjs --school "<school name>" --admin "<office person>" --pin <4-6 digits> --out setup.sql`
+   (optional: `--payment "<how parents pay>"`, `--year-start YYYY-MM-DD --year-end YYYY-MM-DD`)
    then `wrangler d1 execute school-lunch-orders --remote --file setup.sql`, then delete `setup.sql` (it holds a PIN hash).
-   *(The tool is on sl1's list; if it is missing, see "Where to pick this up" in README.md.)*
+   The PIN is typed on the command line, so it can sit in shell history: the office changes it in Settings → Staff after
+   the first sign-in. Until the school year is set (here or in Settings), every day reads "No school" and nothing can be
+   ordered.
 4. `wrangler deploy` (from `worker/`).
 5. Sign in at `/staff/` with that PIN, then in **Settings**: payment instructions, cut-off, school year, classes, the menu items
    and their allergens (checked against the kitchen's real labels), the no-school days, and staff PINs for the kitchen and

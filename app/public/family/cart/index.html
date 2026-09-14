@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Your cart · School lunches</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <script type="module" src="/family/cart/cart.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top" id="top"></header>
+    <main>
+      <p><a class="btn quiet" href="/family/order/">Back to the menu</a></p>
+      <h1>Your cart</h1>
+      <p id="loading" class="muted">Loading…</p>
+      <p id="page-error" class="error box" role="alert" hidden></p>
+
+      <section id="cart-empty" class="card" hidden>
+        <p>Your cart is empty.</p>
+        <a class="btn primary big block" href="/family/order/">Order lunches</a>
+      </section>
+
+      <div id="cart-content" hidden>
+        <div id="cart-lines"></div>
+        <div class="cart-sum"><span>Total</span><span id="cart-total" class="money"></span></div>
+        <p id="order-error" class="error box" role="alert" hidden></p>
+        <button id="place-order" class="btn primary big block" type="button" disabled>Place order</button>
+        <p class="muted small" style="margin-top:12px">The app takes no payments. After you order, the school's payment instructions show here.</p>
+      </div>
+
+      <section id="order-placed" class="card balance" hidden>
+        <h2 style="margin-top:0">Order placed</h2>
+        <p>Total <span id="placed-total" class="amount money"></span></p>
+        <p id="new-balance" class="money" style="font-weight:700"></p>
+        <p id="payment-instructions"></p>
+        <div class="row" style="margin-top:14px">
+          <a class="btn primary" href="/family/">Back to your lunches</a>
+          <a class="btn" href="/family/order/">Order more</a>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

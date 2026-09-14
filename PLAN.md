@@ -56,7 +56,9 @@ Plain English for Newfoundland parents: "Order by 9:00 AM Fri Sep 18", "You owe 
   "All paid up", from `balancePhrase()` in `common/ui.js`) and the school's `#payment-instructions`; **Order lunches**
   `#order-lunches`; `#children` with `.child-card[data-child]` (first name, "Room 4 · Grade 2", allergy pills); **Add a child**
   `#add-child`; `#upcoming` with each active line `.line[data-line]` grouped by day ("Thu Sep 17: Liam, Macaroni and cheese ×1,
-  $4.00") and **Cancel** `button.cancel-line` only when `can_cancel` (inline confirm, then the balance updates); `#history-link`;
+  $4.00") and **Cancel** `button.cancel-line` only when `can_cancel` (inline confirm, then the balance updates). A line whose `acknowledged`
+  is false (an allergy ticked after ordering) shows the red `.allergen-warning` in the same words plus "You ticked this allergy after
+  ordering.", with **I understand, keep it** `button.ack-line` (`POST /api/family/lines/:id/ack`) beside Cancel; `#history-link`;
   `#sign-out`. No children yet → the page leads with "Add your children first".
 - **`/family/children/`.** List `.child-row[data-child]` with `button.edit-child` and `button.remove-child`; form `#child-form`:
   `#first-name`, `#class` (select, "Room 4 · Grade 2"), allergies as large checkbox rows `input[name="allergy"][value="<key>"]`
@@ -95,7 +97,8 @@ Plain English for Newfoundland parents: "Order by 9:00 AM Fri Sep 18", "You owe 
   confirmed by the parent" when `acknowledged` is false), then allergy-on-file rows, then the rest. **Print labels** `#print-labels`
   → `/kitchen/labels/?date=`.
 - **`/kitchen/labels/?date=`.** Print sheet: `.label[data-line]` in a 3-across grid (2⅝ × 1 inch at print): first name large, room +
-  grade, item ×qty, `.label-allergen` "ALLERGY: Milk. Contains Milk." when there is a conflict, or "Allergies on file: Peanuts" when
+  grade, item ×qty, `.label-allergen` "ALLERGY: Eggs. Contains Eggs." naming only the conflicts (plus `.label-allergies` "Also allergic to: Sesame
+  seeds" when the child has others), or "Allergies on file: Peanuts" when
   the child has allergies and no conflict; a small "SAMPLE" while sample. `#print` (`.no-print`) calls `window.print()`.
 - **`/teacher/`.** `#class-pick` (select, default `my_class_id`), `#teacher-date`, counts `#count-waiting`, `#count-delivered`,
   `#count-absent`; rows `.child-row[data-child][data-state]`: first name, items ×qty, the red allergy flag words, **Given out**

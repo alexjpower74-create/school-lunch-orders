@@ -5,7 +5,7 @@ import { PIN_RE, hashPin, randomId, randomSaltHex, staffByPin } from './auth.js'
 import { KINDS, KIND_LABELS, inYear, isSchoolDay, isWeekday, noSchoolInfo, staffStatus, weekLabel, weekStart, weekday } from './calendar.js'
 import { boolField, classOut, intField, itemOut, loadCal, readJson, schoolOut, staffOut, textField } from './db.js'
 import { bad, conflict, json, notFound } from './http.js'
-import { closureLabel, insertEntry } from './ledger.js'
+import { closureLabel } from './ledger.js'
 import { addDays, dateLabel, isValidDate } from './time.js'
 import { parseList } from './text.js'
 
@@ -180,7 +180,7 @@ export async function fillMenuWeek(c) {
 
 // ---------- no-school days ----------
 
-// What closing a day cancels and credits: that day's active lines, summed per family from each line's own total.
+// The preview: what closing a day would cancel and credit now (that day's active lines, per family, at their own totals).
 async function closurePlan(db, date) {
   const { results } = await db.prepare(`SELECT id, family_id, qty, unit_price_cents, total_cents FROM lines
     WHERE date = ? AND status = 'active' ORDER BY family_id, seq`).bind(date).all()
@@ -191,40 +191,48 @@ async function closurePlan(db, date) {
     item_count += r.qty
   }
   const credit_cents = [...credit.values()].reduce((s, v) => s + v, 0)
-  return { ids: results.map((r) => r.id), credit, summary: { lines: results.length, item_count, families: credit.size, credit_cents } }
+  return { lines: results.length, item_count, families: credit.size, credit_cents }
+}
+
+// The date a new no-school day may take; the preview refuses exactly what the POST refuses.
+function checkNewNoSchoolDate(c, cal, date) {
+  if (!isValidDate(date) || !isWeekday(date)) throw bad('date', 'Choose a weekday.')
+  if (date < c.today) throw bad('date', 'Choose today or a later day.')
+  if (!inYear(cal, date)) throw bad('date', 'Choose a day inside the school year.')
+  if (cal.noSchool.has(date)) throw conflict('bad_state', `${dateLabel(date)} is already a no-school day.`)
 }
 
 export async function previewNoSchool(c) {
   const date = c.url.searchParams.get('date')
-  if (!isValidDate(date)) throw bad('date', 'Choose a date.')
-  const { summary } = await closurePlan(c.db, date)
-  return json({ date, date_label: dateLabel(date), ...summary })
+  checkNewNoSchoolDate(c, await loadCal(c.db), date)
+  return json({ date, date_label: dateLabel(date), ...(await closurePlan(c.db, date)) })
 }
 
 export async function addNoSchool(c) {
   const body = await readJson(c)
   const cal = await loadCal(c.db)
   const date = body.date
-  if (!isValidDate(date) || !isWeekday(date)) throw bad('date', 'Choose a weekday.')
-  if (date < c.today) throw bad('date', 'Choose today or a later day.')
-  if (!inYear(cal, date)) throw bad('date', 'Choose a day inside the school year.')
+  checkNewNoSchoolDate(c, cal, date)
   if (!KINDS.includes(body.kind)) throw bad('kind', 'Choose holiday, PD day or school closed.')
   const note = textField(body, 'note', 0, 120, 'Keep the note under 120 characters.')
-  if (cal.noSchool.has(date)) throw conflict('bad_state', `${dateLabel(date)} is already a no-school day.`)
-  const plan = await closurePlan(c.db, date)
-  const stmts = [c.db.prepare('INSERT INTO no_school (date, kind, note, created_at) VALUES (?, ?, ?, ?)').bind(date, body.kind, note, c.nowIso)]
-  // Close exactly the lines that were credited (chunks stay under D1's bound-value limit).
-  for (let i = 0; i < plan.ids.length; i += 80) {
-    const chunk = plan.ids.slice(i, i + 80)
-    stmts.push(c.db.prepare(`UPDATE lines SET status = 'closed', changed_at = ? WHERE status = 'active' AND id IN (${chunk.map(() => '?').join(', ')})`)
-      .bind(c.nowIso, ...chunk))
-  }
-  for (const [familyId, cents] of plan.credit) {
-    stmts.push(insertEntry(c.db, { id: randomId('ent'), family_id: familyId, at: c.nowIso, kind: 'closure', amount_cents: -cents,
-      label: closureLabel(body.kind, date), note }))
-  }
-  await c.db.batch(stmts)
-  return json({ day: { date, date_label: dateLabel(date), kind: body.kind, kind_label: KIND_LABELS[body.kind], note }, cancelled: plan.summary }, 201)
+  const label = closureLabel(body.kind, date)
+  // One batch keyed on the date, so no line can be closed without its credit or credited without being closed: the day off
+  // first (later orders are refused), then one credit per family from the active lines' own totals, then those lines close.
+  await c.db.batch([
+    c.db.prepare('INSERT INTO no_school (date, kind, note, created_at) VALUES (?, ?, ?, ?)').bind(date, body.kind, note, c.nowIso),
+    c.db.prepare(`INSERT INTO entries (id, family_id, at, date, kind, amount_cents, label, method, note)
+      SELECT 'ent_' || lower(hex(randomblob(8))), family_id, ?, ?, 'closure', -SUM(total_cents), ?, NULL, ? FROM lines
+      WHERE date = ? AND status = 'active' GROUP BY family_id`).bind(c.nowIso, c.today, label, note, date),
+    c.db.prepare("UPDATE lines SET status = 'closed', changed_at = ? WHERE date = ? AND status = 'active'").bind(c.nowIso, date),
+  ])
+  // What was done, read back: the lines this batch closed and the credits it wrote.
+  const [l, e] = await c.db.batch([
+    c.db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(qty), 0) AS q FROM lines WHERE date = ? AND status = 'closed' AND changed_at = ?").bind(date, c.nowIso),
+    c.db.prepare("SELECT COUNT(*) AS n, COALESCE(-SUM(amount_cents), 0) AS cents FROM entries WHERE kind = 'closure' AND label = ? AND at = ?")
+      .bind(label, c.nowIso),
+  ])
+  const cancelled = { lines: l.results[0].n, item_count: l.results[0].q, families: e.results[0].n, credit_cents: e.results[0].cents }
+  return json({ day: { date, date_label: dateLabel(date), kind: body.kind, kind_label: KIND_LABELS[body.kind], note }, cancelled }, 201)
 }
 
 export async function deleteNoSchool(c, { date }) {

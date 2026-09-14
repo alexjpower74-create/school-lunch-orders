@@ -1,0 +1,95 @@
+// "/family/" The family's balance, what is coming up (with Cancel before the cut-off) and their children.
+import { $, ApiError, allergenTools, balancePhrase, classWords, familyApi, getInfo, h, money, renderHeader, requireSession, run, say, signOut } from './family.js'
+
+const s = requireSession()
+
+function renderBalance(cents, instructions) {
+  const card = $('balance')
+  card.dataset.balanceCents = String(cents)
+  card.classList.toggle('owing', cents > 0)
+  card.classList.toggle('credit', cents < 0)
+  $('balance-text').textContent = balancePhrase(cents)
+  $('payment-instructions').textContent = cents > 0 ? instructions : ''
+  $('payment-instructions').hidden = !(cents > 0 && instructions)
+}
+
+function renderChildren(children, tools) {
+  $('children').replaceChildren(...children.map((c) => h('article', { class: 'card child-card', dataset: { child: c.id } },
+    h('h3', {}, c.first_name),
+    h('p', { class: 'where' }, classWords(c)),
+    c.allergies.length
+      ? h('div', { class: 'pills', 'aria-label': `${c.first_name}'s allergies` }, c.allergies.map((k) => h('span', { class: 'pill allergy' }, tools.label(k))))
+      : h('p', { class: 'muted small', style: 'margin:0' }, 'No allergies ticked'))))
+  if (!children.length) $('children').replaceChildren(h('p', { class: 'muted' }, 'No children added yet.'))
+}
+
+function lineRow(line, instructions) {
+  const li = h('li', { class: 'line line-row', dataset: { line: line.id } },
+    h('span', { class: 'what' }, `${line.first_name}, ${line.item_name} ×${line.qty}`),
+    h('span', { class: 'money' }, money(line.total_cents)))
+  const error = h('p', { class: 'error', role: 'alert', hidden: true })
+  if (!line.can_cancel) return li
+
+  const actions = h('div', { class: 'row' })
+  const showCancel = () => actions.replaceChildren(h('button', { class: 'btn warn cancel-line', type: 'button', onclick: askConfirm }, 'Cancel'))
+  function askConfirm() {
+    actions.replaceChildren(h('div', { class: 'confirm' },
+      h('p', {}, `Cancel ${line.first_name}'s ${line.item_name} on ${line.date_label}? ${money(line.total_cents)} comes off your balance.`),
+      h('button', { class: 'btn primary confirm-cancel', type: 'button', onclick: doCancel }, 'Yes, cancel it'),
+      h('button', { class: 'btn keep-line', type: 'button', onclick: showCancel }, 'Keep it')))
+    actions.querySelector('.confirm-cancel').focus()
+  }
+  async function doCancel(ev) {
+    ev.currentTarget.disabled = true
+    say(error, '')
+    try {
+      const answer = await familyApi('POST', `/api/family/lines/${line.id}/cancel`)
+      renderBalance(answer.balance_cents, instructions)
+      const group = li.closest('.day-group')
+      li.remove()
+      if (group && !group.querySelector('.line')) group.remove()
+      if (!$('upcoming').querySelector('.line')) renderUpcoming([], instructions)
+    } catch (e) {
+      say(error, e instanceof ApiError ? e.message : 'Something went wrong. Try again.')
+      showCancel()
+    }
+  }
+  showCancel()
+  li.append(actions, error)
+  return li
+}
+
+function renderUpcoming(lines, instructions) {
+  const box = $('upcoming')
+  if (!lines.length) {
+    box.replaceChildren(h('p', { class: 'muted', style: 'margin:0' }, 'No lunches ordered for the days ahead.'))
+    return
+  }
+  const byDay = new Map()
+  for (const l of lines) {
+    if (!byDay.has(l.date)) byDay.set(l.date, [])
+    byDay.get(l.date).push(l)
+  }
+  box.replaceChildren(...[...byDay.values()].map((dayLines) => h('section', { class: 'day-group' },
+    h('h3', {}, dayLines[0].date_label),
+    h('ul', { class: 'list' }, dayLines.map((l) => lineRow(l, instructions))))))
+}
+
+async function start() {
+  if (!s) return
+  const [info, fam] = await Promise.all([getInfo(), familyApi('GET', '/api/family')])
+  renderHeader(info)
+  const orders = await familyApi('GET', `/api/family/orders?from=${info.today}`)
+  const tools = allergenTools(info)
+  $('family-label').textContent = fam.family.label.replace(/ \(SAMPLE\)$/, '')
+  $('first-steps').hidden = fam.children.length > 0
+  $('order-lunches').hidden = fam.children.length === 0
+  renderBalance(fam.balance_cents, fam.payment_instructions)
+  renderUpcoming(orders.lines.filter((l) => l.status === 'active'), fam.payment_instructions)
+  renderChildren(fam.children, tools)
+  $('sign-out').addEventListener('click', signOut)
+  $('loading').hidden = true
+  $('home').hidden = false
+}
+
+run(start)

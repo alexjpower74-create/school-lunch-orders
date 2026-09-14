@@ -38,3 +38,10 @@ Newest at the bottom.
     change any day. An item already ordered for a day cannot be taken off that day's menu (make it a no-school day instead).
 14. **Tests share one fixed calendar.** The seed is the 2026–27 SAMPLE school year with Thanksgiving, a PD day and Remembrance Day,
     and tests pin "now" to Tue Sep 15 2026, 11:00 AM NDT, so every cut-off example in docs/API.md is exact.
+15. **One wording for a conflict, everywhere.** "Liam is allergic to Milk. Macaroni and cheese contains Milk." on the order page,
+    in the cart, in the Worker's refusal and on home; the kitchen label leads with only the conflict ("ALLERGY: Eggs. Contains
+    Eggs.") and lists the child's other allergies on a second line. A parent and the kitchen describe the same risk the same way
+    (sl2's cross-review found three different phrasings).
+16. **An allergy ticked after ordering reaches the parent too.** The kitchen already saw "Not confirmed by the parent"; now the
+    parent's home screen shows the same red warning on that lunch with "I understand, keep it" or Cancel. Confirming never changes
+    the kitchen's numbers, so it has no cut-off (sl2's cross-review).
