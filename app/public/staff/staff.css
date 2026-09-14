@@ -38,10 +38,13 @@ body.staff { min-height: 100vh; }
 
 @media (max-width: 699px) {
   /* On a phone the header scrolls away so the list gets the screen. */
-  .staff-header { position: static; }
-  .brand { flex: 1 1 100%; }
-  #staff-nav { margin-left: 0; }
-  #staff-sign-out { margin-left: auto; }
+  .staff-header { position: static; gap: 0 8px; padding-block: 4px; }
+  .brand { flex: 1 1 100%; font-size: 15px; }
+  .brand svg { width: 18px; height: 18px; }
+  .staff-who { font-size: 13px; max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #staff-nav { margin-left: 0; gap: 2px; }
+  #staff-nav a { padding: 0 10px; }
+  #staff-sign-out { margin-left: auto; padding: 0 12px; }
 }
 
 /* ---------- layout ---------- */
