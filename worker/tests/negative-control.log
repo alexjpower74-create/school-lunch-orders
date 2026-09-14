@@ -577,3 +577,582 @@ not ok 1 - allergy ticked after ordering: the family line and the kitchen show i
       ]
     
 RESULT: RED as intended (exit 1); red tests: allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both
+
+=== negative:01-cutoff-own-day — 2026-09-14T23:55:21.672Z
+break: cut-off compares against D's own 9:00 AM instead of the school day before
+patched: src/calendar.js
+run: node tests/run.mjs --fresh --grep ^cut-off: the school day before, not the day itself \(Wed Sep 16 closes 9:00 AM Tue Sep 15\)$|^cut-off on a fake clock: Wed Sep 16 at 8:59 AM → 201, at 9:00 AM → 409 cutoff_passed, at the anchor → 409; Thu Sep 17 at the anchor → 201$ (PORT 8605)
+== unit: tests/first-setup.test.mjs tests/time.test.mjs tests/unit.test.mjs
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 3 - cut-off: the school day before, not the day itself (Wed Sep 16 closes 9:00 AM Tue Sep 15)
+  ---
+  duration_ms: 1.897083
+  type: 'test'
+  location: 'worker/tests/unit.test.mjs:20:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '2026-09-16T11:30:00.000Z'
+    - '2026-09-15T11:30:00.000Z'
+                ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '2026-09-15T11:30:00.000Z'
+  actual: '2026-09-16T11:30:00.000Z'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/unit.test.mjs:21:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+not ok 5 - cut-off on a fake clock: Wed Sep 16 at 8:59 AM → 201, at 9:00 AM → 409 cutoff_passed, at the anchor → 409; Thu Sep 17 at the anchor → 201
+  ---
+  duration_ms: 153.425391
+  type: 'test'
+  location: 'worker/tests/api-orders.test.mjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"order":{"id":"ord_40d36a6621609c2a","placed_at":"2026-09-15T11:30:00.000Z","total_cents":100,"item_count":1,"lines":[{"id":"ln_9b8aadf25007717f","order_id":"ord_40d36a6621609c2a","child_id":"ch-ava","first_name":"Ava","date":"2026-09-16","date_label":"Wed Sep 16","item_id":"milk","item_name":"White milk (250 mL)","qty":1,"unit_price_cents":100,"total_cents":100,"status":"active","status_label":"Ordered","ack_allergens":[],"conflicts":[],"acknowledged":true,"can_cancel":true,"cutoff_at":"2026-09-16T11:30:00.000Z","cutoff_label":"Order by 9:00 AM Wed Sep 16","delivery":null,"placed_at":"2026-09-15T11:30:00.000Z"}]},"balance_cents":225}
+    
+    201 !== 409
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 409
+  actual: 201
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-orders.test.mjs:17:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: cut-off: the school day before, not the day itself (Wed Sep 16 closes 9:00 AM Tue Sep 15) | cut-off on a fake clock: Wed Sep 16 at 8:59 AM → 201, at 9:00 AM → 409 cutoff_passed, at the anchor → 409; Thu Sep 17 at the anchor → 201
+
+=== negative:02-cutoff-no-holiday-skip — 2026-09-14T23:55:25.713Z
+break: cut-off stops skipping holidays and PD days
+patched: src/calendar.js
+run: node tests/run.mjs --fresh --grep ^cut-off: holiday and PD day are skipped \(Tue Oct 13 → Fri Oct 9, Mon Oct 26 → Thu Oct 22\)$|^cut-off: Tue Oct 13 open until 9:00 AM Fri Oct 9 and closed one minute after$ (PORT 8605)
+== unit: tests/first-setup.test.mjs tests/time.test.mjs tests/unit.test.mjs
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 3 - cut-off: holiday and PD day are skipped (Tue Oct 13 → Fri Oct 9, Mon Oct 26 → Thu Oct 22)
+  ---
+  duration_ms: 2.665722
+  type: 'test'
+  location: 'worker/tests/unit.test.mjs:32:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '2026-10-12'
+    - '2026-10-09'
+               ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '2026-10-09'
+  actual: '2026-10-12'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/unit.test.mjs:36:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+not ok 5 - cut-off: Tue Oct 13 open until 9:00 AM Fri Oct 9 and closed one minute after
+  ---
+  duration_ms: 125.318177
+  type: 'test'
+  location: 'worker/tests/api-orders.test.mjs:56:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'Order by 9:00 AM Mon Oct 12'
+    - 'Order by 9:00 AM Fri Oct 9'
+                        ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Order by 9:00 AM Fri Oct 9'
+  actual: 'Order by 9:00 AM Mon Oct 12'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-orders.test.mjs:65:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+RESULT: RED as intended (exit 1); red tests: cut-off: holiday and PD day are skipped (Tue Oct 13 → Fri Oct 9, Mon Oct 26 → Thu Oct 22) | cut-off: Tue Oct 13 open until 9:00 AM Fri Oct 9 and closed one minute after
+
+=== negative:03-no-ack-required — 2026-09-14T23:55:29.519Z
+break: the server stops requiring allergen_ack
+patched: src/orders.js
+run: node tests/run.mjs --fresh --api-only --grep ^allergens: Liam \+ mac without allergen_ack → 409 allergen_ack_required listing that index$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 5 - allergens: Liam + mac without allergen_ack → 409 allergen_ack_required listing that index
+  ---
+  duration_ms: 123.770899
+  type: 'test'
+  location: 'worker/tests/api-orders.test.mjs:77:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"order":{"id":"ord_04d8a26a692994f1","placed_at":"2026-09-15T13:30:00.000Z","total_cents":400,"item_count":1,"lines":[{"id":"ln_60e5ae07b79387f2","order_id":"ord_04d8a26a692994f1","child_id":"ch-liam","first_name":"Liam","date":"2026-09-17","date_label":"Thu Sep 17","item_id":"mac","item_name":"Macaroni and cheese","qty":1,"unit_price_cents":400,"total_cents":400,"status":"active","status_label":"Ordered","ack_allergens":[],"conflicts":["milk"],"acknowledged":false,"can_cancel":true,"cutoff_at":"2026-09-16T11:30:00.000Z","cutoff_label":"Order by 9:00 AM Wed Sep 16","delivery":null,"placed_at":"2026-09-15T13:30:00.000Z"}]},"balance_cents":400}
+    
+    201 !== 409
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 409
+  actual: 201
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-orders.test.mjs:80:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: allergens: Liam + mac without allergen_ack → 409 allergen_ack_required listing that index
+
+=== negative:04-family-allergies — 2026-09-14T23:55:32.899Z
+break: conflicts use the whole family's allergies (a sibling's allergy blocks Ava)
+patched: src/orders.js
+run: node tests/run.mjs --fresh --api-only --grep ^allergens: Ava \(no allergies\) \+ mac on Thu Sep 17 without an ack → 201$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 5 - allergens: Ava (no allergies) + mac on Thu Sep 17 without an ack → 201
+  ---
+  duration_ms: 118.474155
+  type: 'test'
+  location: 'worker/tests/api-orders.test.mjs:97:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"error":"Ava is allergic to Milk. Macaroni and cheese contains Milk. Tick \"I understand\" to order it anyway.","code":"allergen_ack_required","lines":[{"index":0,"child_id":"ch-ava","first_name":"Ava","item_id":"mac","item_name":"Macaroni and cheese","allergens":["milk"]}]}
+    
+    409 !== 201
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 201
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-orders.test.mjs:100:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: allergens: Ava (no allergies) + mac on Thu Sep 17 without an ack → 201
+
+=== negative:05-closure-ignores-qty — 2026-09-14T23:55:36.363Z
+break: closure credit ignores qty (credits the unit price once per line)
+patched: src/admin.js
+run: node tests/run.mjs --fresh --api-only --grep ^storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 3 - storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum
+  ---
+  duration_ms: 405.871347
+  type: 'test'
+  location: 'worker/tests/api-closure.test.mjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the preview equals what the POST cancelled
+    + actual - expected
+    
+      {
+    +   credit_cents: 6110,
+    -   credit_cents: 5760,
+        families: 4,
+        item_count: 25,
+        lines: 22
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    lines: 22
+RESULT: RED as intended (exit 1); red tests: storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum
+
+=== negative:06-closure-credits-cancelled — 2026-09-14T23:55:40.079Z
+break: closure also credits lines that were already cancelled
+patched: src/admin.js
+run: node tests/run.mjs --fresh --api-only --grep ^storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 3 - storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum
+  ---
+  duration_ms: 434.89814
+  type: 'test'
+  location: 'worker/tests/api-closure.test.mjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the preview equals what the POST cancelled
+    + actual - expected
+    
+      {
+    +   credit_cents: 6110,
+    -   credit_cents: 6310,
+        families: 4,
+        item_count: 25,
+        lines: 22
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    lines: 22
+RESULT: RED as intended (exit 1); red tests: storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum
+
+=== negative:07-kitchen-counts-lines — 2026-09-14T23:55:43.712Z
+break: kitchen totals count lines instead of qty
+patched: src/kitchen.js
+run: node tests/run.mjs --fresh --api-only --grep ^kitchen totals = sum of orders: random orders over two days plus cancellations and a closure$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 4 - kitchen totals = sum of orders: random orders over two days plus cancellations and a closure
+  ---
+  duration_ms: 542.937814
+  type: 'test'
+  location: 'worker/tests/api-kitchen.test.mjs:18:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    2026-09-17: totals.item_count = Σ qty of active lines
+    
+    16 !== 19
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 19
+  actual: 16
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-kitchen.test.mjs:60:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: kitchen totals = sum of orders: random orders over two days plus cancellations and a closure
+
+=== negative:08-kitchen-includes-cancelled — 2026-09-14T23:55:47.579Z
+break: kitchen includes cancelled (and closed) lines
+patched: src/kitchen.js
+run: node tests/run.mjs --fresh --api-only --grep ^kitchen totals = sum of orders: random orders over two days plus cancellations and a closure$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 4 - kitchen totals = sum of orders: random orders over two days plus cancellations and a closure
+  ---
+  duration_ms: 535.854867
+  type: 'test'
+  location: 'worker/tests/api-kitchen.test.mjs:18:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    2026-09-17: Σ items[].qty = Σ qty of active lines
+    
+    24 !== 19
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 19
+  actual: 24
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-kitchen.test.mjs:59:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: kitchen totals = sum of orders: random orders over two days plus cancellations and a closure
+
+=== negative:09-cancel-no-family-check — 2026-09-14T23:55:51.350Z
+break: cancel skips the family check
+patched: src/orders.js
+run: node tests/run.mjs --fresh --api-only --grep ^family isolation: fam-2's token on fam-1's child, line and cancel → 404, and nothing changes$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 2 - family isolation: fam-2's token on fam-1's child, line and cancel → 404, and nothing changes
+  ---
+  duration_ms: 184.437025
+  type: 'test'
+  location: 'worker/tests/api-auth.test.mjs:120:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"line":{"id":"ln_60c97859cde42f3c","order_id":"ord_16491b8fb5785bac","child_id":"ch-ava","first_name":"Ava","date":"2026-09-17","date_label":"Thu Sep 17","item_id":"chili","item_name":"Beef chili with rice","qty":1,"unit_price_cents":475,"total_cents":475,"status":"cancelled","status_label":"Cancelled","ack_allergens":[],"conflicts":[],"acknowledged":true,"can_cancel":false,"cutoff_at":"2026-09-16T11:30:00.000Z","cutoff_label":"Order by 9:00 AM Wed Sep 16","delivery":null,"placed_at":"2026-09-15T13:30:00.000Z"},"balance_cents":0}
+    
+    200 !== 404
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 404
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-auth.test.mjs:132:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: family isolation: fam-2's token on fam-1's child, line and cancel → 404, and nothing changes
+
+=== negative:10-kitchen-into-office — 2026-09-14T23:55:54.708Z
+break: the role matrix lets kitchen into office
+patched: src/auth.js
+run: node tests/run.mjs --fresh --api-only --grep ^role matrix: every role × one route per area → 200 / 403 / 401$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 2 - role matrix: every role × one route per area → 200 / 403 / 401
+  ---
+  duration_ms: 237.768128
+  type: 'test'
+  location: 'worker/tests/api-auth.test.mjs:83:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    kitchen on /api/office/families: {"families":[{"id":"fam-3","label":"Emma, Jack and Chloe (SAMPLE)","children":[{"id":"ch-chloe","first_name":"Chloe","class_name":"Room 2"},{"id":"ch-emma","first_name":"Emma","class_name":"Room 9"},{"id":"ch-jack","first_name":"Jack","class_name":"Room 4"}],"balance_cents":0,"last_payment_at":null,"last_payment_label":null},{"id":"fam-1","label":"Liam and Ava (SAMPLE)","children":[{"id":"ch-ava","first_name":"Ava","class_name":"Room 8"},{"id":"ch-liam","first_name":"Liam","class_name":"Room 4"}],"balance_cents":0,"last_payment_at":null,"last_payment_label":null},{"id":"fam-2","label":"Noah (SAMPLE)","children":[{"id":"ch-noah","first_name":"Noah","class_name":"Room 1"}],"balance_cents":0,"last_payment_at":null,"last_payment_label":null},{"id":"fam-4","label":"Owen (SAMPLE)","children":[{"id":"ch-owen","first_name":"Owen","class_name":"Room 7"}],"balance_cents":0,"last_payment_at":null,"last_payment_label":null}],"totals":{"families":4,"owing_cents":0,"credit_cents":0}}
+    
+    200 !== 403
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 403
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-auth.test.mjs:93:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: role matrix: every role × one route per area → 200 / 403 / 401
+
+=== negative:11-no-formula-guard — 2026-09-14T23:55:58.198Z
+break: the CSV formula guard is removed
+patched: src/csv.js
+run: node tests/run.mjs --fresh --grep ^CSV: quoting and the formula guard$|^office CSV: ledger and balances, header, -3\.00 and the formula guard on a family label =SUM\(A1\)$ (PORT 8605)
+== unit: tests/first-setup.test.mjs tests/time.test.mjs tests/unit.test.mjs
+# tests 3
+# pass 2
+# fail 1
+# skipped 0
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 3 - CSV: quoting and the formula guard
+  ---
+  duration_ms: 1.913713
+  type: 'test'
+  location: 'worker/tests/unit.test.mjs:136:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '=SUM(A1)'
+    - "'=SUM(A1)"
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: "'=SUM(A1)"
+  actual: '=SUM(A1)'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/unit.test.mjs:141:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+not ok 6 - office CSV: ledger and balances, header, -3.00 and the formula guard on a family label =SUM(A1)
+  ---
+  duration_ms: 196.556381
+  type: 'test'
+  location: 'worker/tests/api-staff.test.mjs:96:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '2026-09-15,11:00 AM,=SUM(A1),Adjustment,Adjustment,3.00,,"+cmd, ""quoted""",'
+    - `2026-09-15,11:00 AM,'=SUM(A1),Adjustment,Adjustment,3.00,,"'+cmd, ""quoted""",`
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: `2026-09-15,11:00 AM,'=SUM(A1),Adjustment,Adjustment,3.00,,"'+cmd, ""quoted""",`
+  actual: '2026-09-15,11:00 AM,=SUM(A1),Adjustment,Adjustment,3.00,,"+cmd, ""quoted""",'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-staff.test.mjs:112:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+RESULT: RED as intended (exit 1); red tests: CSV: quoting and the formula guard | office CSV: ledger and balances, header, -3.00 and the formula guard on a family label =SUM(A1)
+
+=== negative:12-no-code-rate-guard — 2026-09-14T23:56:02.062Z
+break: the family-code rate guard is off
+patched: src/auth.js
+run: node tests/run.mjs --fresh --api-only --grep ^family sign-in rate limit: 10 wrong codes from one IP, then 429 even for the right code$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 2 - family sign-in rate limit: 10 wrong codes from one IP, then 429 even for the right code
+  ---
+  duration_ms: 195.2144
+  type: 'test'
+  location: 'worker/tests/api-auth.test.mjs:41:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"token":"bojV0VxuNf56rpHoxnN0zHhkMwBKkpbT5NGfn52GtM8","family":{"id":"fam-1","label":"Liam and Ava (SAMPLE)"},"expires_at":"2026-12-14T13:30:00.000Z"}
+    
+    200 !== 429
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 429
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-auth.test.mjs:48:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: family sign-in rate limit: 10 wrong codes from one IP, then 429 even for the right code
+
+=== negative:13-current-price — 2026-09-14T23:56:05.516Z
+break: a line takes the item's current price instead of its snapshot
+patched: src/lines.js
+run: node tests/run.mjs --fresh --api-only --grep ^price snapshot: a later price change never changes a placed line$|^storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 4
+# fail 2
+# skipped 0
+not ok 3 - storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum
+  ---
+  duration_ms: 431.624247
+  type: 'test'
+  location: 'worker/tests/api-closure.test.mjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    mac lines carry both snapshots
+    + actual - expected
+    
+      [
+    -   400,
+        435
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 400
+    1: 435
+  actual:
+    0: 435
+not ok 5 - price snapshot: a later price change never changes a placed line
+  ---
+  duration_ms: 131.431948
+  type: 'test'
+  location: 'worker/tests/api-orders.test.mjs:192:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    450 !== 400
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 450
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (worker/tests/api-orders.test.mjs:201:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+RESULT: RED as intended (exit 1); red tests: price snapshot: a later price change never changes a placed line | storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum
+
+=== negative:14-ack-writes-nothing — 2026-09-14T23:56:09.431Z
+break: confirming an allergy ticked after ordering stores [] instead of the current conflicts
+patched: src/orders.js
+run: node tests/run.mjs --fresh --api-only --grep ^allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 1 - allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both
+  ---
+  duration_ms: 235.629198
+  type: 'test'
+  location: 'worker/tests/api-ack.test.mjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        [
+          'milk'
+        ],
+    +   false,
+    +   []
+    -   true,
+    -   [
+    -     'milk'
+    -   ]
+      ]
+    
+RESULT: RED as intended (exit 1); red tests: allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both

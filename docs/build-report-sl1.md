@@ -132,6 +132,32 @@ Ingredients summary is a 48 px target. "Ingredients" is a native `<details>` sum
 chevron that turns when open. Re-run: **56 passed** in all four projects, screenshots re-shot. Page negative control **(f)** makes
 the bar transparent again: red on "cart bar background is solid (alpha 0) or blurred". **6 of 6** page controls red.
 
+## Round 3 (sl2's cross-review of the parent pages, and the demo balances)
+
+- **DONE (safety gap): an allergy ticked after ordering reaches the parent** (70e8dfa). Family Lines carry `conflicts` and
+  `acknowledged`, computed with the kitchen's own functions; `POST /api/family/lines/:id/ack` stores the current conflicts (404 for
+  another family's line; 409 `bad_state` for a cancelled line, a past day, or nothing to confirm; no cut-off). Home shows the red
+  warning in the standard words, "You ticked this allergy after ordering." and **I understand, keep it** beside Cancel. Tests: two
+  API tests (the kitchen shows not confirmed, the ack confirms it for both, only that line, no money changes, each refusal) and a
+  family spec by real taps (tick Milk on /family/children/, the warning on home, the ack clears it, the kitchen API agrees, still
+  clear after a reload). Worker negative **14** (the ack stores `[]`) went red: `acknowledged` stayed false. Page negative **(g)**
+  (home ignores `acknowledged`) went red: the warning was not found.
+- **DONE (one wording):** the Worker's `allergen_ack_required` message is now "Liam is allergic to Milk. Macaroni and cheese
+  contains Milk. Tick "I understand" to order it anyway." (320ca1b); the allergen API tests check it.
+- **DONE (cart prices)** (756f1b9). The cart page already priced every line from the menu fetched when it opens, so its total
+  already matched the placed total after a price change; what was missing was saying so. A cart line now keeps the price seen when
+  it was added, and the cart shows "Price changed: now $4.50 each (was $4.00)." Spec: the price changed through the API between
+  adding and opening the cart; the cart, its total and the placed total all read $4.50. Page negative **(h)** (the price is not
+  kept) went red. Not covered: the order page's cart bar still shows the price from when that page loaded until it is reloaded.
+- **DONE (demo balances, lead request):** in the demo scenario fam-1 sends one round e-Transfer larger than it owes (a credit),
+  fam-2 pays exactly its balance (paid up), fam-3 keeps its part cash payment and fam-4 has paid nothing. The contract's demo line
+  should read that way instead of "a payment for fam-1 that covers its first week". The demo API test asserts the signs (credit,
+  zero, owing, owing), one round e-Transfer for fam-1 and the office totals showing both owing and credit.
+
+Verified on the merged branch (main's integration round 2 merged in first): `npm test` **64 tests** (18 unit, 2 empty, 40 API,
+4 without TEST_MODE) green; Playwright `tests/family` **64 passed** (16 tests × 4 projects); Worker negative controls **14 of 14**
+red; page negative controls **8 of 8** red.
+
 ## Cross-review of sl2 staff pages
 
 Read-only, against main at 17e6466 (sl2's pages) and ebce23e, checked against what the Worker actually sends. Real mismatches:
