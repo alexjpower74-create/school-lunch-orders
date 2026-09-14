@@ -344,7 +344,8 @@ No orders and no ledger entries after a reset.
 
 **Demo scenario** (for `npm run demo`, anchored to the real today): orders placed "last week" (the seed may bypass cut-off; nothing
 else may) for today and the next 8 school days with a menu, so that the kitchen's next school day has at least one `conflict` row
-(Liam with an acknowledged milk item) and one `allergy` row; Emma never gets a gluten item; a `payment` for fam-1 that covers its
-first week, a part `payment` in cash for fam-3, fam-4 unpaid, one `cancel` credit, and a `closure` with credits on the most recent
+(Liam with an acknowledged milk item) and one `allergy` row; Emma never gets a gluten item; an e-Transfer `payment` for fam-1
+larger than it owes (a credit), a `payment` for fam-2 of exactly its balance (all paid up), a part `payment` in cash for fam-3
+(still owes), fam-4 unpaid, one `cancel` credit, and a `closure` with credits on the most recent
 past school day since `year_start` when there is one (note "Storm closure (SAMPLE)"); when today is a school day and it is after
 noon, about half of Room 4 marked given out.
