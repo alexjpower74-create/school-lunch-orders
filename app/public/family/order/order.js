@@ -77,7 +77,7 @@ function itemCard(d, item, c) {
       item.vegetarian ? h('span', { class: 'pill veg' }, 'Vegetarian') : null,
       item.allergens.map((k) => h('span', { class: `pill allergen-pill${cs.includes(k) ? ' match' : ''}`, dataset: { allergen: k } }, state.tools.label(k)))),
     cs.length ? h('p', { class: 'allergen-warning' }, icon('alert'), h('span', {}, warningText(c.first_name, words, item.name))) : null,
-    item.ingredients ? h('details', {}, h('summary', {}, 'Ingredients'), h('p', {}, item.ingredients)) : null,
+    item.ingredients ? h('details', {}, h('summary', {}, icon('right'), h('span', {}, 'Ingredients')), h('p', {}, item.ingredients)) : null,
     already ? h('p', { class: 'already-ordered' }, `Already ordered for ${c.first_name}: ${already}`) : null,
     actions)
 }

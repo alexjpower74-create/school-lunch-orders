@@ -268,8 +268,23 @@ input.code { font-family: var(--mono); font-size: 24px; letter-spacing: 0.12em; 
 .item-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
 .item-head h3 { min-width: 0; overflow-wrap: anywhere; }
 .item-head .price { font-weight: 750; font-size: 18px; }
-.item details { margin-top: 10px; color: var(--muted); }
-.item summary { cursor: pointer; min-height: var(--tap-parent); display: flex; align-items: center; font-weight: 600; color: var(--text); }
+.item details { margin-top: 6px; color: var(--muted); }
+.item details p { margin: 0 0 4px; }
+.item summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap-parent);
+  padding-right: 12px;
+  list-style: none;
+  color: var(--muted);
+  font-weight: 400;
+  cursor: pointer;
+}
+.item summary::-webkit-details-marker { display: none; }
+.item summary .icon { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: no-preference) { .item summary .icon { transition: transform 0.15s; } }
+.item details[open] summary .icon { transform: rotate(90deg); }
 .item[data-conflict="true"] { border-color: var(--allergen); box-shadow: inset 4px 0 0 var(--allergen), var(--shadow); }
 .already-ordered { margin: 10px 0 0; color: var(--open); font-weight: 650; font-size: 15px; }
 .item-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 12px; }
@@ -285,10 +300,9 @@ input.code { font-family: var(--mono); font-size: 24px; letter-spacing: 0.12em; 
   right: 0;
   bottom: 0;
   z-index: 10;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: var(--surface); /* solid: no card text reads through the bar */
   border-top: 1px solid var(--line-strong);
+  box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.35);
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
 }
 #cart-bar .inner { max-width: 660px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }

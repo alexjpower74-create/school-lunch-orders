@@ -46,6 +46,20 @@ test('order page: tap targets, and the last item\'s stepper is not covered by #c
   }, [box.x + box.width / 2, box.y + box.height / 2])
   expect(hit, "the last item's + at the bottom of the page: something is on top").toBe('')
   expect(box.height).toBeGreaterThanOrEqual(56)
+  // The bar itself: what you hit at its centre is the bar, the last item's action sits wholly above it, and nothing reads
+  // through it (a solid background, or a real backdrop blur).
+  const bar = page.locator('#cart-bar')
+  const barBox = await bar.boundingBox()
+  expect(await bar.evaluate((el, [x, y]) => el.contains(document.elementFromPoint(x, y)), [barBox.x + barBox.width / 2, barBox.y + barBox.height / 2]),
+    'elementFromPoint at the bar centre is inside #cart-bar').toBe(true)
+  expect(box.y + box.height, "the last item's action is fully above the bar").toBeLessThanOrEqual(barBox.y)
+  const look = await bar.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    const parts = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number)
+    return { alpha: parts.length >= 4 ? parts[3] : parts.length === 3 ? 1 : 0, blur: /blur/.test(cs.backdropFilter || cs.webkitBackdropFilter || '') }
+  })
+  expect(look.alpha === 1 || look.blur, `cart bar background is solid (alpha ${look.alpha}) or blurred`).toBe(true)
+  await expectTapTarget(page, page.locator('.item summary').first(), 48, 'Ingredients')
   await expectNoHorizontalScroll(page)
 })
 

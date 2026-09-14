@@ -123,6 +123,15 @@ A bug the suite caught before commit: a missing `)` in `cart.js` left the cart p
 element → the warning locator not found; (c) ack without the acknowledgement → the stepper never showed qty 1; (d) refusal shown as
 "Order placed" → `#order-error` empty; (e) a transparent cover above the cart bar → the hit-test found `#cart-bar` on top.
 
+### DONE (lead's visual review): a solid cart bar and a real Ingredients disclosure
+
+`#cart-bar` now has a solid `--surface` background with its top hairline and an upward shadow (card text no longer reads
+through it). The order-page layout test adds: at the bottom of the page, elementFromPoint at the bar's centre is inside the bar,
+the last item's action is wholly above the bar's top, the bar's computed background alpha is 1 (or a backdrop blur is set), and the
+Ingredients summary is a 48 px target. "Ingredients" is a native `<details>` summary in muted normal weight with an inline SVG
+chevron that turns when open. Re-run: **56 passed** in all four projects, screenshots re-shot. Page negative control **(f)** makes
+the bar transparent again: red on "cart bar background is solid (alpha 0) or blurred". **6 of 6** page controls red.
+
 ## Cross-review of sl2 staff pages
 
 Read-only, against main at 17e6466 (sl2's pages) and ebce23e, checked against what the Worker actually sends. Real mismatches:
