@@ -1,5 +1,6 @@
 // `npm test`: pure unit tests, the API suites against a fresh local Worker in TEST_MODE, then the no-test-mode check against a
-// fresh Worker WITHOUT TEST_MODE (the /api/test/* routes are 404 and X-Test-Now / X-Test-IP are ignored).
+// fresh Worker WITHOUT TEST_MODE, set up with tools/first-setup.mjs (the /api/test/* routes are 404, X-Test-Now / X-Test-IP are
+// ignored, and the setup PIN signs in as the office).
 // Scaffold adapted from Visitor Log by sl-lead; sl1 owns it.
 //   PORT (default 8602, inspector PORT+10). State in worker/.state-<PORT> (and .state-<PORT>-plain), wiped first and removed after.
 //   If something already answers on PORT, it is used as is and not stopped (unless --fresh), and the empty/plain checks are skipped.
@@ -26,6 +27,8 @@ const TESTS = path.join(WORKER, 'tests')
 const SPECIAL = new Set(['api-empty.test.mjs', 'api-plain.test.mjs'])
 const API_FILES = readdirSync(TESTS).filter((f) => /^api-.+\.test\.mjs$/.test(f) && !SPECIAL.has(f)).sort().map((f) => path.join('tests', f))
 const UNIT_FILES = readdirSync(TESTS).filter((f) => f.endsWith('.test.mjs') && !f.startsWith('api-')).sort().map((f) => path.join('tests', f))
+// A made-up school for the no-test-mode check only (no SAMPLE rows on purpose: that is what the check proves).
+const PLAIN = { school: 'First Setup Check School', admin: 'Setup Check Office', pin: '582714' }
 const grep = opt('--grep')
 const grepArgs = grep ? [`--test-name-pattern=${grep}`] : []
 
@@ -126,12 +129,18 @@ if (!flag('--unit-only')) {
   } else {
     const PSTATE = path.join(WORKER, `.state-${PORT}-plain`)
     console.log(`\n== plain: a fresh Worker on ${BASE} WITHOUT TEST_MODE`)
-    const plain = freshState(PSTATE) ? await startWorker(PSTATE, false) : null
+    // A real school's start: tools/first-setup.mjs SQL applied to a fresh D1 (the school row and one office PIN, nothing else).
+    const sqlFile = path.join(PSTATE, 'first-setup.sql')
+    let ok = freshState(PSTATE)
+    ok = ok && spawnSync(process.execPath, ['tools/first-setup.mjs', '--school', PLAIN.school, '--admin', PLAIN.admin, '--pin', PLAIN.pin,
+      '--out', sqlFile], { cwd: WORKER, stdio: 'inherit' }).status === 0
+    ok = ok && wrangler(['d1', 'execute', 'school-lunch-orders', '--local', '--persist-to', PSTATE, '--file', sqlFile])
+    const plain = ok ? await startWorker(PSTATE, false) : null
     if (!plain) {
       console.error('the no-test-mode check could not start')
       failed = 1
     } else {
-      failed |= runNodeTests(['tests/api-plain.test.mjs'], [], { API_BASE: BASE })
+      failed |= runNodeTests(['tests/api-plain.test.mjs'], [], { API_BASE: BASE, SETUP_SCHOOL: PLAIN.school, SETUP_ADMIN: PLAIN.admin, SETUP_PIN: PLAIN.pin })
       await stopWorker(plain)
     }
     rmSync(PSTATE, { recursive: true, force: true })
