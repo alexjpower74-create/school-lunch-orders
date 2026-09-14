@@ -158,9 +158,10 @@ Shapes used below:
 - **Child** `{ id, first_name, class_id, class_name, grade, allergies: [keys] }`.
 - **MenuItem** `{ id, name, price_cents, ingredients, allergens: [keys], vegetarian, max_per_child }` (`max_per_child` `null` = no limit).
 - **Line** `{ id, order_id, child_id, first_name, date, date_label, item_id, item_name, qty, unit_price_cents, total_cents, status,
-  status_label, ack_allergens: [keys], can_cancel, cutoff_at, cutoff_label, delivery, placed_at }`. `status`: `active`
+  status_label, ack_allergens: [keys], conflicts: [keys], acknowledged, can_cancel, cutoff_at, cutoff_label, delivery, placed_at }`. `status`: `active`
   ("Ordered"), `cancelled` ("Cancelled"), `closed` ("No school, credited"). `delivery`: `null`, `"delivered"`, `"absent"`.
-  `can_cancel` = `status == "active"` and now < `cutoff_at`.
+  `can_cancel` = `status == "active"` and now < `cutoff_at`. `conflicts` and `acknowledged` are computed exactly as the kitchen
+  computes them (the child's allergies and the item's allergens as they are now), so a parent sees an allergy ticked after ordering.
 
 | method + path | body → answer |
 |---|---|
@@ -172,6 +173,7 @@ Shapes used below:
 | `GET /api/family/orders?from=&to=` | → `{ lines: [Line] }` for this family's children (removed children included), sorted by date, first name, item name. Defaults: `from` = today − 60 days, `to` = `year_end`. |
 | `POST /api/family/orders` | `{ lines: [{ child_id, date, item_id, qty, allergen_ack? }] }` → 201 `{ order: { id, placed_at, total_cents, item_count, lines: [Line] }, balance_cents }`. See "Placing an order". |
 | `POST /api/family/lines/:id/cancel` | → 200 `{ line, balance_cents }`. 404 if not this family's. 409 `bad_state` `"That lunch is already cancelled."` if not active. 409 `cutoff_passed` (message as below). Adds a `cancel` entry. |
+| `POST /api/family/lines/:id/ack` | → 200 `{ line }`: sets the line's `ack_allergens` to its current `conflicts`, so the kitchen no longer shows "Not confirmed by the parent". 404 if not this family's. 409 `bad_state` `"That lunch is already cancelled."` if not active; `"That lunch was for a day that has passed."` before today; `"There's nothing to confirm on that lunch."` when `conflicts` is empty. No cut-off: confirming changes no numbers. |
 | `GET /api/family/ledger` | → `{ balance_cents, entries: [Entry] }`, newest first |
 
 ### Placing an order
@@ -188,7 +190,7 @@ zero-based position in `lines`.
    `"Liam can have at most 2 of White milk (250 mL) on Thu Sep 17."`
 7. 409 `allergen_ack_required`: **every** line whose conflicts are not empty and whose `allergen_ack` is not `true`, listed as
    `lines: [{ index, child_id, first_name, item_id, item_name, allergens: [keys] }]`. Message for the first:
-   `"Liam is allergic to Milk, and Macaroni and cheese contains it. Tick \"I understand\" to order it anyway."` (several allergens:
+   `"Liam is allergic to Milk. Macaroni and cheese contains Milk. Tick \"I understand\" to order it anyway."` (several allergens:
    `"Milk and Mustard"`, `"Eggs, Milk and Mustard"`).
 
 On success, in one D1 batch: an `orders` row; one line per request line with `unit_price_cents` copied from the item **now** (a
