@@ -22,7 +22,7 @@ const ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"
 export function brand(schoolName = 'School Lunch Orders', sample = false) {
   const el = h('div', { class: 'brand' })
   el.innerHTML = ICON
-  el.append(h('span', { class: 'brand-name', id: 'school-name' }, schoolName), h('span', { class: 'sample-badge', hidden: !sample }, 'SAMPLE'))
+  el.append(h('span', { class: 'brand-name' }, schoolName), h('span', { class: 'sample-badge', hidden: !sample }, 'SAMPLE'))
   return el
 }
 
@@ -86,7 +86,7 @@ function renderHeader(s, key) {
     PAGES.filter((p) => p.roles.includes(s.role)).map((p) =>
       h('a', { href: p.href, dataset: { nav: p.key }, 'aria-current': p.key === key ? 'page' : null }, p.label)))
   const signOut = h('button', { class: 'btn btn-quiet', id: 'staff-sign-out', type: 'button', onclick: signOutNow }, 'Sign out')
-  header.replaceChildren(brand(), h('span', { class: 'staff-who', id: 'staff-name' }, s.staff?.name || ''), nav, signOut)
+  header.replaceChildren(brand(), h('span', { class: 'staff-who' }, s.staff?.name || ''), nav, signOut)
 }
 
 async function signOutNow() {
@@ -111,7 +111,7 @@ export async function startStaffPage(key) {
   const [me, info] = await Promise.all([staffApi('GET', '/api/staff/me').catch((e) => (handled(e) ? null : Promise.reject(e))), getInfo()])
   if (!me) return null
   $('[data-sticky-header] .brand').replaceWith(brand(me.school_name || info.school_name, me.sample))
-  $('#staff-name').textContent = me.staff.name
+  $('[data-sticky-header] .staff-who').textContent = me.staff.name
   if (!page.roles.includes(me.staff.role)) {
     showForbidden(me.staff.role)
     return null

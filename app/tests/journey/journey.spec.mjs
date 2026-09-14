@@ -143,8 +143,12 @@ test('a parent orders, the kitchen sees it, a storm closure credits it to the ce
   await expect(t.locator('button.mark')).toHaveCount(0)
   await shot(t, testInfo, 'journey', '6-teacher')
 
-  // ---- the kitchen for Thursday: no school, nothing to make ----
+  // ---- the kitchen on Thursday morning: yesterday's 12-hour session has ended, so it signs in again; no school, nothing to make ----
   await setNow(kitchen, THU_7AM)
+  await k.goto(`/kitchen/?date=${THU}`)
+  await expect(k, 'the kitchen session from Wed 10:00 AM has ended by Thu 7:00 AM').toHaveURL(/\/staff\//)
+  await keypad(k, PIN.kitchen, k.locator('#pin-submit'))
+  await expect(k).toHaveURL(/\/kitchen\//)
   await k.goto(`/kitchen/?date=${THU}`)
   await expect(k.locator('#no-school')).toBeVisible()
   await expect(k.locator('#stat-items')).toHaveText('0')

@@ -45,7 +45,7 @@ function showTab(tab) {
 // ---------- school ----------
 function renderSchool() {
   const s = settings.school
-  $('#school-name-input').value = s.school_name
+  $('#school-name').value = s.school_name
   $('#payment-instructions-input').value = s.payment_instructions
   $('#cutoff-days').value = s.cutoff_days_before
   $('#cutoff-time').value = s.cutoff_time
@@ -59,7 +59,7 @@ async function saveSchool() {
   clearMessage(error)
   clearMessage($('#school-saved'))
   const body = {
-    school_name: $('#school-name-input').value.trim(),
+    school_name: $('#school-name').value.trim(),
     payment_instructions: $('#payment-instructions-input').value.trim(),
     cutoff_days_before: Number($('#cutoff-days').value),
     cutoff_time: $('#cutoff-time').value.trim(),
@@ -67,7 +67,7 @@ async function saveSchool() {
     year_end: $('#year-end').value,
   }
   const fields = {
-    school_name: '#school-name-input', payment_instructions: '#payment-instructions-input', cutoff_days_before: '#cutoff-days',
+    school_name: '#school-name', payment_instructions: '#payment-instructions-input', cutoff_days_before: '#cutoff-days',
     cutoff_time: '#cutoff-time', year_start: '#year-start', year_end: '#year-end',
   }
   await busy($('#save-school'), async () => {
@@ -203,7 +203,7 @@ async function addNoSchool() {
       h('p', {}, h('strong', {}, `Make ${preview.date_label} a no-school day (${kindWords})?`)),
       preview.lines
         ? h('p', { id: 'no-school-preview' }, 'This cancels ',
-          h('strong', { id: 'confirm-lunches' }, plural(preview.item_count, 'lunch', 'lunches')), ' for ',
+          h('strong', { id: 'confirm-items' }, plural(preview.item_count, 'item')), ' for ',
           h('strong', { id: 'confirm-families' }, plural(preview.families, 'family', 'families')), ' and credits ',
           h('strong', { id: 'confirm-credit', class: 'money' }, money(preview.credit_cents)), ' to their balances.')
         : h('p', { id: 'no-school-preview' }, `Nothing is ordered for ${preview.date_label}, so nothing is cancelled or credited.`),
@@ -224,7 +224,7 @@ async function confirmNoSchool(e) {
       $('#no-school-confirm').hidden = true
       const c = res.cancelled
       flash($('#no-school-result'), c.lines
-        ? `${res.day.date_label} is now a no-school day. Cancelled ${plural(c.item_count, 'lunch', 'lunches')} for ${plural(c.families, 'family', 'families')}. Credited ${money(c.credit_cents)}.`
+        ? `${res.day.date_label} is now a no-school day. Cancelled ${plural(c.item_count, 'item')} for ${plural(c.families, 'family', 'families')}. Credited ${money(c.credit_cents)}.`
         : `${res.day.date_label} is now a no-school day. Nothing was ordered, so nothing was credited.`)
       $('#no-school-note').value = ''
       await reloadSettings()
@@ -391,7 +391,7 @@ function editStaff(id) {
   editing.staff = id
   const s = settings.staff.find((x) => x.id === id) || { name: '', role: 'teacher', class_id: null, active: true }
   $('#staff-form-title').textContent = id ? `Edit ${s.name}` : 'New staff member'
-  $('#staff-name-input').value = s.name
+  $('#staff-name').value = s.name
   $('#staff-role').value = s.role
   $('#staff-pin').value = ''
   $('#staff-pin-label').textContent = id ? 'New PIN (leave blank to keep the PIN)' : 'PIN (4 to 6 digits)'
@@ -405,9 +405,9 @@ function editStaff(id) {
 async function saveStaff() {
   const error = $('#staff-error')
   clearMessage(error)
-  const fields = { name: '#staff-name-input', role: '#staff-role', pin: '#staff-pin', class_id: '#staff-class' }
+  const fields = { name: '#staff-name', role: '#staff-role', pin: '#staff-pin', class_id: '#staff-class' }
   const pin = $('#staff-pin').value.trim()
-  const body = { name: $('#staff-name-input').value.trim(), role: $('#staff-role').value, class_id: $('#staff-class').value || null }
+  const body = { name: $('#staff-name').value.trim(), role: $('#staff-role').value, class_id: $('#staff-class').value || null }
   if (pin || !editing.staff) body.pin = pin
   if (editing.staff) body.active = $('#staff-active').checked
   await busy($('#save-staff'), async () => {
@@ -457,7 +457,7 @@ async function main() {
   $('#item-form').addEventListener('submit', (e) => { e.preventDefault(); saveItem() })
   $('#new-class').addEventListener('click', () => { editClass(null); $('#class-name').focus() })
   $('#class-form').addEventListener('submit', (e) => { e.preventDefault(); saveClass() })
-  $('#new-staff').addEventListener('click', () => { editStaff(null); $('#staff-name-input').focus() })
+  $('#new-staff').addEventListener('click', () => { editStaff(null); $('#staff-name').focus() })
   $('#staff-form').addEventListener('submit', (e) => { e.preventDefault(); saveStaff() })
   showTab(location.hash.slice(1))
 }

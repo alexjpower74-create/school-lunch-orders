@@ -126,3 +126,48 @@ run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --
     .negative/staff-label-allergen/results/staff-kitchen-one-label-pe-317bb--line-and-Liam-s-names-Milk-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:item-price — 2026-09-14T23:34:05.412Z
+break: the items form sends price_cents as dollars (the typed 3.75 divided by 100 again is never cents)
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 --grep "a new item saves with price in dollars, allergens, days and max" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-item-price/worker)
+  ✘  1 [chromium-1280] › tests/staff/settings.spec.mjs:66:1 › a new item saves with price in dollars, allergens, days and max (9.2s)
+    Error: item-saved
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#item-saved')
+    Expected: "Saved Pea soup (SAMPLE)."
+    Received: ""
+           - unexpected value ""
+    .negative/staff-item-price/results/staff-settings-a-new-item--55428-lars-allergens-days-and-max-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:closure-confirm — 2026-09-14T23:36:24.039Z
+break: the no-school confirm counts the kitchen's order lines instead of the preview's item_count
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/admin.spec.mjs --project chromium-1280 --grep "storm closure: confirm numbers equal the preview, credits to the cent" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-closure-confirm/worker)
+  ✘  1 [chromium-1280] › tests/staff/admin.spec.mjs:25:1 › storm closure: confirm numbers equal the preview, credits to the cent (8.9s)
+    Error: confirm-items = preview item_count
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#confirm-items')
+    Expected: "13 items"
+    Received: "11 items"
+           - unexpected value "11 items"
+    .negative/staff-closure-confirm/results/staff-admin-storm-closure--da5fe-preview-credits-to-the-cent-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:item-price — 2026-09-14T23:38:21.343Z
+break: the items form sends Math.round(price / 10) as price_cents, a valid number the Worker stores (3.75 typed → 38 cents)
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 --grep "a new item saves with price in dollars, allergens, days and max" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-item-price/worker)
+  ✘  1 [chromium-1280] › tests/staff/settings.spec.mjs:66:1 › a new item saves with price in dollars, allergens, days and max (9.2s)
+    Error: the new item row price
+    expect(locator).toContainText(expected) failed
+    Locator: locator('.item-row').filter({ hasText: 'Pea soup (SAMPLE)' })
+    Expected substring: "Pea soup (SAMPLE) · $3.75"
+    Received string:    "Pea soup (SAMPLE) · $0.38Contains Wheat and triticale and Gluten (barley, oats, rye, triticale, wheat) · Mon, Wed · Max 2 · VegetarianEdit"
+           - unexpected value "Pea soup (SAMPLE) · $0.38Contains Wheat and triticale and Gluten (barley, oats, rye, triticale, wheat) · Mon, Wed · Max 2 · VegetarianEdit"
+    .negative/staff-item-price/results/staff-settings-a-new-item--55428-lars-allergens-days-and-max-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
