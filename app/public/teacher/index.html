@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Teacher · School Lunch Orders</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/staff/staff.css">
+  <link rel="stylesheet" href="/teacher/teacher.css">
+  <script type="module" src="/teacher/teacher.js"></script>
+</head>
+<body class="staff">
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="staff-header" data-sticky-header></header>
+  <main class="staff-main teacher-main" id="main">
+    <div class="page-head">
+      <div>
+        <h1>Class lunch list</h1>
+        <p id="teacher-date-label" class="page-sub">Loading…</p>
+      </div>
+      <div class="toolbar teacher-pickers">
+        <label class="field"><span>Class</span><select id="class-pick"></select></label>
+        <label class="field"><span>Day</span><input type="date" id="teacher-date"></label>
+      </div>
+    </div>
+
+    <p id="teacher-error" class="banner banner-warn" role="alert" hidden></p>
+    <p id="teacher-note" class="banner" hidden></p>
+
+    <section class="counts" aria-label="Counts">
+      <div class="card count"><span class="count-value" id="count-waiting">–</span><span class="count-label">Waiting</span></div>
+      <div class="card count count-delivered"><span class="count-value" id="count-delivered">–</span><span class="count-label">Given out</span></div>
+      <div class="card count count-absent"><span class="count-value" id="count-absent">–</span><span class="count-label">Absent</span></div>
+    </section>
+
+    <ul id="class-list" class="class-list" aria-live="polite"></ul>
+  </main>
+</body>
+</html>

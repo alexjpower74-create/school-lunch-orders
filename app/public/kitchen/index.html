@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kitchen · School Lunch Orders</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/staff/staff.css">
+  <link rel="stylesheet" href="/kitchen/kitchen.css">
+  <script type="module" src="/kitchen/kitchen.js"></script>
+</head>
+<body class="staff">
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="staff-header no-print" data-sticky-header></header>
+  <main class="staff-main" id="main">
+    <div class="page-head">
+      <div>
+        <h1>Kitchen</h1>
+        <p id="kitchen-date" class="page-sub">Loading…</p>
+      </div>
+      <div class="toolbar no-print">
+        <button type="button" class="btn" id="date-next" aria-pressed="true">Next school day</button>
+        <button type="button" class="btn" id="date-today" aria-pressed="false">Today</button>
+        <label class="date-pick"><span class="visually-hidden">Pick a day</span><input type="date" id="date-pick"></label>
+        <a class="btn btn-primary" id="print-labels" href="/kitchen/labels/">Print labels</a>
+      </div>
+    </div>
+
+    <p id="kitchen-error" class="banner banner-warn" role="alert" hidden></p>
+    <p id="orders-open" class="banner banner-open" hidden></p>
+    <p id="no-school" class="banner banner-no-school" hidden></p>
+
+    <section class="stats" aria-label="Totals">
+      <div class="card stat"><span class="stat-label">Items to make</span><span class="stat-value" id="stat-items">–</span></div>
+      <div class="card stat"><span class="stat-label">Children</span><span class="stat-value" id="stat-children">–</span></div>
+      <div class="card stat"><span class="stat-label">Allergy rows</span><span class="stat-value" id="stat-flagged">–</span><span class="stat-note allergy-words" id="stat-conflicts"></span></div>
+    </section>
+
+    <div class="kitchen-grid">
+      <section class="card" aria-labelledby="by-item">
+        <h2 id="by-item">By item</h2>
+        <table id="item-totals" class="data-table">
+          <thead><tr><th scope="col">Item</th><th scope="col" class="qty">Qty</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+      <section class="card" aria-labelledby="by-class">
+        <h2 id="by-class">By class</h2>
+        <table id="class-totals" class="data-table">
+          <thead><tr><th scope="col">Class</th><th scope="col">Items</th><th scope="col" class="qty">Qty</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </div>
+
+    <section class="card children-card" aria-labelledby="by-child">
+      <h2 id="by-child">Children</h2>
+      <p class="hint">Allergy rows come first: a red ALLERGY row has an allergen the parent ticked in that child's lunch. The warning uses the allergens the school listed for each item.</p>
+      <table id="children" class="data-table stack-table">
+        <thead><tr><th scope="col">Child</th><th scope="col">Lunch</th><th scope="col">Allergies</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
