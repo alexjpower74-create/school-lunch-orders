@@ -1,0 +1,147 @@
+/* School Lunch Orders design tokens. Lead-owned: slices read these and style their own pages in their own CSS files.
+   Look: Alexander's approved portfolio look (dark navy base, colour on data, pills, edges, never a loud backdrop), with indigo
+   as the one accent. RED MEANS ALLERGEN: the --allergen tokens are for allergen warnings, matching allergen pills and allergy
+   flags only. Other problems (ordering closed, a refused save) use --warn. System fonts only.
+   Every text/background pair used for text is >= 4.5:1 on --ground and --surface. */
+
+:root {
+  color-scheme: dark;
+
+  /* Ground and surfaces */
+  --ground: #0b1020;
+  --surface: #121a2c;
+  --raised: #1a2440;
+  --glass: rgba(18, 26, 44, 0.82);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  /* Text: --text 16.9:1, --muted 8.6:1, --faint 5.2:1 on --ground */
+  --text: #eef2f8;
+  --muted: #a6b0c3;
+  --faint: #7d889c;
+
+  /* Accent and primary action (ink --on-primary on the gradient: 5.9:1 at #818cf8, 9.4:1 at #a5b4fc) */
+  --accent: #a5b4fc;
+  --primary-from: #818cf8;
+  --primary-to: #a5b4fc;
+  --on-primary: #0b1020;
+
+  /* Allergens (the loudest thing on every page). --allergen: edges, pills, icons; text on a solid pill uses --on-allergen.
+     --allergen-solid is the filled warning block with white text (6.5:1). --allergen-text is red text on --ground (6.4:1). */
+  --allergen: #f87171;
+  --on-allergen: #2b0707;
+  --allergen-solid: #b91c1c;
+  --on-allergen-solid: #ffffff;
+  --allergen-text: #fca5a5;
+  --tint: 22%; /* band tint strength: color-mix(in srgb, var(--allergen) var(--tint), transparent) */
+
+  /* Not allergens: problems and refusals (ordering closed, over the maximum, a save refused) */
+  --warn: #fb923c;
+  --on-warn: #331400;
+  --warn-text: #fdba74;
+
+  /* Data colours */
+  --veg: #86efac;          /* Vegetarian pill */
+  --on-veg: #052e16;
+  --open: #4ade80;         /* day open for orders */
+  --on-open: #052e16;
+  --closed: #94a3b8;       /* ordering closed */
+  --on-closed: #0f172a;
+  --no-school: #7dd3fc;    /* holiday, PD day, school closed */
+  --on-no-school: #082f49;
+  --owing: #fbbf24;        /* a family owes money */
+  --on-owing: #3a2600;
+  --credit: #4ade80;       /* a family has a credit */
+  --on-credit: #052e16;
+  --paid: #94a3b8;         /* all paid up */
+  --on-paid: #0f172a;
+  --delivered: #4ade80;    /* lunch given out */
+  --on-delivered: #052e16;
+  --absent: #94a3b8;
+  --on-absent: #0f172a;
+
+  /* Shape and size */
+  --radius: 14px;
+  --radius-sm: 10px;
+  --tap: 44px;         /* staff and settings controls */
+  --tap-parent: 48px;  /* every control on the parent pages */
+  --tap-big: 56px;     /* Place order, "I understand, add it", quantity steppers, Given out / Absent */
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px rgba(0, 0, 0, 0.35);
+  --aurora-opacity: 0.2;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The hidden attribute always wins over a class with its own display (found on Daycare Day Sheet's SAMPLE badge). */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+}
+
+.money, .tabular { font-variant-numeric: tabular-nums; }
+
+/* The SAMPLE badge every screen shows next to the school name while the school is sample. */
+.sample-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--on-owing);
+  background: var(--owing);
+}
+
+/* Soft ambient light behind glass on the staff pages (never on parent pages or print). */
+.aurora {
+  position: fixed;
+  inset: -20vmax;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--aurora-opacity);
+  background:
+    radial-gradient(40vmax 30vmax at 20% 10%, #6366f1 0%, transparent 60%),
+    radial-gradient(35vmax 25vmax at 85% 20%, #0ea5e9 0%, transparent 60%),
+    radial-gradient(40vmax 30vmax at 60% 90%, #14b8a6 0%, transparent 60%);
+  filter: blur(40px);
+}
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Print: white sheet, black ink; allergen lines stay bold with a border so they read in black and white. Pages add .no-print
+   to buttons and navigation. */
+@media print {
+  :root {
+    color-scheme: light;
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --raised: #ffffff;
+    --text: #000000;
+    --muted: #333333;
+    --faint: #555555;
+    --line: #999999;
+    --line-strong: #555555;
+    --allergen: #b00000;
+    --allergen-text: #b00000;
+    --allergen-solid: #ffffff;
+    --on-allergen-solid: #b00000;
+    --shadow: none;
+  }
+  html, body { background: #ffffff; color: #000000; }
+  .aurora, .no-print { display: none !important; }
+  .sample-badge { color: #000000; background: none; border: 1px solid #000000; }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "school-lunch-orders-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:family": "playwright test tests/family",
+    "test:staff": "playwright test tests/staff",
+    "test:journey": "playwright test tests/journey",
+    "negative:family": "node tests/family/negative-all.mjs",
+    "negative:staff": "node tests/staff/negative-all.mjs",
+    "negative:journey": "node tests/journey/negative-all.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

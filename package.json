@@ -1,0 +1,14 @@
+{
+  "name": "school-lunch-orders",
+  "private": true,
+  "type": "module",
+  "description": "Hot lunch pre-orders for a Newfoundland school: parents order on their phone, the kitchen gets totals with allergens flagged. Local build; see README.md.",
+  "scripts": {
+    "demo": "node demo.mjs",
+    "test:worker": "cd worker && npm test",
+    "test:negative": "cd worker && npm run negative",
+    "test:e2e": "cd app && npx playwright test",
+    "test:e2e:negative": "cd app && npm run negative:family && npm run negative:staff && npm run negative:journey",
+    "check:allergens": "node tools/check-allergen-quotes.mjs && node tools/check-allergen-quotes.mjs --self-test"
+  }
+}
