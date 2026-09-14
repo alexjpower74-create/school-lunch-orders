@@ -1,15 +1,15 @@
-// Scaffold adapted from Visitor Log by sl-lead; sl1 owns it now and makes it fit docs/API.md (API_FILES, the setup check).
-// `npm test`: pure unit tests, the API suites against a fresh local Worker in TEST_MODE, then the first-setup check against a
-// fresh Worker WITHOUT TEST_MODE. Adapted from Daycare Day Sheet.
-//   PORT (default 8602, inspector PORT+10). State in worker/.state-<PORT> (and .state-<PORT>-setup), wiped first and removed after.
-//   If something already answers on PORT, it is used as is and not stopped (unless --fresh), and the setup check is skipped.
+// `npm test`: pure unit tests, the API suites against a fresh local Worker in TEST_MODE, then the no-test-mode check against a
+// fresh Worker WITHOUT TEST_MODE (the /api/test/* routes are 404 and X-Test-Now / X-Test-IP are ignored).
+// Scaffold adapted from Visitor Log by sl-lead; sl1 owns it.
+//   PORT (default 8602, inspector PORT+10). State in worker/.state-<PORT> (and .state-<PORT>-plain), wiped first and removed after.
+//   If something already answers on PORT, it is used as is and not stopped (unless --fresh), and the empty/plain checks are skipped.
 //   --unit-only       unit tests only
 //   --api-only        skip the unit tests
-//   --grep <regex>    only API tests whose name matches (the setup check is skipped)
+//   --grep <regex>    only tests whose name matches (unit and API; the empty and plain checks are skipped)
 //   --fresh           refuse to reuse a Worker already answering on PORT (negative controls must test their own copy)
 // Exit code is non-zero when anything fails. Local only: never --remote.
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { mkdirSync, readdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -21,13 +21,16 @@ const flag = (f) => args.includes(f)
 const opt = (f) => (args.includes(f) ? args[args.indexOf(f) + 1] : null)
 const env = { ...process.env, CI: '1', WRANGLER_SEND_METRICS: 'false', NO_COLOR: '1' }
 const reporter = process.env.TEST_REPORTER ? [`--test-reporter=${process.env.TEST_REPORTER}`] : []
-// API suites, in order. api-empty.test.mjs runs first, on its own, before anything resets the D1.
-const API_FILES = ['tests/api.test.mjs', 'tests/count-property.test.mjs', 'tests/api-m2.test.mjs']
-const NOT_UNIT = new Set(['api-empty.test.mjs', 'api-setup.test.mjs', ...API_FILES.map((f) => path.basename(f))])
-// A made-up home for the first-setup check only (no SAMPLE rows on purpose: that is what the check proves).
-const SETUP = { home: 'First Setup Check Home', phone: '709-555-0150', manager: 'Setup Check Manager', pin: '5827' }
+const TESTS = path.join(WORKER, 'tests')
+// api-empty runs first, on its own, before anything resets the D1; api-plain runs against a Worker without TEST_MODE.
+const SPECIAL = new Set(['api-empty.test.mjs', 'api-plain.test.mjs'])
+const API_FILES = readdirSync(TESTS).filter((f) => /^api-.+\.test\.mjs$/.test(f) && !SPECIAL.has(f)).sort().map((f) => path.join('tests', f))
+const UNIT_FILES = readdirSync(TESTS).filter((f) => f.endsWith('.test.mjs') && !f.startsWith('api-')).sort().map((f) => path.join('tests', f))
+const grep = opt('--grep')
+const grepArgs = grep ? [`--test-name-pattern=${grep}`] : []
 
 function runNodeTests(files, extra = [], extraEnv = {}) {
+  if (!files.length) return 0
   const r = spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...reporter, ...extra, ...files],
     { cwd: WORKER, stdio: 'inherit', env: { ...env, ...extraEnv } })
   return r.status === 0 ? 0 : 1
@@ -79,15 +82,11 @@ async function stopWorker(dev) {
 let failed = 0
 
 if (!flag('--api-only')) {
-  const unit = readdirSync(path.join(WORKER, 'tests')).filter((f) => f.endsWith('.test.mjs') && !NOT_UNIT.has(f)).sort()
-    .map((f) => path.join('tests', f))
-  console.log(`\n== unit: ${unit.join(' ')}`)
-  failed |= runNodeTests(unit)
+  console.log(`\n== unit: ${UNIT_FILES.join(' ')}`)
+  failed |= runNodeTests(UNIT_FILES, grepArgs)
 }
 
 if (!flag('--unit-only')) {
-  const grep = opt('--grep')
-  const grepArgs = grep ? [`--test-name-pattern=${grep}`] : []
   let reused = false
   let dev = null
   const STATE = path.join(WORKER, `.state-${PORT}`)
@@ -110,39 +109,32 @@ if (!flag('--unit-only')) {
       process.exit(1)
     }
   }
-  // A freshly migrated D1 has no home row: checked first, before any test resets it, and only on a Worker this run started.
-  if (!reused) failed |= runNodeTests(['tests/api-empty.test.mjs'], grepArgs, { API_BASE: BASE, STATE_DIR: STATE })
-  else console.log('== api-empty: SKIPPED — the Worker on this port was not started by this run, so its D1 is not known to be empty')
-  const files = API_FILES.filter((f) => existsSync(path.join(WORKER, f)))
-  failed |= runNodeTests(files, grepArgs, { API_BASE: BASE, STATE_DIR: STATE })
+  // A freshly migrated D1 is empty: checked first, before any test resets it, and only on a Worker this run started.
+  if (!reused && !grep) failed |= runNodeTests(['tests/api-empty.test.mjs'], [], { API_BASE: BASE })
+  else console.log('== api-empty: SKIPPED — --grep, or the Worker on this port was not started by this run')
+  console.log(`== api: ${API_FILES.join(' ')}`)
+  failed |= runNodeTests(API_FILES, grepArgs, { API_BASE: BASE })
   if (dev) {
     await stopWorker(dev)
     rmSync(STATE, { recursive: true, force: true })
   }
 
   if (grep) {
-    console.log('\n== setup: skipped (--grep)')
+    console.log('\n== plain: skipped (--grep)')
   } else if (reused) {
-    console.log(`\n== setup: SKIPPED — a Worker this run did not start holds ${BASE}; run again with the port free`)
+    console.log(`\n== plain: SKIPPED — a Worker this run did not start holds ${BASE}; run again with the port free`)
   } else {
-    const SSTATE = path.join(WORKER, `.state-${PORT}-setup`)
-    const sqlFile = path.join(SSTATE, 'first-setup.sql')
-    console.log(`\n== setup: tools/first-setup.mjs applied to a fresh D1, Worker on ${BASE} WITHOUT TEST_MODE`)
-    let ok = freshState(SSTATE)
-    ok = ok && spawnSync(process.execPath, ['tools/first-setup.mjs', '--home', SETUP.home, '--phone', SETUP.phone, '--manager', SETUP.manager,
-      '--pin', SETUP.pin, '--out', sqlFile], { cwd: WORKER, stdio: 'inherit' }).status === 0
-    ok = ok && wrangler(['d1', 'execute', 'school-lunch-orders', '--local', '--persist-to', SSTATE, '--file', sqlFile])
-    const setupDev = ok ? await startWorker(SSTATE, false) : null
-    if (!setupDev) {
-      console.error('the first-setup check could not start')
+    const PSTATE = path.join(WORKER, `.state-${PORT}-plain`)
+    console.log(`\n== plain: a fresh Worker on ${BASE} WITHOUT TEST_MODE`)
+    const plain = freshState(PSTATE) ? await startWorker(PSTATE, false) : null
+    if (!plain) {
+      console.error('the no-test-mode check could not start')
       failed = 1
     } else {
-      failed |= runNodeTests(['tests/api-setup.test.mjs'], [], {
-        SETUP_BASE: BASE, SETUP_HOME: SETUP.home, SETUP_PHONE: SETUP.phone, SETUP_MANAGER: SETUP.manager, SETUP_PIN: SETUP.pin,
-      })
-      await stopWorker(setupDev)
+      failed |= runNodeTests(['tests/api-plain.test.mjs'], [], { API_BASE: BASE })
+      await stopWorker(plain)
     }
-    rmSync(SSTATE, { recursive: true, force: true })
+    rmSync(PSTATE, { recursive: true, force: true })
   }
 }
 

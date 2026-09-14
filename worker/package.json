@@ -1,0 +1,11 @@
+{
+  "name": "school-lunch-orders-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "test:unit": "node tests/run.mjs --unit-only",
+    "negative": "node tests/negative-all.mjs",
+    "dev": "wrangler dev --local --port 8602 --inspector-port 8612 --var TEST_MODE:1"
+  }
+}
