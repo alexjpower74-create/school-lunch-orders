@@ -113,7 +113,7 @@ test('menu grid: fill from usual days on an empty week', async ({ page, context,
 test('settings tabs: tap targets and screenshots', async ({ page, context, request }, testInfo) => {
   desktopOnly(testInfo)
   await openSettings(page, context, request, 'school')
-  await expect(page.locator('#school-name-input')).toHaveValue('SAMPLE Harbour Pond Elementary (demo)')
+  await expect(page.locator('#school-name')).toHaveValue('SAMPLE Harbour Pond Elementary (demo)')
   for (const t of ['school', 'menu', 'days', 'items', 'classes', 'staff']) {
     await expectTapTarget(page, page.locator(`button.tab[data-tab="${t}"]`), 44, `${t} tab`)
   }
