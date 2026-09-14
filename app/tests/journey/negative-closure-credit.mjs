@@ -11,5 +11,7 @@ process.exit(pageNegative({
   spec: 'journey.spec.mjs',
   grep: 'a parent orders, the kitchen sees it, a storm closure credits it to the cent, the teacher and kitchen see no school',
   project: 'chromium-1280',
-  expect: ['each family credited exactly its own Thursday total'],
+  // The copy's POST answer is read back from what it wrote, so the result line already shows the wrong credit ($19.00: Jack's
+  // milk ×2 credited once) and the journey stops there, before the per-family balance check.
+  expect: ['Credited $19.00'],
 }))
