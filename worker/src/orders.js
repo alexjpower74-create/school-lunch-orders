@@ -72,7 +72,7 @@ export function checkOrder({ lines, children, items, cal, menu, existing, now })
   if (needAck.length) {
     const f = needAck[0]
     throw conflict('allergen_ack_required',
-      `${f.first_name} is allergic to ${allergenWords(f.allergens)}, and ${f.item_name} contains it. Tick "I understand" to order it anyway.`,
+      `${f.first_name} is allergic to ${allergenWords(f.allergens)}. ${f.item_name} contains ${allergenWords(f.allergens)}. Tick "I understand" to order it anyway.`,
       { lines: needAck })
   }
   return out
