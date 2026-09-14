@@ -76,6 +76,8 @@ test('a new item saves with price in dollars, allergens, days and max', async ({
   await setBox(page, page.locator('#item-veg'), true, 'vegetarian')
   await tap(page, page.locator('#save-item'), 'save item')
   await expect(page.locator('#item-saved'), 'item-saved').toHaveText('Saved Pea soup (SAMPLE).')
+  // What the office sees in the list straight after saving: the price typed in dollars, stored as cents, shown in dollars.
+  await expect(page.locator('.item-row').filter({ hasText: 'Pea soup (SAMPLE)' }), 'the new item row price').toContainText('Pea soup (SAMPLE) · $3.75')
 
   const item = (await settings(request)).items.find((i) => i.name === 'Pea soup (SAMPLE)')
   expect(item, 'the new item is in the API').toBeTruthy()

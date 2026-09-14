@@ -156,3 +156,18 @@ run: npx playwright test tests/staff/admin.spec.mjs --project chromium-1280 --gr
     .negative/staff-closure-confirm/results/staff-admin-storm-closure--da5fe-preview-credits-to-the-cent-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:item-price — 2026-09-14T23:38:21.343Z
+break: the items form sends Math.round(price / 10) as price_cents, a valid number the Worker stores (3.75 typed → 38 cents)
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 --grep "a new item saves with price in dollars, allergens, days and max" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-item-price/worker)
+  ✘  1 [chromium-1280] › tests/staff/settings.spec.mjs:66:1 › a new item saves with price in dollars, allergens, days and max (9.2s)
+    Error: the new item row price
+    expect(locator).toContainText(expected) failed
+    Locator: locator('.item-row').filter({ hasText: 'Pea soup (SAMPLE)' })
+    Expected substring: "Pea soup (SAMPLE) · $3.75"
+    Received string:    "Pea soup (SAMPLE) · $0.38Contains Wheat and triticale and Gluten (barley, oats, rye, triticale, wheat) · Mon, Wed · Max 2 · VegetarianEdit"
+           - unexpected value "Pea soup (SAMPLE) · $0.38Contains Wheat and triticale and Gluten (barley, oats, rye, triticale, wheat) · Mon, Wed · Max 2 · VegetarianEdit"
+    .negative/staff-item-price/results/staff-settings-a-new-item--55428-lars-allergens-days-and-max-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
