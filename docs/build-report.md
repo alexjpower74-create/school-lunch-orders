@@ -42,6 +42,12 @@ TBD-FINAL-QA: sha, port, every suite's passed / failed / skipped, negative contr
   20:25) and `npm ci` (sl2, 20:36) replaced the links and emptied main's folder through them. Two QA runs then failed to start
   (`ERR_MODULE_NOT_FOUND`, exit 127). Those were setup failures, never reported as results. Fix: reinstall main; the QA worktree
   gets its own `npm ci`. For LEAD-RULES: give each worktree its own install instead of a link.
+- **The lead's journey negative control named the wrong assertion.** Its break (a closure credited by unit price, so Jack's
+  milk ×2 counts once) made the journey fail on the settings result line ("Credited $19.00" instead of "$20.00"), before the
+  per-family balance check it had named, so the library correctly reported NOT RED. The expected text now names the real failure
+  and the control went red. That first run's log was in the QA worktree and was cleaned away, so
+  `app/tests/journey/negative-control.log` holds only the red rerun (the commit message says both runs are in the log; they are
+  not).
 - **A grep that could not fail.** The lead's first look at the integration run searched for `✘`, which the line reporter does
   not print, and read "no failures"; the summary said 2 failed. Failures are now read from the summary and the numbered `1) `
   list.
