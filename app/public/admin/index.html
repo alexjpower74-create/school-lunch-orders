@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Settings · School Lunch Orders</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/staff/staff.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script type="module" src="/admin/admin.js"></script>
+</head>
+<body class="staff">
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="staff-header" data-sticky-header></header>
+  <main class="staff-main" id="main">
+    <div class="page-head">
+      <div>
+        <h1>Settings</h1>
+        <p class="page-sub">The school, the menu, no-school days, items, classes and staff PINs.</p>
+      </div>
+    </div>
+    <p id="admin-error" class="banner banner-warn" role="alert" hidden></p>
+
+    <div class="tabs" role="tablist" aria-label="Settings">
+      <button type="button" class="tab" role="tab" data-tab="school" id="tab-school" aria-controls="panel-school">School</button>
+      <button type="button" class="tab" role="tab" data-tab="menu" id="tab-menu" aria-controls="panel-menu">Menu</button>
+      <button type="button" class="tab" role="tab" data-tab="days" id="tab-days" aria-controls="panel-days">No-school days</button>
+      <button type="button" class="tab" role="tab" data-tab="items" id="tab-items" aria-controls="panel-items">Items</button>
+      <button type="button" class="tab" role="tab" data-tab="classes" id="tab-classes" aria-controls="panel-classes">Classes</button>
+      <button type="button" class="tab" role="tab" data-tab="staff" id="tab-staff" aria-controls="panel-staff">Staff PINs</button>
+    </div>
+
+    <!-- School -->
+    <section class="card tab-panel" role="tabpanel" id="panel-school" aria-labelledby="tab-school" hidden>
+      <h2>School</h2>
+      <form id="school-form" class="stack" novalidate>
+        <label class="field"><span>School name</span><input type="text" id="school-name-input" name="school_name" maxlength="80"></label>
+        <label class="field"><span>Payment instructions parents see</span><textarea id="payment-instructions-input" name="payment_instructions" maxlength="600"></textarea></label>
+        <div class="form-grid">
+          <label class="field"><span>Order cut-off: school days before</span><input type="number" id="cutoff-days" name="cutoff_days_before" min="0" max="5" inputmode="numeric"></label>
+          <label class="field"><span>Cut-off time (24-hour, 09:00)</span><input type="text" id="cutoff-time" name="cutoff_time" inputmode="numeric" placeholder="09:00" maxlength="5"></label>
+          <label class="field"><span>School year starts</span><input type="date" id="year-start" name="year_start"></label>
+          <label class="field"><span>School year ends</span><input type="date" id="year-end" name="year_end"></label>
+        </div>
+        <p class="hint" id="cutoff-rule"></p>
+        <div class="toolbar"><button type="submit" class="btn btn-primary" id="save-school">Save school settings</button></div>
+        <p id="school-error" class="error" role="alert" hidden></p>
+        <p id="school-saved" class="saved" role="status" hidden></p>
+      </form>
+    </section>
+
+    <!-- Menu -->
+    <section class="card tab-panel" role="tabpanel" id="panel-menu" aria-labelledby="tab-menu" hidden>
+      <div class="menu-head">
+        <h2>Menu by week</h2>
+        <div class="toolbar">
+          <button type="button" class="btn" id="menu-prev" aria-label="Previous week">Previous</button>
+          <span id="menu-week-label" class="week-label">…</span>
+          <button type="button" class="btn" id="menu-next" aria-label="Next week">Next</button>
+          <button type="button" class="btn btn-primary" id="fill-week">Fill from usual days</button>
+        </div>
+      </div>
+      <p class="hint">Tick what the kitchen makes each day. A change saves that day. An item already ordered for a day stays on its menu.</p>
+      <p id="menu-error" class="banner banner-warn" role="alert" hidden></p>
+      <p id="menu-saved" class="saved" role="status" hidden></p>
+      <div class="table-wrap"><table class="data-table menu-grid" id="menu-grid"></table></div>
+    </section>
+
+    <!-- No-school days -->
+    <section class="card tab-panel" role="tabpanel" id="panel-days" aria-labelledby="tab-days" hidden>
+      <h2>No-school days</h2>
+      <p class="hint">Adding a day that already has lunches ordered cancels them and credits each family. Removing the day later does not bring the orders back.</p>
+      <div class="form-grid">
+        <label class="field"><span>Date</span><input type="date" id="no-school-date"></label>
+        <label class="field"><span>Kind</span>
+          <select id="no-school-kind">
+            <option value="closure">School closed (storm, water, power)</option>
+            <option value="pd_day">PD day</option>
+            <option value="holiday">Holiday</option>
+          </select>
+        </label>
+        <label class="field"><span>Note (optional)</span><input type="text" id="no-school-note" maxlength="120" autocomplete="off" placeholder="Storm closure"></label>
+        <button type="button" class="btn btn-primary" id="add-no-school">Add</button>
+      </div>
+      <p id="no-school-error" class="error" role="alert" hidden></p>
+      <div id="no-school-confirm" class="confirm" hidden></div>
+      <p id="no-school-result" class="banner banner-no-school" role="status" hidden></p>
+      <ul id="no-school-list" class="rows"></ul>
+    </section>
+
+    <!-- Items -->
+    <section class="card tab-panel" role="tabpanel" id="panel-items" aria-labelledby="tab-items" hidden>
+      <div class="menu-head"><h2>Menu items</h2><button type="button" class="btn btn-primary" id="new-item">New item</button></div>
+      <div class="split">
+        <ul id="item-list" class="rows"></ul>
+        <form id="item-form" class="stack sub-card" novalidate>
+          <h3 id="item-form-title">New item</h3>
+          <label class="field"><span>Name</span><input type="text" id="item-name" maxlength="60" autocomplete="off"></label>
+          <div class="form-grid">
+            <label class="field"><span>Price ($)</span><input type="text" id="item-price" inputmode="decimal" placeholder="3.50" autocomplete="off"></label>
+            <label class="field"><span>Most one child can have a day (blank = no limit)</span><input type="number" id="item-max" min="1" max="10" inputmode="numeric"></label>
+          </div>
+          <label class="field"><span>Ingredients</span><textarea id="item-ingredients" maxlength="400"></textarea></label>
+          <fieldset class="plain"><legend class="legend">Allergens in this item</legend><div class="check-grid" id="item-allergens"></div></fieldset>
+          <fieldset class="plain"><legend class="legend">Usual days</legend>
+            <div class="check-days">
+              <label class="check-row"><input type="checkbox" name="item-day" value="1"> Mon</label>
+              <label class="check-row"><input type="checkbox" name="item-day" value="2"> Tue</label>
+              <label class="check-row"><input type="checkbox" name="item-day" value="3"> Wed</label>
+              <label class="check-row"><input type="checkbox" name="item-day" value="4"> Thu</label>
+              <label class="check-row"><input type="checkbox" name="item-day" value="5"> Fri</label>
+            </div>
+          </fieldset>
+          <div class="check-days">
+            <label class="check-row"><input type="checkbox" id="item-veg"> Vegetarian</label>
+            <label class="check-row"><input type="checkbox" id="item-active" checked> On offer</label>
+          </div>
+          <div class="toolbar"><button type="submit" class="btn btn-primary" id="save-item">Save item</button></div>
+          <p id="item-error" class="error" role="alert" hidden></p>
+          <p id="item-saved" class="saved" role="status" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Classes -->
+    <section class="card tab-panel" role="tabpanel" id="panel-classes" aria-labelledby="tab-classes" hidden>
+      <div class="menu-head"><h2>Classes</h2><button type="button" class="btn btn-primary" id="new-class">New class</button></div>
+      <div class="split">
+        <ul id="class-list" class="rows"></ul>
+        <form id="class-form" class="stack sub-card" novalidate>
+          <h3 id="class-form-title">New class</h3>
+          <label class="field"><span>Room</span><input type="text" id="class-name" maxlength="30" placeholder="Room 4" autocomplete="off"></label>
+          <label class="field"><span>Grade</span><input type="text" id="class-grade" maxlength="30" placeholder="Grade 2" autocomplete="off"></label>
+          <label class="field"><span>Order in lists (0 first)</span><input type="number" id="class-sort" min="0" max="99" inputmode="numeric"></label>
+          <div class="toolbar"><button type="submit" class="btn btn-primary" id="save-class">Save class</button></div>
+          <p id="class-error" class="error" role="alert" hidden></p>
+          <p id="class-saved" class="saved" role="status" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Staff -->
+    <section class="card tab-panel" role="tabpanel" id="panel-staff" aria-labelledby="tab-staff" hidden>
+      <div class="menu-head"><h2>Staff PINs</h2><button type="button" class="btn btn-primary" id="new-staff">New staff member</button></div>
+      <div class="split">
+        <ul id="staff-list" class="rows"></ul>
+        <form id="staff-form" class="stack sub-card" novalidate>
+          <h3 id="staff-form-title">New staff member</h3>
+          <label class="field"><span>Name</span><input type="text" id="staff-name-input" maxlength="60" autocomplete="off"></label>
+          <label class="field"><span>Role</span>
+            <select id="staff-role">
+              <option value="teacher">Teacher</option>
+              <option value="kitchen">Kitchen</option>
+              <option value="admin">Office and settings</option>
+            </select>
+          </label>
+          <label class="field"><span id="staff-pin-label">PIN (4 to 6 digits)</span><input type="password" id="staff-pin" inputmode="numeric" maxlength="6" autocomplete="new-password"></label>
+          <label class="field"><span>Class (teachers)</span><select id="staff-class"></select></label>
+          <label class="check-row"><input type="checkbox" id="staff-active" checked> PIN works</label>
+          <div class="toolbar"><button type="submit" class="btn btn-primary" id="save-staff">Save staff member</button></div>
+          <p id="staff-error" class="error" role="alert" hidden></p>
+          <p id="staff-saved" class="saved" role="status" hidden></p>
+        </form>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

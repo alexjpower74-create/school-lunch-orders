@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Labels · School Lunch Orders</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/staff/staff.css">
+  <link rel="stylesheet" href="/kitchen/labels/labels.css">
+  <script type="module" src="/kitchen/labels/labels.js"></script>
+</head>
+<body class="staff labels-page">
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="staff-header no-print" data-sticky-header></header>
+  <main class="staff-main labels-main" id="main">
+    <section class="card labels-toolbar no-print">
+      <div>
+        <h1>Labels</h1>
+        <p id="labels-date" class="page-sub">Loading…</p>
+        <p class="hint">Letter paper, 30 labels a sheet (2⅝ × 1 inch, 3 across). Print at 100% scale.</p>
+      </div>
+      <div class="toolbar">
+        <a class="btn" id="back-kitchen" href="/kitchen/">Back to kitchen</a>
+        <button type="button" class="btn btn-primary" id="print">Print</button>
+      </div>
+    </section>
+    <p id="labels-error" class="banner banner-warn no-print" role="alert" hidden></p>
+    <p id="labels-empty" class="banner no-print" hidden></p>
+    <div id="labels" class="sheet"></div>
+  </main>
+</body>
+</html>
