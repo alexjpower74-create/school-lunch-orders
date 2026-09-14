@@ -171,3 +171,16 @@ run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 -
     .negative/staff-item-price/results/staff-settings-a-new-item--55428-lars-allergens-days-and-max-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:blank-cutoff — 2026-09-14T23:49:35.677Z
+break: the school form reads cutoff days with Number(), so a blank field is sent as 0 and saved
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 --grep "a blank cut-off or class order is refused on the field and nothing is saved" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-blank-cutoff/worker)
+  ✘  1 [chromium-1280] › tests/staff/settings.spec.mjs:66:1 › a blank cut-off or class order is refused on the field and nothing is saved (795ms)
+    Error: cutoff_days_before still 1 in the API
+    expect(received).toBe(expected) // Object.is equality
+    Expected: 1
+    Received: 0
+    .negative/staff-blank-cutoff/results/staff-settings-a-blank-cut-12e25--field-and-nothing-is-saved-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended

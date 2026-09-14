@@ -63,6 +63,29 @@ test('school settings save and come back after a reload', async ({ page, context
   await expect(page.locator('[data-sticky-header] .brand-name')).toHaveText(name)
 })
 
+test('a blank cut-off or class order is refused on the field and nothing is saved', async ({ page, context, request }) => {
+  await openTab(page, context, request, 'school')
+  await expect(page.locator('#cutoff-days')).toHaveValue('1')
+  await type(page, page.locator('#cutoff-days'), '', { clear: true })
+  await tap(page, page.locator('#save-school'), 'save school')
+  // Wait for the page's answer (refused or saved), then check what was stored before anything else.
+  await expect(page.locator('#school-error, #school-saved').filter({ visible: true })).toHaveCount(1)
+  expect((await settings(request)).school.cutoff_days_before, 'cutoff_days_before still 1 in the API').toBe(1)
+  await expect(page.locator('#school-saved')).toBeHidden()
+  await expect(page.locator('#school-error')).toHaveText('Type how many school days before, from 0 to 5.')
+  await expect(page.locator('#cutoff-days'), 'cutoff-days marked').toHaveAttribute('aria-invalid', 'true')
+
+  await tap(page, page.locator('button.tab[data-tab="classes"]'), 'classes tab')
+  await tap(page, page.locator('.class-row[data-class="room-2"] button.edit-class'), 'edit Room 4')
+  await expect(page.locator('#class-sort')).toHaveValue('2')
+  await type(page, page.locator('#class-sort'), '', { clear: true })
+  await tap(page, page.locator('#save-class'), 'save class')
+  await expect(page.locator('#class-error, #class-saved').filter({ visible: true })).toHaveCount(1)
+  expect((await settings(request)).classes.find((c) => c.id === 'room-2').sort, 'Room 4 order still 2 in the API').toBe(2)
+  await expect(page.locator('#class-error')).toHaveText('Type a place in the list from 0 to 99.')
+  await expect(page.locator('#class-sort'), 'class-sort marked').toHaveAttribute('aria-invalid', 'true')
+})
+
 test('a new item saves with price in dollars, allergens, days and max', async ({ page, context, request }) => {
   await openTab(page, context, request, 'items')
   await tap(page, page.locator('#new-item'), 'new item')
