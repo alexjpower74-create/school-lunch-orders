@@ -19,6 +19,9 @@ async function openThursday(page) {
   await expectTapTarget(page, page.locator('#date-pick'), 44, 'date picker')
   await page.locator('#date-pick').fill(THU)
   await expect(page.locator('#kitchen-date')).toHaveText('Thursday, September 17')
+  // Tap the heading so Chromium's highlighted date segment is not in the screenshots. (A touch tap on text does not move focus
+  // in WebKit, so focus itself is not asserted.)
+  await tap(page, page.locator('.page-head h1'), 'kitchen heading')
 }
 const qtyByKey = (rows, key) => rows.evaluateAll((rs, k) => Object.fromEntries(rs.map((r) => [r.dataset[k], Number(r.querySelector('.qty').textContent)])), key)
 

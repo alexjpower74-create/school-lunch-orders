@@ -38,6 +38,12 @@
 .empty-list { padding: 24px; text-align: center; color: var(--muted); }
 
 @media (max-width: 699px) {
+  .teacher-main .page-head { margin-bottom: 10px; gap: 8px; }
+  .teacher-main .page-head h1 { font-size: 20px; }
+  .teacher-main .page-sub { font-size: 15px; }
+  .teacher-pickers .field > span { font-size: 13px; }
+  .counts { gap: 8px; margin-bottom: 12px; }
+  .count { padding: 8px 12px; }
   .teacher-pickers { width: 100%; }
   .teacher-pickers .field { flex: 1 1 140px; min-width: 0; }
   .child-row { grid-template-columns: minmax(0, 1fr); }
