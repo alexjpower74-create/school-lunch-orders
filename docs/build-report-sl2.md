@@ -121,8 +121,10 @@ and labels.
 - **Settings at 390 is skipped** for the menu grid and screenshots only. The storm-closure test runs in all four projects.
 - A throwaway layout mock (`tests/staff/mock-server.mjs`) was used before the Worker was merged. No test ever used it, and it
   has been deleted.
-- `npm ci` in `app/` replaced a `node_modules` symlink in this worktree with a real install of the pinned
-  `@playwright/test`. Only the link inside this worktree was removed; its target wasn't touched.
+- `npm ci` in `app/` (20:36:58) replaced a `node_modules` symlink in this worktree with a real install of the pinned
+  `@playwright/test`. The lead saw main's `app/node_modules` emptied through a symlink at 20:25, which was before my install,
+  so mine was not that cause. I can't rule out that `npm ci` emptied the link's target a second time before removing the link.
+  Main's folder was reinstalled at 20:51, and every worktree now has a real directory. I told the lead.
 
 ## Not done
 
@@ -138,6 +140,19 @@ and labels.
 ## Needed from other slices
 
 Nothing blocks sl2. No changes asked of the lead's shared files.
+
+## Second pass (after the lead's review)
+
+- DONE: merged main again (97153a9: docs/API.md now records the Worker behaviours from the cross-review below). No page
+  changes were needed. The Days tab previews only when Add is tapped, and a refused preview shows in `#no-school-error`.
+- DONE: lead's visual note (a). At 390 the staff header and the teacher's title, pickers and counts are tighter, so the class
+  list starts higher. Tap targets are unchanged (44, and 56 for the marks). The full suite with this CSS passed everything
+  except the 5 failures below.
+- DONE: lead's visual note (b). The kitchen specs tap the heading after filling the date, so Chromium's highlighted date
+  segment is not in the screenshots. My first version also asserted `#date-pick` lost focus. That went red in webkit-390 for
+  all 5 kitchen tests that open Thursday (a touch tap on text does not move focus in WebKit), so the assertion was removed.
+  The kitchen spec then passed 24/24 in all four projects, and negatives (a) and (b) went red again against the changed spec
+  (logged).
 
 ## Cross-review of sl1 M1 (c0ec703), for the routes the staff pages use
 
