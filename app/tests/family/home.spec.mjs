@@ -1,6 +1,8 @@
 // "/family/" and "/family/history/": cancel before the cut-off, the balance in plain words, and a storm closure's credit.
 import { expect, test } from '@playwright/test'
-import { CODE, PIN, fresh, noSchoolViaApi, paymentViaApi, placeOrderViaApi, staffToken, tap, useFamilySession, api, bearer } from '../helpers.mjs'
+import {
+  CODE, PIN, api, bearer, familyOrdersViaApi, fresh, kitchenDayViaApi, noSchoolViaApi, paymentViaApi, placeOrderViaApi, staffToken, tap, useFamilySession,
+} from '../helpers.mjs'
 
 test.beforeEach(async ({ context, request }) => fresh(context, request))
 
@@ -73,4 +75,40 @@ test('a storm closure added through the API shows as a credit in history', async
   await expect(page.locator('#balance-text')).toHaveText('All paid up')
   await expect(page.locator('.line[data-status="closed"]')).toHaveCount(2)
   await expect(page.locator('.line[data-status="closed"]').first()).toContainText('No school, credited')
+})
+
+test('an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees', async ({ page, context, request }) => {
+  const s = await useFamilySession(context, request, CODE.liamAva)
+  const placed = await placeOrderViaApi(request, s.token, [{ child_id: 'ch-ava', date: '2026-09-17', item_id: 'mac', qty: 1 }])
+  const lineId = placed.order.lines[0].id
+  await page.goto('/family/')
+  const line = page.locator(`.line[data-line="${lineId}"]`)
+  await expect(line).toContainText('Ava, Macaroni and cheese ×1')
+  await expect(line.locator('.allergen-warning'), 'no warning before the allergy is ticked').toHaveCount(0)
+
+  await page.goto('/family/children/')
+  await tap(page, page.locator('.child-row[data-child="ch-ava"] .edit-child'), 'Edit Ava')
+  await tap(page, page.locator('input[name="allergy"][value="milk"]'), 'tick Milk')
+  await tap(page, page.locator('#save-child'), 'Save')
+  await expect(page.locator('#child-saved')).toHaveText('Saved Ava.')
+
+  await tap(page, page.getByRole('link', { name: 'Back to your lunches' }), 'Back to your lunches')
+  await expect(page).toHaveURL(/\/family\/$/)
+  await expect(line.locator('.allergen-warning')).toHaveText('Ava is allergic to Milk. Macaroni and cheese contains Milk.')
+  await expect(line.locator('.late-note')).toHaveText('You ticked this allergy after ordering.')
+  await expect(line.locator('button.ack-line')).toHaveText('I understand, keep it')
+  await expect(line.locator('button.cancel-line')).toBeVisible()
+  const kitchen = await staffToken(request, PIN.kitchen)
+  const kitchenLine = async () => (await kitchenDayViaApi(request, kitchen, '2026-09-17')).children.flatMap((c) => c.lines).find((l) => l.line_id === lineId)
+  expect((await kitchenLine()).acknowledged, 'the kitchen shows it not confirmed').toBe(false)
+
+  await tap(page, line.locator('button.ack-line'), 'I understand, keep it')
+  await expect(line.locator('.allergen-warning')).toHaveCount(0)
+  await expect(line.locator('button.ack-line')).toHaveCount(0)
+  await expect(line).toBeVisible()
+  expect((await kitchenLine()).acknowledged, 'the kitchen agrees').toBe(true)
+  const lines = await familyOrdersViaApi(request, s.token)
+  expect(lines[0]).toMatchObject({ conflicts: ['milk'], acknowledged: true, ack_allergens: ['milk'] })
+  await page.reload()
+  await expect(line.locator('.allergen-warning'), 'still confirmed after a reload').toHaveCount(0)
 })

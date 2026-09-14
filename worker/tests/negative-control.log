@@ -543,3 +543,37 @@ not ok 4 - price snapshot: a later price change never changes a placed line
     async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
   ...
 RESULT: RED as intended (exit 1); red tests: price snapshot: a later price change never changes a placed line | storm closure to the cent: seeded random orders, a price change and a cancelled line; preview = cancelled, credit = active totals, each balance drops by its own sum
+
+=== negative:14-ack-writes-nothing — 2026-09-14T23:52:54.190Z
+break: confirming an allergy ticked after ordering stores [] instead of the current conflicts
+patched: src/orders.js
+run: node tests/run.mjs --fresh --api-only --grep ^allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both$ (PORT 8605)
+== api: fresh Worker on http://127.0.0.1:8605 (state .state-8605)
+== api: tests/api-ack.test.mjs tests/api-auth.test.mjs tests/api-closure.test.mjs tests/api-kitchen.test.mjs tests/api-orders.test.mjs tests/api-staff.test.mjs
+# tests 6
+# pass 5
+# fail 1
+# skipped 0
+not ok 1 - allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both
+  ---
+  duration_ms: 250.07759
+  type: 'test'
+  location: 'worker/tests/api-ack.test.mjs:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        [
+          'milk'
+        ],
+    +   false,
+    +   []
+    -   true,
+    -   [
+    -     'milk'
+    -   ]
+      ]
+    
+RESULT: RED as intended (exit 1); red tests: allergy ticked after ordering: the family line and the kitchen show it unconfirmed; "I understand, keep it" confirms it for both

@@ -147,3 +147,16 @@ run: npx playwright test tests/family/layout.spec.mjs --project chromium-390 --g
     .negative/family-f-see-through-bar/results/family-layout-order-page-t-2b88b-r-at-the-bottom-of-the-page-chromium-390/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== family negative:g-home-ignores-ack — 2026-09-14T23:52:54.189Z
+break: the family home never shows the red warning for an allergy ticked after ordering
+patched: app/public/family/home.js
+run: npx playwright test tests/family/home.spec.mjs --project chromium-390 --grep "an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-g-home-ignores-ack/worker)
+  ✘  1 [chromium-390] › tests/family/home.spec.mjs:80:1 › an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees (9.1s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.line[data-line="ln_7429fe4bf31ae228"]').locator('.allergen-warning')
+    Expected: "Ava is allergic to Milk. Macaroni and cheese contains Milk."
+    Error: element(s) not found
+    .negative/family-g-home-ignores-ack/results/family-home-an-allergy-tic-6165b-firms-it-the-kitchen-agrees-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
