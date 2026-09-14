@@ -1,7 +1,7 @@
 // "/family/order/" and "/family/cart/": the red warning for the child with the allergy and not for a sibling, "I understand"
 // required and stored, a closed day, and a refusal at the cut-off that removes nothing.
 import { expect, test } from '@playwright/test'
-import { CODE, contrastOf, familyOrdersViaApi, fresh, nl, setNow, tap, useFamilySession } from '../helpers.mjs'
+import { CODE, PIN, api, bearer, contrastOf, familyOrdersViaApi, fresh, nl, setNow, staffToken, tap, useFamilySession } from '../helpers.mjs'
 
 test.beforeEach(async ({ context, request }) => fresh(context, request))
 
@@ -118,4 +118,27 @@ test('max per child stops the + at the limit', async ({ page, context, request }
   await expect(milk.locator('.limit')).toHaveText("That's the most for one day (2)")
   await tap(page, milk.locator('.qty-minus'), 'milk back to 1')
   await expect(milk.locator('.qty-plus')).toBeEnabled()
+})
+
+test('a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total', async ({ page, context, request }) => {
+  await useFamilySession(context, request, CODE.liamAva)
+  await openThursday(page)
+  await tap(page, page.locator('button.child-tab[data-child="ch-ava"]'), 'Ava')
+  await tap(page, card(page, 'mac').locator('.qty-plus'), 'Ava + mac at $4.00')
+  await expect(page.locator('#cart-total')).toHaveText('$4.00')
+
+  const office = await staffToken(request, PIN.admin)
+  const settings = await api(request, 'GET', '/api/admin/settings', undefined, bearer(office))
+  const { id, ...mac } = settings.body.items.find((i) => i.id === 'mac')
+  const put = await api(request, 'PUT', '/api/admin/items/mac', { ...mac, price_cents: 450 }, bearer(office))
+  expect(put.status, JSON.stringify(put.body)).toBe(200)
+
+  await tap(page, page.locator('#view-cart'), 'View cart')
+  const line = page.locator('.cart-line[data-child="ch-ava"][data-item="mac"]')
+  await expect(line.locator('.line-main .money')).toHaveText('$4.50')
+  await expect(line.locator('.price-changed')).toHaveText('Price changed: now $4.50 each (was $4.00).')
+  await expect(page.locator('#cart-total')).toHaveText('$4.50')
+  await tap(page, page.locator('#place-order'), 'Place order')
+  await expect(page.locator('#placed-total')).toHaveText('$4.50')
+  await expect(page.locator('#new-balance')).toHaveText('You owe $4.50')
 })

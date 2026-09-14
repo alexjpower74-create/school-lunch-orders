@@ -160,3 +160,16 @@ run: npx playwright test tests/family/home.spec.mjs --project chromium-390 --gre
     .negative/family-g-home-ignores-ack/results/family-home-an-allergy-tic-6165b-firms-it-the-kitchen-agrees-chromium-390/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== family negative:h-price-not-remembered — 2026-09-14T23:54:25.883Z
+break: the cart line no longer keeps the price seen when it was added, so a price change is never mentioned
+patched: app/public/family/order/order.js
+run: npx playwright test tests/family/order.spec.mjs --project chromium-390 --grep "a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-h-price-not-remembered/worker)
+  ✘  1 [chromium-390] › tests/family/order.spec.mjs:123:1 › a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total (8.9s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.cart-line[data-child="ch-ava"][data-item="mac"]').locator('.price-changed')
+    Expected: "Price changed: now $4.50 each (was $4.00)."
+    Error: element(s) not found
+    .negative/family-h-price-not-remembered/results/family-order-a-price-chang-c636a-tal-equals-the-placed-total-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
