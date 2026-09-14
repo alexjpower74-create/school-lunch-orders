@@ -1,0 +1,121 @@
+// "/family/order/" and "/family/cart/": the red warning for the child with the allergy and not for a sibling, "I understand"
+// required and stored, a closed day, and a refusal at the cut-off that removes nothing.
+import { expect, test } from '@playwright/test'
+import { CODE, contrastOf, familyOrdersViaApi, fresh, nl, setNow, tap, useFamilySession } from '../helpers.mjs'
+
+test.beforeEach(async ({ context, request }) => fresh(context, request))
+
+const card = (page, item) => page.locator(`.item[data-item="${item}"]`)
+
+async function openThursday(page) {
+  await page.goto('/family/order/')
+  await tap(page, page.locator('button.day[data-date="2026-09-17"]'), 'Thu Sep 17')
+  await expect(page.locator('button.day[data-date="2026-09-17"]')).toHaveAttribute('aria-pressed', 'true')
+}
+
+test('allergen warning for Liam and not for Ava', async ({ page, context, request }) => {
+  await useFamilySession(context, request, CODE.liamAva)
+  await openThursday(page)
+  await tap(page, page.locator('button.child-tab[data-child="ch-liam"]'), 'Liam')
+  const mac = card(page, 'mac')
+  await expect(mac).toHaveAttribute('data-conflict', 'true')
+  await expect(mac.locator('.allergen-warning')).toHaveText('Liam is allergic to Milk. Macaroni and cheese contains Milk.')
+  await expect(mac.locator('button.ack')).toHaveText('I understand, add it')
+  await expect(mac.locator('.qty-plus')).toHaveCount(0)
+  await expect(mac.locator('.allergen-pill.match')).toHaveText(['Milk'])
+  expect(await contrastOf(mac.locator('.allergen-warning')), 'red warning contrast').toBeGreaterThanOrEqual(4.5)
+  await expect(card(page, 'chili')).not.toHaveAttribute('data-conflict', 'true')
+  await expect(page.getByText('The red warning uses the allergens the school listed for each item. Ask the school about anything else.')).toBeVisible()
+
+  await tap(page, page.locator('button.child-tab[data-child="ch-ava"]'), 'Ava')
+  await expect(page.locator('button.child-tab[data-child="ch-ava"]')).toHaveAttribute('aria-pressed', 'true')
+  await expect(mac).not.toHaveAttribute('data-conflict', 'true')
+  await expect(mac.locator('.allergen-warning'), 'no warning for Ava').toHaveCount(0)
+  await expect(mac.locator('button.ack'), 'no "I understand" for Ava').toHaveCount(0)
+  await expect(mac.locator('.allergen-pill.match')).toHaveCount(0)
+  await tap(page, mac.locator('.qty-plus'), 'Ava + Macaroni and cheese')
+  await expect(mac.locator('.qty')).toHaveText('1')
+  await expect(page.locator('#cart-count')).toHaveText('1 item')
+  await expect(page.locator('#cart-total')).toHaveText('$4.00')
+})
+
+test('"I understand" is required: the tap adds 1, the cart keeps the tick, unticking disables Place order, and the order stores ack_allergens', async ({ page, context, request }) => {
+  const s = await useFamilySession(context, request, CODE.liamAva)
+  await openThursday(page)
+  await tap(page, page.locator('button.child-tab[data-child="ch-liam"]'), 'Liam')
+  await tap(page, card(page, 'mac').locator('button.ack'), 'I understand, add it')
+  await expect(card(page, 'mac').locator('.qty')).toHaveText('1')
+  await expect(card(page, 'mac').locator('button.ack')).toHaveCount(0)
+  await tap(page, page.locator('button.child-tab[data-child="ch-ava"]'), 'Ava')
+  await tap(page, card(page, 'mac').locator('.qty-plus'), 'Ava + mac')
+  await expect(page.locator('#cart-count')).toHaveText('2 items')
+  await page.reload()
+  await expect(page.locator('#cart-count'), 'the cart survives a reload').toHaveText('2 items')
+  await tap(page, page.locator('#view-cart'), 'View cart')
+  await expect(page).toHaveURL(/\/family\/cart\/$/)
+
+  const liam = page.locator('.cart-line[data-child="ch-liam"][data-item="mac"]')
+  const ava = page.locator('.cart-line[data-child="ch-ava"][data-item="mac"]')
+  await expect(liam.locator('.allergen-warning')).toHaveText('Liam is allergic to Milk. Macaroni and cheese contains Milk.')
+  await expect(liam.locator('input.ack-check')).toBeChecked()
+  await expect(liam.locator('.check-row')).toHaveText('I understand Liam is allergic to Milk')
+  await expect(ava.locator('input.ack-check')).toHaveCount(0)
+  await expect(ava.locator('.allergen-warning')).toHaveCount(0)
+  await expect(page.locator('#cart-total')).toHaveText('$8.00')
+  await expect(page.locator('#place-order')).toBeEnabled()
+
+  await tap(page, liam.locator('input.ack-check'), 'untick I understand')
+  await expect(liam.locator('input.ack-check')).not.toBeChecked()
+  await expect(page.locator('#place-order')).toBeDisabled()
+  await tap(page, liam.locator('input.ack-check'), 'tick I understand again')
+  await expect(page.locator('#place-order')).toBeEnabled()
+  await tap(page, page.locator('#place-order'), 'Place order')
+
+  await expect(page.locator('#order-placed h2')).toHaveText('Order placed')
+  await expect(page.locator('#placed-total')).toHaveText('$8.00')
+  await expect(page.locator('#new-balance')).toHaveText('You owe $8.00')
+  await expect(page.locator('#payment-instructions')).toContainText('Pay by Interac e-Transfer to lunch-orders@example.org (SAMPLE address)')
+  const lines = await familyOrdersViaApi(request, s.token)
+  expect(lines.map((l) => [l.first_name, l.item_id, l.ack_allergens])).toEqual([['Ava', 'mac', []], ['Liam', 'mac', ['milk']]])
+  expect(await page.evaluate((id) => localStorage.getItem(`school-lunch:cart:${id}`), s.family.id)).toBe('[]')
+})
+
+test('a closed day has no steppers; placing after the cut-off shows #order-error naming the day, marks the line and stores nothing', async ({ page, context, request }) => {
+  const s = await useFamilySession(context, request, CODE.liamAva)
+  await page.goto('/family/order/')
+  await tap(page, page.locator('button.day[data-date="2026-09-16"]'), 'Wed Sep 16')
+  await expect(page.locator('button.day[data-date="2026-09-16"]')).toHaveAttribute('data-status', 'closed')
+  await expect(page.locator('#day-status')).toHaveText('Ordering closed at 9:00 AM Tue Sep 15')
+  await expect(page.locator('.item')).toHaveCount(6)
+  await expect(page.locator('.item .qty-plus, .item .qty-minus, .item button.ack')).toHaveCount(0)
+
+  await tap(page, page.locator('button.day[data-date="2026-09-17"]'), 'Thu Sep 17')
+  await expect(page.locator('#day-status')).toHaveText('Order by 9:00 AM Wed Sep 16')
+  await tap(page, page.locator('button.child-tab[data-child="ch-ava"]'), 'Ava')
+  await tap(page, card(page, 'chili').locator('.qty-plus'), 'Ava + chili')
+  await tap(page, page.locator('#view-cart'), 'View cart')
+  await expect(page.locator('.cart-line')).toHaveCount(1)
+
+  await setNow(context, nl('2026-09-16', '09:00'))
+  await tap(page, page.locator('#place-order'), 'Place order after the cut-off')
+  await expect(page.locator('#order-error')).toHaveText('Ordering for Thu Sep 17 closed at 9:00 AM Wed Sep 16.')
+  await expect(page.locator('.cart-line[data-item="chili"]')).toHaveAttribute('data-error', 'cutoff_passed')
+  await expect(page.locator('#order-placed')).toBeHidden()
+  await expect(page.locator('.cart-line')).toHaveCount(1)
+  expect(await familyOrdersViaApi(request, s.token)).toEqual([])
+  expect(JSON.parse(await page.evaluate((id) => localStorage.getItem(`school-lunch:cart:${id}`), s.family.id))).toHaveLength(1)
+})
+
+test('max per child stops the + at the limit', async ({ page, context, request }) => {
+  await useFamilySession(context, request, CODE.liamAva)
+  await openThursday(page)
+  await tap(page, page.locator('button.child-tab[data-child="ch-ava"]'), 'Ava')
+  const milk = card(page, 'milk')
+  await tap(page, milk.locator('.qty-plus'), 'milk 1')
+  await tap(page, milk.locator('.qty-plus'), 'milk 2')
+  await expect(milk.locator('.qty')).toHaveText('2')
+  await expect(milk.locator('.qty-plus')).toBeDisabled()
+  await expect(milk.locator('.limit')).toHaveText("That's the most for one day (2)")
+  await tap(page, milk.locator('.qty-minus'), 'milk back to 1')
+  await expect(milk.locator('.qty-plus')).toBeEnabled()
+})

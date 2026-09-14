@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>History · School lunches</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <script type="module" src="/family/history/history.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top" id="top"></header>
+    <main>
+      <p><a class="btn quiet" href="/family/">Back to your lunches</a></p>
+      <h1>History and payments</h1>
+      <p id="loading" class="muted">Loading…</p>
+      <p id="page-error" class="error box" role="alert" hidden></p>
+      <div id="history" hidden>
+        <section id="balance" class="card balance">
+          <p id="balance-text" class="amount money"></p>
+          <p id="payment-instructions" class="pay"></p>
+        </section>
+
+        <h2>Money</h2>
+        <p class="muted small">Orders add to what you owe. Cancellations, school closures and payments the office recorded take it off.</p>
+        <ul id="ledger" class="list card"></ul>
+
+        <h2>Lunches</h2>
+        <ul id="lines" class="list card"></ul>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

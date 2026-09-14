@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Your lunches · School lunches</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <script type="module" src="/family/home.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top" id="top"></header>
+    <main>
+      <p id="loading" class="muted">Loading…</p>
+      <p id="page-error" class="error box" role="alert" hidden></p>
+      <div id="home" hidden>
+        <div class="spread">
+          <h1 id="family-label">Your lunches</h1>
+        </div>
+
+        <section id="first-steps" class="card lead-callout" hidden>
+          <h2 style="margin-top:0">Add your children first</h2>
+          <p>Add each child's first name, class and allergies. Then you can order their lunches.</p>
+          <a id="add-first-child" class="btn primary big block" href="/family/children/">Add a child</a>
+        </section>
+
+        <section id="balance" class="card balance" aria-live="polite">
+          <p class="amount money" id="balance-text"></p>
+          <p class="pay" id="payment-instructions"></p>
+        </section>
+
+        <a id="order-lunches" class="btn primary big block" href="/family/order/" style="margin-top:14px">Order lunches</a>
+
+        <h2>Coming up</h2>
+        <div id="upcoming" class="card"></div>
+
+        <div class="spread">
+          <h2>Your children</h2>
+          <a id="add-child" class="btn" href="/family/children/">Add a child</a>
+        </div>
+        <div id="children" class="children-grid"></div>
+
+        <div class="row" style="margin-top:28px">
+          <a id="history-link" class="btn" href="/family/history/">Order history and payments</a>
+          <button id="sign-out" class="btn quiet" type="button">Sign out</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -87,4 +87,42 @@ log keeps the assertion under each red test):
 - A closure re-added at the same test instant after a DELETE would count lines closed by the first one in its answer (the money is
   still right). Only possible with a pinned test clock.
 
-(The parent pages section follows as the work lands.)
+**DONE (lead request): `worker/tools/first-setup.mjs`.** Writes SQL for the school row (sample 0, cut-off 1 / 09:00) and one
+office PIN (PBKDF2 with auth.js's parameters), nothing else; refuses a PIN that is not 4–6 digits and never prints it. `npm test`
+now starts its no-TEST_MODE Worker from that SQL: the name shows with `sample: false`, the PIN signs in as admin, no classes or
+items exist, `/api/test/reset` is 404. With it the suite is **67 tests** (18 unit, 2 empty, 38 API, 4 plain), all green.
+
+## The parent pages
+
+**DONE.** `/` sign-in (`app/public/index.html` + `family/signin.js`), `/family/` home, `/family/children/`, `/family/order/`,
+`/family/cart/`, `/family/history/`, with shared `family/family.js` (session, 401 → sign-in, header, allergen words, the cart in
+`localStorage` `school-lunch:cart:<family id>`, menu weeks) and `family/family.css`. Plain HTML/JS/CSS on the lead's tokens and
+`common/` helpers; no emoji, inline SVG icons; red only for allergens (a solid block, white words); "closed" and refusals in orange.
+Dates, times and labels come from the API. Checkbox rows put the real input over the whole row, so the row is the tap target.
+
+### Verified: Playwright `tests/family` on 8604, all four projects (chromium and webkit, 390 and 1280)
+
+**56 passed (14 tests × 4 projects).** Sign-in by typing `KQ7M-4RTX`, `kq7m4rtx` (shown as `KQ7M-4RTX`), a wrong code in
+`#code-error`, sign out. Add a child with two allergies (the `<select>` hit-tested then `selectOption`, per PLAN), edit, removal
+refused by the Worker while Owen has a lunch ordered. **Liam gets the warning, Ava does not** (data-conflict, the exact words,
+`button.ack` and no `.qty-plus`; for Ava no warning, no ack, `.qty-plus` adds it; contrast ≥ 4.5). "I understand" required: ack →
+qty 1, the cart survives a reload, the tick shows in the cart, unticking disables Place order, the placed order stores `["milk"]`
+for Liam and `[]` for Ava, payment instructions and "You owe $8.00" after. Wed Sep 16 closed with the exact label and no steppers;
+Thu open; clock moved to Thu's cut-off → `#order-error` "Ordering for Thu Sep 17 closed at 9:00 AM Wed Sep 16.", the line marked
+`cutoff_passed`, nothing stored, the cart kept. max_per_child stops the +. Cancel before the cut-off: the balance changes by exactly
+the line total and matches the API; no Cancel on the closed Wednesday line. Balance phrases (owe / all paid up / credit). A storm
+closure through the API shows as a credit in history. Tap targets (48, 56 for steppers, ack, Place order, View cart) hit-tested on
+every page; the last item's action at the bottom of a scrolled page is not under `#cart-bar`; no sideways scroll. 32 screenshots
+(8 pages × 4 projects) in `app/tests/family/shots/`, looked at on chromium-390, webkit-390 and webkit-1280.
+
+A bug the suite caught before commit: a missing `)` in `cart.js` left the cart page on "Loading…" (seen in the trace's page error).
+
+### Verified: the 5 page negative controls (`npm run negative:family`, port 8606, `app/tests/family/negative-control.log`)
+
+**5 of 5 red, each for the right reason:** (a) every child's allergies → Ava's card had `data-conflict="true"`; (b) no warning
+element → the warning locator not found; (c) ack without the acknowledgement → the stepper never showed qty 1; (d) refusal shown as
+"Order placed" → `#order-error` empty; (e) a transparent cover above the cart bar → the hit-test found `#cart-bar` on top.
+
+## For the lead
+
+- Nothing needed from sl2. No changes asked of lead-owned files.

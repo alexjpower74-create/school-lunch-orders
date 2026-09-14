@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sign in · School lunches</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <script type="module" src="/family/signin.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top" id="top"></header>
+    <main>
+      <h1>Hot lunch orders</h1>
+      <p class="muted">Order your children's school lunches from your phone.</p>
+      <form id="signin-form" class="card" novalidate>
+        <label class="field" for="code" style="margin-top:0">Family code</label>
+        <input id="code" name="code" class="text code" type="text" placeholder="ABCD-2345" autocapitalize="characters" autocomplete="off"
+          autocorrect="off" spellcheck="false" enterkeyhint="go" aria-describedby="code-help code-error">
+        <p id="code-error" class="error" role="alert" hidden></p>
+        <button id="sign-in" class="btn primary big block" type="submit" style="margin-top:16px">Sign in</button>
+        <p id="code-help" class="muted small" style="margin:14px 0 0">The school gives each family a code on paper. Lost it? Ask the office.</p>
+      </form>
+      <p class="muted small" style="margin-top:24px">School staff: <a href="/staff/">sign in with your PIN</a>.</p>
+    </main>
+  </div>
+</body>
+</html>
