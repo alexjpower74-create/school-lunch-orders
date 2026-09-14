@@ -199,17 +199,20 @@ async function recordAdjustment() {
     showError(error, { message: 'Type the amount, like 4.00 for a charge or -4.00 for a credit.' })
     return
   }
-  try {
-    const res = await staffApi('POST', '/api/office/adjustments', {
-      body: { family_id: detail.family.id, amount_cents: cents, note: $('#adjust-note').value.trim() },
-    })
-    detail.balance_cents = res.balance_cents
-    detail.entries = [res.entry, ...detail.entries]
-    renderPanel()
-    await loadList()
-  } catch (err) {
-    fail(error, err)
-  }
+  // The button is disabled from the first tap until the answer, so a double tap records one adjustment.
+  await busy($('#record-adjustment'), async () => {
+    try {
+      const res = await staffApi('POST', '/api/office/adjustments', {
+        body: { family_id: detail.family.id, amount_cents: cents, note: $('#adjust-note').value.trim() },
+      })
+      detail.balance_cents = res.balance_cents
+      detail.entries = [res.entry, ...detail.entries]
+      renderPanel()
+      await loadList()
+    } catch (err) {
+      fail(error, err)
+    }
+  })
 }
 
 async function voidEntry(id, button) {

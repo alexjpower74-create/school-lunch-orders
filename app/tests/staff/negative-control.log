@@ -184,3 +184,29 @@ run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 -
     .negative/staff-blank-cutoff/results/staff-settings-a-blank-cut-12e25--field-and-nothing-is-saved-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:adjust-double — 2026-09-14T23:51:07.534Z
+break: Add adjustment is not disabled while its request runs, so a second tap records a second adjustment
+patched: app/public/office/office.js
+run: npx playwright test tests/staff/office.spec.mjs --project chromium-1280 --grep "a double tap on Add adjustment records one adjustment" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-adjust-double/worker)
+  ✘  1 [chromium-1280] › tests/staff/office.spec.mjs:86:1 › a double tap on Add adjustment records one adjustment (1.6s)
+    Error: adjustments stored after a double tap
+    expect(received).toBe(expected) // Object.is equality
+    Expected: 1
+    Received: 2
+    .negative/staff-adjust-double/results/staff-office-a-double-tap--a57da-ment-records-one-adjustment-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:adjust-double — 2026-09-14T23:52:21.022Z
+break: Add adjustment is not disabled while its request runs, so a second tap records a second adjustment
+patched: app/public/office/office.js
+run: npx playwright test tests/staff/office.spec.mjs --project chromium-1280 --grep "a double tap on Add adjustment records one adjustment" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-adjust-double/worker)
+  ✘  1 [chromium-1280] › tests/staff/office.spec.mjs:86:1 › a double tap on Add adjustment records one adjustment (1.5s)
+    Error: adjustments stored after a double tap
+    expect(received).toBe(expected) // Object.is equality
+    Expected: 1
+    Received: 2
+    .negative/staff-adjust-double/results/staff-office-a-double-tap--a57da-ment-records-one-adjustment-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
