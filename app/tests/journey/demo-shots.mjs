@@ -104,8 +104,10 @@ for (const [device, suffix] of [[PHONE, '390'], [DESKTOP, '1280']]) {
   await o.locator('.family-row').first().click()
   await o.locator('#family-panel').waitFor()
   await shot(o, 'office-family-1280')
+  await o.goto('/admin/')
   for (const tab of ['menu', 'days', 'items']) {
-    await o.goto(`/admin/#${tab}`)
+    // Tap the tab: a goto that only changes the #hash does not reload the page, so the panel would not switch.
+    await o.locator(`button.tab[data-tab="${tab}"]`).click()
     await o.locator(`#panel-${tab}`).waitFor()
     await shot(o, `settings-${tab}-1280`)
   }
