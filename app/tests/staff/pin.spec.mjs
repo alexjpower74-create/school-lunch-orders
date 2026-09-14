@@ -14,11 +14,11 @@ test.afterEach(async ({ context }) => { assertNoThirdParty(context) })
 test('PIN sign-in by keypad lands on the right page with the right nav', async ({ page }) => {
   for (const r of ROLES) {
     await page.goto('/staff/')
-    await expect(page.locator('#school-name')).toHaveText(SCHOOL)
+    await expect(page.locator('[data-sticky-header] .brand-name')).toHaveText(SCHOOL)
     await keypad(page, r.pin, page.locator('#pin-submit'))
     await expect(page, `PIN ${r.pin} lands on ${r.path}`).toHaveURL(new RegExp(`${r.path}(\\?|$)`))
-    await expect(page.locator('#staff-name')).toHaveText(r.name)
-    await expect(page.locator('[data-sticky-header] #school-name')).toHaveText(SCHOOL)
+    await expect(page.locator('[data-sticky-header] .staff-who')).toHaveText(r.name)
+    await expect(page.locator('[data-sticky-header] .brand-name')).toHaveText(SCHOOL)
     await expect(page.locator('[data-sticky-header] .sample-badge')).toBeVisible()
     await expect(page.locator('nav#staff-nav a[data-nav]')).toHaveCount(r.nav.length)
     expect(await page.locator('nav#staff-nav a[data-nav]').evaluateAll((as) => as.map((a) => a.dataset.nav)), `nav for ${r.name}`).toEqual(r.nav)
@@ -31,7 +31,7 @@ test('PIN sign-in by keypad lands on the right page with the right nav', async (
 
 test('a wrong PIN shows the error', async ({ page }, testInfo) => {
   await page.goto('/staff/')
-  await expect(page.locator('#school-name')).toHaveText(SCHOOL)
+  await expect(page.locator('[data-sticky-header] .brand-name')).toHaveText(SCHOOL)
   await shot(page, testInfo, 'staff', 'pin')
   await keypad(page, '9090', page.locator('#pin-submit'))
   await expect(page.locator('#pin-error')).toHaveText('That PIN is not right.')

@@ -34,7 +34,7 @@
     <section class="card tab-panel" role="tabpanel" id="panel-school" aria-labelledby="tab-school" hidden>
       <h2>School</h2>
       <form id="school-form" class="stack" novalidate>
-        <label class="field"><span>School name</span><input type="text" id="school-name-input" name="school_name" maxlength="80"></label>
+        <label class="field"><span>School name</span><input type="text" id="school-name" name="school_name" maxlength="80"></label>
         <label class="field"><span>Payment instructions parents see</span><textarea id="payment-instructions-input" name="payment_instructions" maxlength="600"></textarea></label>
         <div class="form-grid">
           <label class="field"><span>Order cut-off: school days before</span><input type="number" id="cutoff-days" name="cutoff_days_before" min="0" max="5" inputmode="numeric"></label>
@@ -146,7 +146,7 @@
         <ul id="staff-list" class="rows"></ul>
         <form id="staff-form" class="stack sub-card" novalidate>
           <h3 id="staff-form-title">New staff member</h3>
-          <label class="field"><span>Name</span><input type="text" id="staff-name-input" maxlength="60" autocomplete="off"></label>
+          <label class="field"><span>Name</span><input type="text" id="staff-name" maxlength="60" autocomplete="off"></label>
           <label class="field"><span>Role</span>
             <select id="staff-role">
               <option value="teacher">Teacher</option>

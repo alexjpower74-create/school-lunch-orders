@@ -46,6 +46,42 @@ test('record a payment by typing, then undo it', async ({ page, context, request
   expect((await staffGet(request, '/api/office/families/fam-1')).balance_cents, 'API balance after undo').toBe(1050)
 })
 
+test('an adjustment either way changes the balance to the cent', async ({ page, context, request }) => {
+  await openOffice(page, context, request)
+  await openFamily(page, 'fam-1')
+  await expect(page.locator('#family-balance')).toHaveAttribute('data-balance-cents', '1050')
+  const openAdjust = async () => {
+    if (!(await page.locator('#family-panel details').evaluate((d) => d.open))) {
+      await tap(page, page.locator('#family-panel details summary'), 'add an adjustment')
+    }
+    await expect(page.locator('#adjust-amount')).toBeVisible()
+  }
+  const apiBalance = async () => (await staffGet(request, '/api/office/families/fam-1')).balance_cents
+
+  await openAdjust()
+  await type(page, page.locator('#adjust-amount'), '2.50')
+  await type(page, page.locator('#adjust-note'), 'Extra milk for the week (SAMPLE)')
+  await tap(page, page.locator('#record-adjustment'), 'add adjustment +2.50')
+  await expect(page.locator('#family-balance'), '#family-balance after +2.50').toHaveAttribute('data-balance-cents', '1300')
+  await expect(page.locator('#family-balance')).toHaveText('Owes $13.00')
+  expect(await apiBalance(), 'API balance after +2.50').toBe(1300)
+
+  await openAdjust()
+  await type(page, page.locator('#adjust-amount'), '-4.00')
+  await type(page, page.locator('#adjust-note'), 'Absent Thursday, credited (SAMPLE)')
+  await tap(page, page.locator('#record-adjustment'), 'add adjustment -4.00')
+  await expect(page.locator('#family-balance'), '#family-balance after -4.00').toHaveAttribute('data-balance-cents', '900')
+  await expect(page.locator('.family-row[data-family="fam-1"] .balance')).toHaveAttribute('data-balance-cents', '900')
+  expect(await apiBalance(), 'API balance after -4.00').toBe(900)
+  await expect(page.locator('#ledger .entry[data-kind="adjustment"]').first()).toContainText('-$4.00')
+
+  await page.reload()
+  await expect(page.locator('.family-row')).toHaveCount(4)
+  await openFamily(page, 'fam-1')
+  await expect(page.locator('#family-balance')).toHaveAttribute('data-balance-cents', '900')
+  await expect(page.locator('#ledger .entry[data-kind="adjustment"]')).toHaveCount(2)
+})
+
 test('add a family shows the code once and it signs in', async ({ page, context, request }) => {
   await openOffice(page, context, request)
   await type(page, page.locator('#add-family-label'), 'Hillview family (SAMPLE)')

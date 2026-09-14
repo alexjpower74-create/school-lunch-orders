@@ -15,5 +15,5 @@ process.exit(pageNegative({
   spec: 'admin.spec.mjs',
   grep: 'storm closure: confirm numbers equal the preview, credits to the cent',
   project: 'chromium-1280',
-  expect: ['confirm-lunches = preview item_count'],
+  expect: ['confirm-items = preview item_count'],
 }))

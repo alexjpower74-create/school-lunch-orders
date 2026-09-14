@@ -34,13 +34,13 @@ test('storm closure: confirm numbers equal the preview, credits to the cent', as
   const preview = await staffGet(request, `/api/admin/no-school/preview?date=${THU}`)
   expect(preview, 'the API preview = the hand-computed numbers').toMatchObject({ lines: EXPECT_LINES, item_count: EXPECT_ITEM_COUNT, families: 4, credit_cents: EXPECT_CREDIT_TOTAL })
   await expect(page.locator('#no-school-confirm')).toBeVisible()
-  await expect(page.locator('#confirm-lunches'), 'confirm-lunches = preview item_count').toHaveText(`${preview.item_count} lunches`)
+  await expect(page.locator('#confirm-items'), 'confirm-items = preview item_count').toHaveText(`${preview.item_count} items`)
   await expect(page.locator('#confirm-families'), 'confirm-families = preview families').toHaveText(`${preview.families} families`)
   await expect(page.locator('#confirm-credit'), 'confirm-credit = preview credit').toHaveText('$34.25')
-  await expect(page.locator('#no-school-preview')).toHaveText('This cancels 13 lunches for 4 families and credits $34.25 to their balances.')
+  await expect(page.locator('#no-school-preview')).toHaveText('This cancels 13 items for 4 families and credits $34.25 to their balances.')
 
   await tap(page, page.locator('#confirm-no-school'), 'yes, add the no-school day')
-  await expect(page.locator('#no-school-result')).toHaveText('Thu Sep 17 is now a no-school day. Cancelled 13 lunches for 4 families. Credited $34.25.')
+  await expect(page.locator('#no-school-result')).toHaveText('Thu Sep 17 is now a no-school day. Cancelled 13 items for 4 families. Credited $34.25.')
   await expect(page.locator(`.no-school-row[data-date="${THU}"]`)).toContainText('School closed')
 
   const after = await balancesViaApi(request)
@@ -113,7 +113,7 @@ test('menu grid: fill from usual days on an empty week', async ({ page, context,
 test('settings tabs: tap targets and screenshots', async ({ page, context, request }, testInfo) => {
   desktopOnly(testInfo)
   await openSettings(page, context, request, 'school')
-  await expect(page.locator('#school-name-input')).toHaveValue('SAMPLE Harbour Pond Elementary (demo)')
+  await expect(page.locator('#school-name')).toHaveValue('SAMPLE Harbour Pond Elementary (demo)')
   for (const t of ['school', 'menu', 'days', 'items', 'classes', 'staff']) {
     await expectTapTarget(page, page.locator(`button.tab[data-tab="${t}"]`), 44, `${t} tab`)
   }
