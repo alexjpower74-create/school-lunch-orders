@@ -203,9 +203,11 @@ later price change never changes a placed line); `ack_allergens` as above; one `
 ```
 { date, date_label, long_label, today, is_today,
   status: "school_day" | "no_school" | "weekend" | "outside_year", status_label, no_school: null | { kind, kind_label, note },
+  // status_label: "School day", the no-school kind label, "Weekend", "Outside the school year"
   cutoff_at, cutoff_label, orders_open,            // orders_open: a school day and now < cutoff_at (totals can still change)
   totals: { item_count, line_count, children },   // item_count = Σ qty of active lines
-  items: [{ item_id, name, qty, allergens, vegetarian }],        // every item on that day's menu, qty 0 included; qty desc, then name
+  items: [{ item_id, name, qty, allergens, vegetarian }],        // every item on that day's menu (qty 0 included) plus any item with
+                                                                  // active lines that day that is no longer on it; qty desc, then name
   classes: [{ class_id, name, grade, sort, children, qty, items: [{ item_id, name, qty }] }],   // classes with qty ≥ 1, by sort
   children: [{ child_id, first_name, class_id, class_name, grade, flag, allergies,
                lines: [{ line_id, item_id, item_name, qty, conflicts: [keys], acknowledged }] }] }
@@ -229,7 +231,8 @@ class `sort`, first name, item name.
   ("Absent"). Any teacher may look at any class (substitutes). 404 for an unknown class.
 - `POST /api/teacher/mark` `{ date, child_id, state }` (`state` `"delivered"`, `"absent"` or `null` to clear) → 200 `{ child, counts }`
   (the child's row and the class counts). 409 `bad_state` `"You can only mark today's lunches."` when `date` is not today;
-  409 `bad_state` `"Liam has no lunch ordered today."` when the child has no active line that day. Absent does not credit anything.
+  409 `bad_state` `"Liam has no lunch ordered today."` when the child has no active line that day; 404 for an unknown child (checked
+  first). Absent does not credit anything.
 
 ### Office (`admin`)
 
@@ -244,7 +247,7 @@ class `sort`, first name, item name.
 | `POST /api/office/adjustments` | `{ family_id, amount_cents (non-zero, −1 000 000 to 1 000 000), note (1–200, required) }` → 201 `{ entry, balance_cents }` |
 | `POST /api/office/entries/:id/void` | → 200 `{ entry, balance_cents }`. 409 `bad_state` `"Only payments and adjustments can be undone."` / `"That entry is already undone."` |
 | `GET /api/office/ledger.csv?from=&to=` | → `text/csv; charset=utf-8`, `Content-Disposition: attachment; filename="lunch-ledger-<from>-to-<to>.csv"`. Defaults `year_start` to today. Columns `Date,Time,Family,Kind,Description,Amount,Method,Note,Voided`, oldest first, CRLF. `Amount` is a plain number `12.50` / `-3.00`. `Voided` is `yes` or empty. |
-| `GET /api/office/balances.csv` | → columns `Family,Children,Balance` (`Children` `"Liam (Room 4); Ava (Room 8)"`, `Balance` `12.50`), same order as the families list. |
+| `GET /api/office/balances.csv` | → `filename="lunch-balances-<today>.csv"`, columns `Family,Children,Balance` (`Children` `"Liam (Room 4); Ava (Room 8)"`, `Balance` `12.50`), same order as the families list. |
 
 **CSV rules:** a cell containing a comma, a double quote, CR or LF is quoted with `"` doubled. Any text cell that starts with `=`,
 `+`, `-`, `@`, a tab or CR gets a leading `'` (spreadsheet formula guard). The `Amount` and `Balance` columns are written by the
@@ -264,8 +267,8 @@ Worker as numbers and are never prefixed.
 | `GET /api/admin/menu?week=` | → `{ week_start, week_label, prev_week, next_week, days: [{ date, date_label, status, status_label, no_school, item_ids: [ids], ordered: { "<item_id>": qty } }] }` (`status` as kitchen: `school_day`, `no_school`, `outside_year`) |
 | `PUT /api/admin/menu/:date` | `{ item_ids }` → 200 `{ day }` (same shape as a `days` entry). 400 when the date is not a school day or an id is not an active item. 409 `bad_state` `"That day has passed."` for a date before today. 409 `bad_state` `"3 of Cheese pizza slice are already ordered for Fri Sep 25. Keep it on the menu, or make the day a no-school day."` when an item with active lines that day is left out. |
 | `POST /api/admin/menu/fill` | `{ week }` → 200 (same shape as `GET /api/admin/menu`). Every school day in that week dated today or later that has **no** items gets the active items whose `days` include its weekday. Days that already have items are not touched. |
-| `GET /api/admin/no-school/preview?date=` | → `{ date, date_label, lines, item_count, families, credit_cents }`: what adding that date would cancel and credit now. |
-| `POST /api/admin/no-school` | `{ date, kind, note (0–120) }` → 201 `{ day: { date, date_label, kind, kind_label, note }, cancelled: { lines, item_count, families, credit_cents } }`. 400 when the date is not a weekday, is before today, or is outside the school year. 409 `bad_state` `"Wed Sep 23 is already a no-school day."`. **In one D1 batch:** every `active` line that day becomes `closed`, and each family with such lines gets one `closure` entry of −(the sum of those lines' `total_cents`). `credit_cents` is the sum over families (positive number). |
+| `GET /api/admin/no-school/preview?date=` | → `{ date, date_label, lines, item_count, families, credit_cents }`: what adding that date would cancel and credit now. The same 400s and 409 as the POST below (not a weekday, before today, outside the year, already a no-school day). |
+| `POST /api/admin/no-school` | `{ date, kind, note (0–120) }` → 201 `{ day: { date, date_label, kind, kind_label, note }, cancelled: { lines, item_count, families, credit_cents } }`. 400 when the date is not a weekday, is before today, or is outside the school year. 409 `bad_state` `"Wed Sep 23 is already a no-school day."`. **In one D1 batch:** every `active` line that day becomes `closed`, and each family with such lines gets one `closure` entry of −(the sum of those lines' `total_cents`), whose `note` is the no-school day's note. `credit_cents` is the sum over families (positive number). |
 | `DELETE /api/admin/no-school/:date` | → 200 `{ ok: true, restored_lines: 0 }`. 404 when unknown; 409 `bad_state` `"That day has passed."` before today. **Closed lines stay closed and credits stay**; parents may order again once it is a school day with a menu. |
 | `POST /api/admin/classes` | `{ name (1–30), grade (1–30), sort (0–99) }` → 201 `{ class }` |
 | `PUT /api/admin/classes/:id` | same → 200 `{ class }` |
