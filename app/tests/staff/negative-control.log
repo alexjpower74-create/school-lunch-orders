@@ -141,3 +141,18 @@ run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 -
     .negative/staff-item-price/results/staff-settings-a-new-item--55428-lars-allergens-days-and-max-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:closure-confirm — 2026-09-14T23:36:24.039Z
+break: the no-school confirm counts the kitchen's order lines instead of the preview's item_count
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/admin.spec.mjs --project chromium-1280 --grep "storm closure: confirm numbers equal the preview, credits to the cent" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-closure-confirm/worker)
+  ✘  1 [chromium-1280] › tests/staff/admin.spec.mjs:25:1 › storm closure: confirm numbers equal the preview, credits to the cent (8.9s)
+    Error: confirm-items = preview item_count
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#confirm-items')
+    Expected: "13 items"
+    Received: "11 items"
+           - unexpected value "11 items"
+    .negative/staff-closure-confirm/results/staff-admin-storm-closure--da5fe-preview-credits-to-the-cent-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended

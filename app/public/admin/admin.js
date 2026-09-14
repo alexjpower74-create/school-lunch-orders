@@ -203,7 +203,7 @@ async function addNoSchool() {
       h('p', {}, h('strong', {}, `Make ${preview.date_label} a no-school day (${kindWords})?`)),
       preview.lines
         ? h('p', { id: 'no-school-preview' }, 'This cancels ',
-          h('strong', { id: 'confirm-lunches' }, plural(preview.item_count, 'lunch', 'lunches')), ' for ',
+          h('strong', { id: 'confirm-items' }, plural(preview.item_count, 'item')), ' for ',
           h('strong', { id: 'confirm-families' }, plural(preview.families, 'family', 'families')), ' and credits ',
           h('strong', { id: 'confirm-credit', class: 'money' }, money(preview.credit_cents)), ' to their balances.')
         : h('p', { id: 'no-school-preview' }, `Nothing is ordered for ${preview.date_label}, so nothing is cancelled or credited.`),
@@ -224,7 +224,7 @@ async function confirmNoSchool(e) {
       $('#no-school-confirm').hidden = true
       const c = res.cancelled
       flash($('#no-school-result'), c.lines
-        ? `${res.day.date_label} is now a no-school day. Cancelled ${plural(c.item_count, 'lunch', 'lunches')} for ${plural(c.families, 'family', 'families')}. Credited ${money(c.credit_cents)}.`
+        ? `${res.day.date_label} is now a no-school day. Cancelled ${plural(c.item_count, 'item')} for ${plural(c.families, 'family', 'families')}. Credited ${money(c.credit_cents)}.`
         : `${res.day.date_label} is now a no-school day. Nothing was ordered, so nothing was credited.`)
       $('#no-school-note').value = ''
       await reloadSettings()
