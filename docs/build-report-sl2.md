@@ -25,8 +25,9 @@ DONE, all under `app/public/`:
   - `#print-labels`.
   - Print styles.
 - **`/kitchen/labels/?date=`**: one `.label[data-line]` per active line, 3 across on screen. At print it's a Letter sheet of
-  2⅝ × 1 inch labels, 30 a sheet. `.label-allergen` reads "ALLERGY: <the conflicts>. Contains <the conflicts>.", with
-  `.label-allergies` "Also allergic to: …" for the child's other allergies, or "Allergies on file: …" when nothing conflicts. There's a small SAMPLE mark, and `#print` calls `window.print()`.
+  2⅝ × 1 inch labels, 30 a sheet. `.label-allergen` reads "ALLERGY: <the conflicts>", with
+  `.label-allergies` "Also: …" for the child's other allergies, or "Allergies on file: …" when nothing conflicts. Labels are drawn
+  at their printed size, and a fit check makes sure no allergy word is cut off at print (fifth pass). There's a small SAMPLE mark, and `#print` calls `window.print()`.
 - **`/teacher/`**:
   - `#class-pick` (defaults to `my_class_id`), `#teacher-date` (date input; `?date=` works too), and the three `#count-*` cards.
   - `.child-row[data-child][data-state][data-flag]` with red allergy words.
@@ -93,7 +94,7 @@ them.
   - Tab tap targets, 44 px menu cells, screenshots.
 
 **Negative controls** (`node tests/staff/negative-all.mjs`, copies on 8607, logged in `tests/staff/negative-control.log`). All
-twelve went red for the named test:
+thirteen went red for the named test:
 
 | | break | went red on |
 |---|---|---|
@@ -107,8 +108,9 @@ twelve went red for the named test:
 | h | the school form reads cut-off days with `Number()` again (blank → 0) | "cutoff_days_before still 1 in the API" (1 expected, 0 saved) |
 | i | Add adjustment loses its `busy()` guard | "adjustments stored after a double tap" (1 expected, 2 stored; red on both runs) |
 | j | the school form does not re-read `/api/info` after saving | "the parents' rule line after saving, without a reload" (still "Order by 9:00 AM the school day before.") |
-| k | the label's ALLERGY part lists all of the child's allergies again | "Chloe's label-allergen names only the conflict" ("ALLERGY: Eggs and Sesame seeds." shown) |
+| k | the label's ALLERGY part lists all of the child's allergies again | "Chloe's label-allergen names only the conflict" ("ALLERGY: Eggs and Sesame seeds" shown) |
 | l | a refused Undo puts its words in `#payment-error` again | "the refusal next to the entry that was tapped" (the entry's line empty) |
+| m | the label fit check does nothing (`fit()` returns at once) | "labels whose words are cut off at print" (the worst-case label) |
 
 Control (c) first ran red on `count-delivered` rather than the string I had named (`count-waiting`). The break leaves
 `day.counts` set from the answer and then adds 1, so the delivered counter shows the error first. I widened the expect string to
@@ -185,6 +187,37 @@ Nothing blocks sl2. No changes asked of the lead's shared files.
   36 passed; storm closure 4/4 after the wording change; settings 24/24 after adding the row check; negatives (e) and (g) red.
   Every changed spec ran in all four projects. I did not rerun the whole suite in one go on the final sha.
 
+## Fifth pass (labels never cut off allergy words)
+
+- DONE: a9cd1c8, shorter label wording. `.label-allergen` reads "ALLERGY: Eggs" (no "Contains" repeat), `.label-allergies` reads
+  "Also: Sesame seeds", gluten reads "Gluten" (the full grains name stays on the kitchen page), and an unconfirmed conflict adds
+  "(not confirmed)". The kitchen's #children row is unchanged.
+- DONE: labels are drawn at their printed size on screen too (2⅝ × 1 inch, point type sizes, decoration by box-shadow only), so
+  the box is the same in both media. After rendering, and again when print media applies, `labels.js` `fit()` takes these steps
+  only while a label still overflows:
+  1. denser type (`.dense`)
+  2. "More allergies: see the kitchen list" in place of the other allergies
+  3. a one-line item
+  4. a one-line class
+  
+  The ALLERGY line is never shortened. `.label > * { flex: none }` means no line can be squeezed to hide its words; I caught that
+  while writing it, because a flex line with `overflow: hidden` could shrink to nothing without the label ever reporting overflow.
+  A label that still doesn't fit is counted on screen in `#labels-too-full`.
+- Test, in print emulation: a worst-case SAMPLE child (Zoe, all 12 allergies ticked) gets the cookie (eggs, milk, wheat and
+  triticale, gluten), alongside Thursday's normal children. No `.label` has `scrollHeight > clientHeight + 1` or a line wider
+  than its box. Zoe's ALLERGY line reads "ALLERGY: Eggs, Milk, Wheat and triticale and Gluten" inside her label, and her other
+  allergies are all shown or replaced by the kitchen-list words. Jack's and Liam's labels keep normal type. Negative (m) turns the
+  fit check off: red. (k) and (b) were rerun red.
+- What the worst case needed (a throwaway probe, deleted, never committed): in chromium-1280 and webkit-390, Zoe's label needed
+  only denser type and keeps all eight other allergies. Its content fills the label down to the 0.05 inch bottom padding (96 of
+  96 px), with no spare room past that padding. It was the only dense label of 12. I looked at the print-emulation screenshot of
+  her label in both engines: every word is visible.
+- Runs: kitchen spec (labels included) 32/32 in all four projects; negatives (m), (k) and (b) red. I did not rerun the whole staff
+  suite; the lead is rerunning it and the staff negatives on the final tree.
+- Not checked on paper: the check measures the browser's print layout, which is what the browser sends to the printer, but a
+  real label sheet's alignment isn't tested. On screen the labels are now small (their true size), 4 across at 1280; paper
+  takes 3 across.
+
 ## Fourth pass (sl1's review of my pages, and the label decision)
 
 One commit per fix, each with its spec passing in all four projects and its negative control logged. Main (integration round 2,
@@ -206,8 +239,8 @@ One commit per fix, each with its spec passing in all four projects and its nega
   Eggs."), then `.label-allergies` "Also allergic to: Sesame seeds"; a child with allergies and no conflict keeps "Allergies on
   file: …". The kitchen's conflict row does the same. The test orders Chloe a cookie in that test only, so the shared hand
   numbers stay the same. Negative (k) puts all the allergies back, and (b) was rerun red.
-- The extra label line can make a 1-inch label crowded at print; the label clips rather than spilling onto the next one. Not
-  checked on paper.
+- Corrected in the fifth pass: I first wrote here that a crowded label "clips rather than spilling onto the next one". That
+  was the failure itself, because a clipped label silently hides allergy words. The lead caught it.
 - Runs after the merge: settings, kitchen and office specs 88 passed in all four projects; negative (l) red. Full staff suite on
   the final commit: 122 passed, 6 skipped (menu grid and settings shots at 390), 0 failed, in chromium and webkit at 390 and 1280.
 
