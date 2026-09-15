@@ -43,6 +43,8 @@ test('school settings save and come back after a reload', async ({ page, context
   await page.locator('#year-end').fill('2027-06-18')
   await tap(page, page.locator('#save-school'), 'save school')
   await expect(page.locator('#school-saved'), 'school-saved').toHaveText('Saved.')
+  await expect(page.locator('#cutoff-rule'), "the parents' rule line after saving, without a reload")
+    .toHaveText('Parents see: "Order by 8:30 AM 2 school days before."')
   await expect(page.locator('#school-error')).toBeHidden()
   await expect(page.locator('#year-end')).not.toHaveAttribute('aria-invalid', 'true')
 

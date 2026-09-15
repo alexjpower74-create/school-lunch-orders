@@ -59,6 +59,11 @@ function renderSchool() {
   $('#cutoff-time').value = s.cutoff_time
   $('#year-start').value = s.year_start
   $('#year-end').value = s.year_end
+  renderRule()
+}
+
+/** The rule parents see, from /api/info (the Worker words it from the saved cut-off). */
+function renderRule() {
   $('#cutoff-rule').textContent = `Parents see: "${info.cutoff_rule_label}"`
 }
 
@@ -89,6 +94,8 @@ async function saveSchool() {
       settings.school = res.school
       fieldError(null, null, fields)
       flash($('#school-saved'), 'Saved.')
+      info = await staffApi('GET', '/api/info') // the parents' rule line follows the saved cut-off
+      renderRule()
     } catch (err) {
       fieldError(error, err, fields)
     }
