@@ -89,12 +89,14 @@ function renderClasses() {
 
 function flagCell(child) {
   if (child.flag === 'conflict') {
+    const conflicting = new Set(child.lines.flatMap((l) => l.conflicts))
+    const others = child.allergies.filter((k) => !conflicting.has(k))
     return h('td', {},
       h('span', { class: 'pill pill-allergy' }, 'ALLERGY'),
       child.lines.filter((l) => l.conflicts.length).map((l) => h('span', { class: 'flag-line' },
         h('span', { class: 'allergy-words' }, `${allergenWords(info, l.conflicts)} in ${l.item_name}`),
         l.acknowledged ? null : h('span', { class: 'unconfirmed' }, ' · Not confirmed by the parent'))),
-      h('span', { class: 'sub' }, `Allergies on file: ${allergenWords(info, child.allergies)}`))
+      others.length ? h('span', { class: 'sub' }, `Also allergic to: ${allergenWords(info, others)}`) : null)
   }
   if (child.flag === 'allergy') {
     return h('td', {},

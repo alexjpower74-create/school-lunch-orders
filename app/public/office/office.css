@@ -30,6 +30,7 @@
 .entry-amount { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
 .entry.voided .entry-label, .entry.voided .entry-amount { text-decoration: line-through; color: var(--faint); }
 .entry-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.entry-error { grid-column: 1 / -1; }
 .undone { color: var(--muted); font-weight: 600; }
 
 @media (max-width: 899px) {

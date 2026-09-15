@@ -70,11 +70,12 @@ function showCode(slot, code, label) {
 function entryRow(e) {
   const undoable = (e.kind === 'payment' || e.kind === 'adjustment') && !e.voided
   const actions = h('div', { class: 'entry-actions' })
+  const error = h('p', { class: 'error entry-error', role: 'alert', hidden: true })
   const showUndo = () => actions.replaceChildren(h('button', { type: 'button', class: 'btn btn-warn void-entry', onclick: askUndo }, 'Undo'))
   function askUndo() {
     actions.replaceChildren(
       h('span', {}, `Undo this ${e.kind}? It stays in the ledger, struck through.`),
-      h('button', { type: 'button', class: 'btn btn-warn confirm-void', onclick: (ev) => voidEntry(e.id, ev.currentTarget) }, 'Yes, undo it'),
+      h('button', { type: 'button', class: 'btn btn-warn confirm-void', onclick: (ev) => voidEntry(e.id, ev.currentTarget, error) }, 'Yes, undo it'),
       h('button', { type: 'button', class: 'btn btn-quiet keep-entry', onclick: showUndo }, 'Keep it'))
   }
   if (undoable) showUndo()
@@ -84,7 +85,8 @@ function entryRow(e) {
       h('span', { class: 'entry-label' }, e.label),
       h('span', { class: 'sub' }, [e.at_label, e.note].filter(Boolean).join(' · '))),
     h('span', { class: 'entry-amount money' }, money(e.amount_cents)),
-    undoable || e.voided ? actions : null)
+    undoable || e.voided ? actions : null,
+    undoable ? error : null)
 }
 
 function renderPanel() {
@@ -94,11 +96,12 @@ function renderPanel() {
   const owing = d.balance_cents > 0
   const codeSlot = h('div', { id: 'family-code-slot' })
   const confirmSlot = h('div')
+  const codeError = h('p', { id: 'new-code-error', class: 'error', role: 'alert', hidden: true })
 
   const askNewCode = () => confirmSlot.replaceChildren(h('div', { class: 'confirm' },
     h('p', {}, `A new code stops the old one at once and signs out every phone that used it. Only do this when ${d.family.label} has lost the paper.`),
     h('div', { class: 'toolbar' },
-      h('button', { type: 'button', class: 'btn btn-warn', id: 'confirm-new-code', onclick: (ev) => newCode(ev.currentTarget, codeSlot, confirmSlot) }, 'Yes, make a new code'),
+      h('button', { type: 'button', class: 'btn btn-warn', id: 'confirm-new-code', onclick: (ev) => newCode(ev.currentTarget, codeSlot, confirmSlot, codeError) }, 'Yes, make a new code'),
       h('button', { type: 'button', class: 'btn btn-quiet', id: 'cancel-new-code', onclick: () => confirmSlot.replaceChildren() }, 'Cancel'))))
 
   panel.replaceChildren(
@@ -148,6 +151,7 @@ function renderPanel() {
       h('p', { class: 'hint' }, 'The code is only shown when it is made. If the family lost the paper, make a new one.'),
       h('button', { type: 'button', class: 'btn', id: 'new-code', onclick: askNewCode }, 'New code'),
       confirmSlot,
+      codeError,
       codeSlot),
 
     h('div', { class: 'panel-section' },
@@ -199,20 +203,23 @@ async function recordAdjustment() {
     showError(error, { message: 'Type the amount, like 4.00 for a charge or -4.00 for a credit.' })
     return
   }
-  try {
-    const res = await staffApi('POST', '/api/office/adjustments', {
-      body: { family_id: detail.family.id, amount_cents: cents, note: $('#adjust-note').value.trim() },
-    })
-    detail.balance_cents = res.balance_cents
-    detail.entries = [res.entry, ...detail.entries]
-    renderPanel()
-    await loadList()
-  } catch (err) {
-    fail(error, err)
-  }
+  // The button is disabled from the first tap until the answer, so a double tap records one adjustment.
+  await busy($('#record-adjustment'), async () => {
+    try {
+      const res = await staffApi('POST', '/api/office/adjustments', {
+        body: { family_id: detail.family.id, amount_cents: cents, note: $('#adjust-note').value.trim() },
+      })
+      detail.balance_cents = res.balance_cents
+      detail.entries = [res.entry, ...detail.entries]
+      renderPanel()
+      await loadList()
+    } catch (err) {
+      fail(error, err)
+    }
+  })
 }
 
-async function voidEntry(id, button) {
+async function voidEntry(id, button, errorEl) {
   await busy(button, async () => {
     try {
       const res = await staffApi('POST', `/api/office/entries/${encodeURIComponent(id)}/void`)
@@ -221,19 +228,19 @@ async function voidEntry(id, button) {
       renderPanel()
       await loadList()
     } catch (err) {
-      fail($('#payment-error'), err)
+      fail(errorEl, err) // next to the entry that was tapped
     }
   })
 }
 
-async function newCode(button, codeSlot, confirmSlot) {
+async function newCode(button, codeSlot, confirmSlot, errorEl) {
   await busy(button, async () => {
     try {
       const res = await staffApi('POST', `/api/office/families/${encodeURIComponent(detail.family.id)}/code`)
       confirmSlot.replaceChildren()
       showCode(codeSlot, res.code, detail.family.label)
     } catch (err) {
-      fail($('#payment-error'), err)
+      fail(errorEl, err) // next to New code
     }
   })
 }

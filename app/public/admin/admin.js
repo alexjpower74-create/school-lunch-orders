@@ -29,6 +29,14 @@ function fieldError(el, err, fields) {
   fail(el, err)
 }
 
+/** "2" → 2 when it is a whole number from min to max; blank, "1.5", "abc" or out of range → null (Number('') would quietly be 0). */
+function wholeNumber(text, min, max) {
+  const t = String(text ?? '').trim()
+  if (!/^\d+$/.test(t)) return null
+  const n = Number(t)
+  return n >= min && n <= max ? n : null
+}
+
 async function reloadSettings() {
   settings = await staffApi('GET', '/api/admin/settings')
 }
@@ -51,6 +59,11 @@ function renderSchool() {
   $('#cutoff-time').value = s.cutoff_time
   $('#year-start').value = s.year_start
   $('#year-end').value = s.year_end
+  renderRule()
+}
+
+/** The rule parents see, from /api/info (the Worker words it from the saved cut-off). */
+function renderRule() {
   $('#cutoff-rule').textContent = `Parents see: "${info.cutoff_rule_label}"`
 }
 
@@ -58,10 +71,11 @@ async function saveSchool() {
   const error = $('#school-error')
   clearMessage(error)
   clearMessage($('#school-saved'))
+  const days = wholeNumber($('#cutoff-days').value, 0, 5)
   const body = {
     school_name: $('#school-name').value.trim(),
     payment_instructions: $('#payment-instructions-input').value.trim(),
-    cutoff_days_before: Number($('#cutoff-days').value),
+    cutoff_days_before: days,
     cutoff_time: $('#cutoff-time').value.trim(),
     year_start: $('#year-start').value,
     year_end: $('#year-end').value,
@@ -70,12 +84,18 @@ async function saveSchool() {
     school_name: '#school-name', payment_instructions: '#payment-instructions-input', cutoff_days_before: '#cutoff-days',
     cutoff_time: '#cutoff-time', year_start: '#year-start', year_end: '#year-end',
   }
+  if (days === null) {
+    fieldError(error, { message: 'Type how many school days before, from 0 to 5.', field: 'cutoff_days_before' }, fields)
+    return
+  }
   await busy($('#save-school'), async () => {
     try {
       const res = await staffApi('PUT', '/api/admin/school', { body })
       settings.school = res.school
       fieldError(null, null, fields)
       flash($('#school-saved'), 'Saved.')
+      info = await staffApi('GET', '/api/info') // the parents' rule line follows the saved cut-off
+      renderRule()
     } catch (err) {
       fieldError(error, err, fields)
     }
@@ -351,7 +371,12 @@ async function saveClass() {
   const error = $('#class-error')
   clearMessage(error)
   const fields = { name: '#class-name', grade: '#class-grade', sort: '#class-sort' }
-  const body = { name: $('#class-name').value.trim(), grade: $('#class-grade').value.trim(), sort: Number($('#class-sort').value) }
+  const sort = wholeNumber($('#class-sort').value, 0, 99)
+  const body = { name: $('#class-name').value.trim(), grade: $('#class-grade').value.trim(), sort }
+  if (sort === null) {
+    fieldError(error, { message: 'Type a place in the list from 0 to 99.', field: 'sort' }, fields)
+    return
+  }
   await busy($('#save-class'), async () => {
     try {
       const res = editing.class

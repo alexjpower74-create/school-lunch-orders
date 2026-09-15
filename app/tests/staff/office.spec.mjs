@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import {
-  api, assertNoThirdParty, CODE, expectNoHorizontalScroll, expectTapTarget, fresh, paymentViaApi, PIN, shot, staffToken, tap, type, useStaffSession,
+  api, assertNoThirdParty, bearer, CODE, expectNoHorizontalScroll, expectTapTarget, fresh, isCoarse, paymentViaApi, PIN, shot, staffToken, tap,
+  type, useStaffSession,
 } from '../helpers.mjs'
 import { orderThursday, staffGet } from './setup.mjs'
 
@@ -80,6 +81,49 @@ test('an adjustment either way changes the balance to the cent', async ({ page, 
   await openFamily(page, 'fam-1')
   await expect(page.locator('#family-balance')).toHaveAttribute('data-balance-cents', '900')
   await expect(page.locator('#ledger .entry[data-kind="adjustment"]')).toHaveCount(2)
+})
+
+test('a double tap on Add adjustment records one adjustment', async ({ page, context, request }) => {
+  await openOffice(page, context, request)
+  await openFamily(page, 'fam-1')
+  await expect(page.locator('#family-balance')).toHaveAttribute('data-balance-cents', '1050')
+  await tap(page, page.locator('#family-panel details summary'), 'add an adjustment')
+  await type(page, page.locator('#adjust-amount'), '1.00')
+  await type(page, page.locator('#adjust-note'), 'Double tap check (SAMPLE)')
+  const button = page.locator('#record-adjustment')
+  await expectTapTarget(page, button, 44, 'add adjustment')
+  const box = await button.boundingBox()
+  const [x, y] = [box.x + box.width / 2, box.y + box.height / 2]
+  // Two real taps back to back, without waiting for the answer in between.
+  if (await isCoarse(page)) {
+    await page.touchscreen.tap(x, y)
+    await page.touchscreen.tap(x, y)
+  } else {
+    await page.mouse.click(x, y)
+    await page.mouse.click(x, y)
+  }
+  await expect(page.locator('#family-balance')).toHaveAttribute('data-balance-cents', /^(1150|1250)$/)
+  await page.waitForLoadState('networkidle') // let a second request, if one was sent, land before counting
+  const stored = (await staffGet(request, '/api/office/families/fam-1')).entries.filter((e) => e.kind === 'adjustment')
+  expect(stored.length, 'adjustments stored after a double tap').toBe(1)
+  await expect(page.locator('#ledger .entry[data-kind="adjustment"]'), 'adjustments in the ledger').toHaveCount(1)
+  await expect(page.locator('#family-balance')).toHaveAttribute('data-balance-cents', '1150')
+})
+
+test('a refused undo shows its words next to that entry', async ({ page, context, request }) => {
+  const office = await staffToken(request, PIN.admin)
+  await paymentViaApi(request, office, { family_id: 'fam-1', amount_cents: 500 })
+  await openOffice(page, context, request)
+  await openFamily(page, 'fam-1')
+  const entry = page.locator('#ledger .entry[data-kind="payment"]').first()
+  const id = await entry.getAttribute('data-entry')
+  await tap(page, entry.locator('button.void-entry'), 'undo')
+  // Someone at another office desk undoes the same payment before this one confirms.
+  expect((await api(request, 'POST', `/api/office/entries/${id}/void`, undefined, bearer(office))).status, 'undone elsewhere').toBe(200)
+  await tap(page, page.locator(`#ledger .entry[data-entry="${id}"] button.confirm-void`), 'yes, undo it')
+  await expect(page.locator(`#ledger .entry[data-entry="${id}"] .entry-error`), 'the refusal next to the entry that was tapped')
+    .toHaveText('That entry is already undone.')
+  await expect(page.locator('#payment-error'), 'nothing in the payment form').toBeHidden()
 })
 
 test('add a family shows the code once and it signs in', async ({ page, context, request }) => {
