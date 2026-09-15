@@ -1,4 +1,4 @@
-// Placing an order and cancelling a line (docs/API.md "Placing an order"). checkOrder is pure: the first failing check, in
+// Placing an order, cancelling a line and confirming a late allergy (docs/API.md "Placing an order"). checkOrder is pure: the first failing check, in
 // the contract's order, rejects the whole request, and nothing is stored.
 import { allergenWords, conflicts } from './allergens.js'
 import { randomId } from './auth.js'
@@ -72,7 +72,7 @@ export function checkOrder({ lines, children, items, cal, menu, existing, now })
   if (needAck.length) {
     const f = needAck[0]
     throw conflict('allergen_ack_required',
-      `${f.first_name} is allergic to ${allergenWords(f.allergens)}, and ${f.item_name} contains it. Tick "I understand" to order it anyway.`,
+      `${f.first_name} is allergic to ${allergenWords(f.allergens)}. ${f.item_name} contains ${allergenWords(f.allergens)}. Tick "I understand" to order it anyway.`,
       { lines: needAck })
   }
   return out
@@ -134,4 +134,19 @@ export async function cancelLine(c, { id }) {
   ])
   const after = await c.db.prepare(`${LINE_SELECT} WHERE l.id = ?`).bind(id).first()
   return json({ line: lineOut(after, cal, c.now), balance_cents: await balanceOf(c.db, c.family.id) })
+}
+
+// "I understand, keep it": an allergy ticked after ordering is confirmed for that line. No cut-off (nothing the kitchen counts
+// changes); refused for a line that is not active, a day that has passed, or a line with nothing to confirm.
+export async function ackLine(c, { id }) {
+  const r = await c.db.prepare(`${LINE_SELECT} WHERE l.family_id = ? AND l.id = ?`).bind(c.family.id, id).first()
+  if (!r) throw notFound("That lunch isn't on your family's orders.")
+  if (r.status !== 'active') throw conflict('bad_state', 'That lunch is already cancelled.')
+  if (r.date < c.today) throw conflict('bad_state', 'That lunch was for a day that has passed.')
+  const cal = await loadCal(c.db)
+  const line = lineOut(r, cal, c.now)
+  if (!line.conflicts.length) throw conflict('bad_state', "There's nothing to confirm on that lunch.")
+  await c.db.prepare('UPDATE lines SET ack_allergens = ?, changed_at = ? WHERE id = ?').bind(JSON.stringify(line.conflicts), c.nowIso, id).run()
+  const after = await c.db.prepare(`${LINE_SELECT} WHERE l.id = ?`).bind(id).first()
+  return json({ line: lineOut(after, cal, c.now) })
 }

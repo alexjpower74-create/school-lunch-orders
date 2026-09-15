@@ -147,3 +147,136 @@ run: npx playwright test tests/family/layout.spec.mjs --project chromium-390 --g
     .negative/family-f-see-through-bar/results/family-layout-order-page-t-2b88b-r-at-the-bottom-of-the-page-chromium-390/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== family negative:g-home-ignores-ack — 2026-09-14T23:52:54.189Z
+break: the family home never shows the red warning for an allergy ticked after ordering
+patched: app/public/family/home.js
+run: npx playwright test tests/family/home.spec.mjs --project chromium-390 --grep "an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-g-home-ignores-ack/worker)
+  ✘  1 [chromium-390] › tests/family/home.spec.mjs:80:1 › an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees (9.1s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.line[data-line="ln_7429fe4bf31ae228"]').locator('.allergen-warning')
+    Expected: "Ava is allergic to Milk. Macaroni and cheese contains Milk."
+    Error: element(s) not found
+    .negative/family-g-home-ignores-ack/results/family-home-an-allergy-tic-6165b-firms-it-the-kitchen-agrees-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:h-price-not-remembered — 2026-09-14T23:54:25.883Z
+break: the cart line no longer keeps the price seen when it was added, so a price change is never mentioned
+patched: app/public/family/order/order.js
+run: npx playwright test tests/family/order.spec.mjs --project chromium-390 --grep "a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-h-price-not-remembered/worker)
+  ✘  1 [chromium-390] › tests/family/order.spec.mjs:123:1 › a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total (8.9s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.cart-line[data-child="ch-ava"][data-item="mac"]').locator('.price-changed')
+    Expected: "Price changed: now $4.50 each (was $4.00)."
+    Error: element(s) not found
+    .negative/family-h-price-not-remembered/results/family-order-a-price-chang-c636a-tal-equals-the-placed-total-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:a-family-allergies — 2026-09-14T23:55:21.705Z
+break: the order page warns using every child's allergies instead of the selected child's
+patched: app/public/family/order/order.js
+run: npx playwright test tests/family/order.spec.mjs --project chromium-390 --grep "allergen warning for Liam and not for Ava" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-a-family-allergies/worker)
+  ✘  1 [chromium-390] › tests/family/order.spec.mjs:16:1 › allergen warning for Liam and not for Ava (8.8s)
+    Error: expect(locator).not.toHaveAttribute(expected) failed
+    Locator:  locator('.item[data-item="mac"]')
+    Expected: not "true"
+    Received: "true"
+           - unexpected value "true"
+    .negative/family-a-family-allergies/results/family-order-allergen-warning-for-Liam-and-not-for-Ava-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:b-no-warning — 2026-09-14T23:55:34.930Z
+break: the order page does not render the red .allergen-warning
+patched: app/public/family/order/order.js
+run: npx playwright test tests/family/order.spec.mjs --project chromium-390 --grep "allergen warning for Liam and not for Ava" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-b-no-warning/worker)
+  ✘  1 [chromium-390] › tests/family/order.spec.mjs:16:1 › allergen warning for Liam and not for Ava (8.6s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.item[data-item="mac"]').locator('.allergen-warning')
+    Expected: "Liam is allergic to Milk. Macaroni and cheese contains Milk."
+    Error: element(s) not found
+    .negative/family-b-no-warning/results/family-order-allergen-warning-for-Liam-and-not-for-Ava-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:c-ack-not-recorded — 2026-09-14T23:55:47.703Z
+break: "I understand, add it" adds 1 but does not record allergen_ack
+patched: app/public/family/order/order.js
+run: npx playwright test tests/family/order.spec.mjs --project chromium-390 --grep ""I understand" is required: the tap adds 1, the cart keeps the tick, unticking disables Place order, and the order stores ack_allergens" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-c-ack-not-recorded/worker)
+  ✘  1 [chromium-390] › tests/family/order.spec.mjs:42:1 › "I understand" is required: the tap adds 1, the cart keeps the tick, unticking disables Place order, and the order stores ack_allergens (8.8s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.item[data-item="mac"]').locator('.qty')
+    Expected: "1"
+    Error: element(s) not found
+    .negative/family-c-ack-not-recorded/results/family-order--I-understand-7d6cb--order-stores-ack-allergens-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:d-ignore-refusal — 2026-09-14T23:56:00.617Z
+break: the cart page treats a refusal as success: empties the cart and shows "Order placed"
+patched: app/public/family/cart/cart.js
+run: npx playwright test tests/family/order.spec.mjs --project chromium-390 --grep "a closed day has no steppers; placing after the cut-off shows #order-error naming the day, marks the line and stores nothing" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-d-ignore-refusal/worker)
+  ✘  1 [chromium-390] › tests/family/order.spec.mjs:83:1 › a closed day has no steppers; placing after the cut-off shows #order-error naming the day, marks the line and stores nothing (9.1s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator:  locator('#order-error')
+    Expected: "Ordering for Thu Sep 17 closed at 9:00 AM Wed Sep 16."
+    Received: ""
+           - unexpected value ""
+      102 |   await expect(page.locator('.cart-line[data-item="chili"]')).toHaveAttribute('data-error', 'cutoff_passed')
+    .negative/family-d-ignore-refusal/results/family-order-a-closed-day--775d8-the-line-and-stores-nothing-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:e-cover — 2026-09-14T23:56:13.906Z
+break: a transparent box rises 180 px above #cart-bar, over the last item's stepper
+patched: app/public/family/family.css
+run: npx playwright test tests/family/layout.spec.mjs --project chromium-390 --grep "order page: tap targets, and the last item's stepper is not covered by #cart-bar at the bottom of the page" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-e-cover/worker)
+  ✘  1 [chromium-390] › tests/family/layout.spec.mjs:18:1 › order page: tap targets, and the last item's stepper is not covered by #cart-bar at the bottom of the page (1.3s)
+    Error: the last item's + at the bottom of the page: something is on top
+    expect(received).toBe(expected) // Object.is equality
+    Expected: ""
+    Received: "<div id=\"cart-bar\" data-sticky-footer=\"\">
+    .negative/family-e-cover/results/family-layout-order-page-t-2b88b-r-at-the-bottom-of-the-page-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:f-see-through-bar — 2026-09-14T23:56:19.385Z
+break: #cart-bar gets a transparent background (no blur), so the cards behind it show through
+patched: app/public/family/family.css
+run: npx playwright test tests/family/layout.spec.mjs --project chromium-390 --grep "order page: tap targets, and the last item's stepper is not covered by #cart-bar at the bottom of the page" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-f-see-through-bar/worker)
+  ✘  1 [chromium-390] › tests/family/layout.spec.mjs:18:1 › order page: tap targets, and the last item's stepper is not covered by #cart-bar at the bottom of the page (1.4s)
+    Error: cart bar background is solid (alpha 0) or blurred
+    expect(received).toBe(expected) // Object.is equality
+    Expected: true
+    Received: false
+    .negative/family-f-see-through-bar/results/family-layout-order-page-t-2b88b-r-at-the-bottom-of-the-page-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:g-home-ignores-ack — 2026-09-14T23:56:25.020Z
+break: the family home never shows the red warning for an allergy ticked after ordering
+patched: app/public/family/home.js
+run: npx playwright test tests/family/home.spec.mjs --project chromium-390 --grep "an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-g-home-ignores-ack/worker)
+  ✘  1 [chromium-390] › tests/family/home.spec.mjs:80:1 › an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees (9.0s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.line[data-line="ln_5dae40394f49a746"]').locator('.allergen-warning')
+    Expected: "Ava is allergic to Milk. Macaroni and cheese contains Milk."
+    Error: element(s) not found
+    .negative/family-g-home-ignores-ack/results/family-home-an-allergy-tic-6165b-firms-it-the-kitchen-agrees-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== family negative:h-price-not-remembered — 2026-09-14T23:56:38.245Z
+break: the cart line no longer keeps the price seen when it was added, so a price change is never mentioned
+patched: app/public/family/order/order.js
+run: npx playwright test tests/family/order.spec.mjs --project chromium-390 --grep "a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total" (E2E_PORT 8606, E2E_WORKER_DIR app/.negative/family-h-price-not-remembered/worker)
+  ✘  1 [chromium-390] › tests/family/order.spec.mjs:123:1 › a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total (9.0s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator: locator('.cart-line[data-child="ch-ava"][data-item="mac"]').locator('.price-changed')
+    Expected: "Price changed: now $4.50 each (was $4.00)."
+    Error: element(s) not found
+    .negative/family-h-price-not-remembered/results/family-order-a-price-chang-c636a-tal-equals-the-placed-total-chromium-390/test-failed-1.png
+  1 failed
+RESULT: RED as intended
