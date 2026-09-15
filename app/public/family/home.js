@@ -26,8 +26,11 @@ function renderChildren(children, tools) {
 }
 
 function lineRow(line, instructions, tools) {
+  // Red means allergen on every screen: a lunch holding one of this child's allergens keeps a "Contains Milk" pill, even once the
+  // parent has said "I understand".
   const li = h('li', { class: 'line line-row', dataset: { line: line.id } },
     h('span', { class: 'what' }, `${line.first_name}, ${line.item_name} ×${line.qty}`),
+    line.conflicts.length ? h('span', { class: 'pill allergen-pill match', dataset: { allergen: line.conflicts.join(' ') } }, `Contains ${tools.words(line.conflicts)}`) : null,
     h('span', { class: 'money' }, money(line.total_cents)))
   const error = h('p', { class: 'error', role: 'alert', hidden: true })
   // An allergy ticked after ordering: the kitchen sees "Not confirmed by the parent", so the parent sees the same red warning.

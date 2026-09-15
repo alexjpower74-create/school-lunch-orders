@@ -1,6 +1,6 @@
 // "/family/history/" The family's ledger (orders, cancellations, closure credits, payments; undone ones struck through) and
 // their lunches with status and whether they were given out.
-import { $, balancePhrase, familyApi, getInfo, h, money, renderHeader, requireSession, run } from '../family.js'
+import { $, allergenTools, balancePhrase, familyApi, getInfo, h, money, renderHeader, requireSession, run } from '../family.js'
 
 const s = requireSession()
 const DELIVERY = { delivered: 'Given out', absent: 'Absent' }
@@ -13,10 +13,11 @@ function entryRow(e) {
     h('span', { class: `amount money${e.amount_cents < 0 ? ' credit' : ''}` }, money(e.amount_cents)))
 }
 
-function lineRow(l) {
+function lineRow(l, tools) {
   const statusClass = { active: 'open', cancelled: 'closed', closed: 'no-school' }[l.status]
   return h('li', { class: 'line line-row', dataset: { line: l.id, status: l.status } },
     h('span', { class: 'what' }, h('strong', {}, l.date_label), ` ${l.first_name}, ${l.item_name} ×${l.qty}`),
+    l.conflicts.length ? h('span', { class: 'pill allergen-pill match', dataset: { allergen: l.conflicts.join(' ') } }, `Contains ${tools.words(l.conflicts)}`) : null,
     h('span', { class: 'money' }, money(l.total_cents)),
     h('span', { class: `pill ${statusClass}` }, l.status_label),
     l.delivery ? h('span', { class: `pill ${l.delivery}` }, DELIVERY[l.delivery]) : null)
@@ -35,7 +36,7 @@ async function start() {
   $('payment-instructions').textContent = cents > 0 ? fam.payment_instructions : ''
   $('ledger').replaceChildren(...(ledger.entries.length ? ledger.entries.map(entryRow) : [h('li', { class: 'line-row muted' }, 'Nothing yet.')]))
   const lines = [...orders.lines].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-  $('lines').replaceChildren(...(lines.length ? lines.map(lineRow) : [h('li', { class: 'line-row muted' }, 'No lunches yet.')]))
+  $('lines').replaceChildren(...(lines.length ? lines.map((l) => lineRow(l, allergenTools(info))) : [h('li', { class: 'line-row muted' }, 'No lunches yet.')]))
   $('loading').hidden = true
   $('history').hidden = false
 }

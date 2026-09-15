@@ -154,6 +154,12 @@ the bar transparent again: red on "cart bar background is solid (alpha 0) or blu
   should read that way instead of "a payment for fam-1 that covers its first week". The demo API test asserts the signs (credit,
   zero, owing, owing), one round e-Transfer for fam-1 and the office totals showing both owing and credit.
 
+- **DONE (red means allergen on every screen):** on /family/ "Coming up" and /family/history/, any line whose `conflicts` is not
+  empty carries a small red `.allergen-pill` "Contains Milk", also once acknowledged (no warning block, no buttons); unacknowledged
+  lines keep the full warning with "I understand, keep it" and Cancel. The home spec checks Liam's acknowledged milk line has the
+  pill and no `button.ack-line`, Ava's line has neither before her allergy is ticked, and the pill stays after she confirms. Re-run:
+  `tests/family` 64 passed in four projects, page negatives 8 of 8 red.
+
 Verified on the merged branch (main's integration round 2 merged in first): `npm test` **64 tests** (18 unit, 2 empty, 40 API,
 4 without TEST_MODE) green; Playwright `tests/family` **64 passed** (16 tests × 4 projects); Worker negative controls **14 of 14**
 red; page negative controls **8 of 8** red.
