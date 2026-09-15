@@ -5,9 +5,14 @@ import { $, allergenWords, classWords, handled, showError, staffApi, startStaffP
 function label(l, info, sample) {
   let allergy = null
   if (l.conflicts.length) {
-    allergy = h('div', { class: 'label-allergen' },
-      `ALLERGY: ${allergenWords(info, l.allergies)}. Contains ${allergenWords(info, l.conflicts)}.`,
-      l.acknowledged ? null : h('span', { class: 'label-unconfirmed' }, ' Not confirmed by the parent.'))
+    // Only the allergens in this lunch, in the parent's words; the child's other allergies follow on their own line.
+    const others = l.allergies.filter((k) => !l.conflicts.includes(k))
+    allergy = [
+      h('div', { class: 'label-allergen' },
+        `ALLERGY: ${allergenWords(info, l.conflicts)}. Contains ${allergenWords(info, l.conflicts)}.`,
+        l.acknowledged ? null : h('span', { class: 'label-unconfirmed' }, ' Not confirmed by the parent.')),
+      others.length ? h('div', { class: 'label-allergies' }, `Also allergic to: ${allergenWords(info, others)}`) : null,
+    ]
   } else if (l.allergies.length) {
     allergy = h('div', { class: 'label-allergies' }, `Allergies on file: ${allergenWords(info, l.allergies)}`)
   }

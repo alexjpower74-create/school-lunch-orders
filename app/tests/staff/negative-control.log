@@ -210,3 +210,62 @@ run: npx playwright test tests/staff/office.spec.mjs --project chromium-1280 --g
     .negative/staff-adjust-double/results/staff-office-a-double-tap--a57da-ment-records-one-adjustment-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:stale-rule — 2026-09-14T23:54:28.234Z
+break: the school form does not re-read /api/info after saving, so "Parents see" keeps the old cut-off rule
+patched: app/public/admin/admin.js
+run: npx playwright test tests/staff/settings.spec.mjs --project chromium-1280 --grep "school settings save and come back after a reload" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-stale-rule/worker)
+  ✘  1 [chromium-1280] › tests/staff/settings.spec.mjs:26:1 › school settings save and come back after a reload (9.1s)
+    Error: the parents' rule line after saving, without a reload
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#cutoff-rule')
+    Expected: "Parents see: \"Order by 8:30 AM 2 school days before.\""
+    Received: "Parents see: \"Order by 9:00 AM the school day before.\""
+           - unexpected value "Parents see: "Order by 9:00 AM the school day before.""
+    .negative/staff-stale-rule/results/staff-settings-school-sett-39c07-nd-come-back-after-a-reload-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:label-all-allergies — 2026-09-14T23:55:29.090Z
+break: the label's ALLERGY part lists every allergy the child has, not just the ones in this lunch
+patched: app/public/kitchen/labels/labels.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "a conflict names only its allergen, and the other allergies follow as "Also allergic to"" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-label-all-allergies/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:124:1 › a conflict names only its allergen, and the other allergies follow as "Also allergic to" (9.0s)
+    Error: Chloe's label-allergen names only the conflict
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('.label').filter({ hasText: 'Chloe' }).filter({ hasText: 'Oatmeal raisin cookie' }).locator('.label-allergen')
+    Expected: "ALLERGY: Eggs. Contains Eggs."
+    Received: "ALLERGY: Eggs and Sesame seeds. Contains Eggs."
+           - unexpected value "ALLERGY: Eggs and Sesame seeds. Contains Eggs."
+    .negative/staff-label-all-allergies/results/staff-kitchen-a-conflict-n-79893-follow-as-Also-allergic-to--chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:label-allergen — 2026-09-14T23:55:42.298Z
+break: the kitchen label no longer renders the ALLERGY line for a conflict
+patched: app/public/kitchen/labels/labels.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "one label per active line and Liam's names Milk" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-label-allergen/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:100:1 › one label per active line and Liam's names Milk (9.0s)
+    Error: Liam's label-allergen
+    expect(locator).toHaveText(expected) failed
+    Locator: locator('.label[data-line="ln_2a4622ce41410a5c"] .label-allergen')
+    Expected: "ALLERGY: Milk. Contains Milk."
+    Error: element(s) not found
+    .negative/staff-label-allergen/results/staff-kitchen-one-label-pe-317bb--line-and-Liam-s-names-Milk-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:undo-error-place — 2026-09-14T23:58:56.774Z
+break: a refused Undo puts its words in #payment-error instead of under the entry
+patched: app/public/office/office.js
+run: npx playwright test tests/staff/office.spec.mjs --project chromium-1280 --grep "a refused undo shows its words next to that entry" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-undo-error-place/worker)
+  ✘  1 [chromium-1280] › tests/staff/office.spec.mjs:113:1 › a refused undo shows its words next to that entry (9.0s)
+    Error: the refusal next to the entry that was tapped
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('#ledger .entry[data-entry="ent_426c88d74b5f39b9"] .entry-error')
+    Expected: "That entry is already undone."
+    Received: ""
+           - unexpected value ""
+    .negative/staff-undo-error-place/results/staff-office-a-refused-und-e4606-ts-words-next-to-that-entry-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended

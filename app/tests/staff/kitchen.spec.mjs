@@ -1,8 +1,8 @@
 // Kitchen day page and labels: totals equal the orders, allergy rows first, the cut-off banner, print.
 import { expect, test } from '@playwright/test'
 import {
-  assertNoThirdParty, contrastOf, expectNoHorizontalScroll, expectTapTarget, fresh, kitchenDayViaApi, nl, PIN, setNow, shot, staffToken, tap,
-  useStaffSession,
+  assertNoThirdParty, CODE, contrastOf, expectNoHorizontalScroll, expectTapTarget, familyToken, fresh, kitchenDayViaApi, nl, PIN, placeOrderViaApi,
+  setNow, shot, staffToken, tap, useStaffSession,
 } from '../helpers.mjs'
 import { EXPECT_CLASSES, EXPECT_ITEM_COUNT, EXPECT_ITEMS, EXPECT_LINES, orderThursday, THU } from './setup.mjs'
 
@@ -119,6 +119,33 @@ test("one label per active line and Liam's names Milk", async ({ page, context, 
   const noah = labels.find((l) => l.first_name === 'Noah' && l.item_name === 'Beef chili with rice')
   await expect(page.locator(`.label[data-line="${noah.line_id}"] .label-allergies`)).toHaveText('Allergies on file: Peanuts and Tree nuts')
   if (testInfo.project.name.endsWith('1280')) await shot(page, testInfo, 'staff', 'labels')
+})
+
+test('a conflict names only its allergen, and the other allergies follow as "Also allergic to"', async ({ page, context, request }) => {
+  // Chloe (eggs, sesame) gets a cookie (eggs) on Thursday, in this test only.
+  await placeOrderViaApi(request, await familyToken(request, CODE.emmaJackChloe),
+    [{ child_id: 'ch-chloe', date: THU, item_id: 'cookie', qty: 1, allergen_ack: true }])
+  await useStaffSession(context, request, PIN.kitchen)
+  await openThursday(page)
+
+  const chloe = page.locator('#children tr.child-row[data-child="ch-chloe"]')
+  await expect(chloe).toHaveAttribute('data-flag', 'conflict')
+  await expect(chloe).toContainText('Eggs in Oatmeal raisin cookie')
+  await expect(chloe, "Chloe's kitchen row: the other allergy on its own line").toContainText('Also allergic to: Sesame seeds')
+  await expect(chloe).not.toContainText('Eggs and Sesame seeds')
+  await expect(page.locator('#children tr.child-row[data-child="ch-liam"]'), 'Liam has no other allergies').not.toContainText('Also allergic to')
+
+  await tap(page, page.locator('#print-labels'), 'print labels')
+  const cookie = page.locator('.label').filter({ hasText: 'Chloe' }).filter({ hasText: 'Oatmeal raisin cookie' })
+  await expect(cookie).toHaveCount(1)
+  await expect(cookie.locator('.label-allergen'), "Chloe's label-allergen names only the conflict").toHaveText('ALLERGY: Eggs. Contains Eggs.')
+  await expect(cookie.locator('.label-allergies')).toHaveText('Also allergic to: Sesame seeds')
+  const chili = page.locator('.label').filter({ hasText: 'Chloe' }).filter({ hasText: 'Beef chili with rice' })
+  await expect(chili.locator('.label-allergen')).toHaveCount(0)
+  await expect(chili.locator('.label-allergies')).toHaveText('Allergies on file: Eggs and Sesame seeds')
+  const liam = page.locator('.label').filter({ hasText: 'Liam' })
+  await expect(liam.locator('.label-allergen')).toHaveText('ALLERGY: Milk. Contains Milk.')
+  await expect(liam.locator('.label-allergies')).toHaveCount(0)
 })
 
 test('print emulation gives a white sheet and hides buttons', async ({ page, context, request }) => {
