@@ -2,8 +2,8 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import {
-  api, assertNoThirdParty, CODE, expectNoHorizontalScroll, expectTapTarget, fresh, isCoarse, paymentViaApi, PIN, shot, staffToken, tap, type,
-  useStaffSession,
+  api, assertNoThirdParty, bearer, CODE, expectNoHorizontalScroll, expectTapTarget, fresh, isCoarse, paymentViaApi, PIN, shot, staffToken, tap,
+  type, useStaffSession,
 } from '../helpers.mjs'
 import { orderThursday, staffGet } from './setup.mjs'
 
@@ -108,6 +108,22 @@ test('a double tap on Add adjustment records one adjustment', async ({ page, con
   expect(stored.length, 'adjustments stored after a double tap').toBe(1)
   await expect(page.locator('#ledger .entry[data-kind="adjustment"]'), 'adjustments in the ledger').toHaveCount(1)
   await expect(page.locator('#family-balance')).toHaveAttribute('data-balance-cents', '1150')
+})
+
+test('a refused undo shows its words next to that entry', async ({ page, context, request }) => {
+  const office = await staffToken(request, PIN.admin)
+  await paymentViaApi(request, office, { family_id: 'fam-1', amount_cents: 500 })
+  await openOffice(page, context, request)
+  await openFamily(page, 'fam-1')
+  const entry = page.locator('#ledger .entry[data-kind="payment"]').first()
+  const id = await entry.getAttribute('data-entry')
+  await tap(page, entry.locator('button.void-entry'), 'undo')
+  // Someone at another office desk undoes the same payment before this one confirms.
+  expect((await api(request, 'POST', `/api/office/entries/${id}/void`, undefined, bearer(office))).status, 'undone elsewhere').toBe(200)
+  await tap(page, page.locator(`#ledger .entry[data-entry="${id}"] button.confirm-void`), 'yes, undo it')
+  await expect(page.locator(`#ledger .entry[data-entry="${id}"] .entry-error`), 'the refusal next to the entry that was tapped')
+    .toHaveText('That entry is already undone.')
+  await expect(page.locator('#payment-error'), 'nothing in the payment form').toBeHidden()
 })
 
 test('add a family shows the code once and it signs in', async ({ page, context, request }) => {
