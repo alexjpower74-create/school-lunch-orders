@@ -79,12 +79,22 @@ test('a storm closure added through the API shows as a credit in history', async
 
 test('an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees', async ({ page, context, request }) => {
   const s = await useFamilySession(context, request, CODE.liamAva)
-  const placed = await placeOrderViaApi(request, s.token, [{ child_id: 'ch-ava', date: '2026-09-17', item_id: 'mac', qty: 1 }])
-  const lineId = placed.order.lines[0].id
+  const placed = await placeOrderViaApi(request, s.token, [
+    { child_id: 'ch-ava', date: '2026-09-17', item_id: 'mac', qty: 1 },
+    { child_id: 'ch-liam', date: '2026-09-17', item_id: 'milk', qty: 1, allergen_ack: true },
+  ])
+  const lineId = placed.order.lines.find((l) => l.child_id === 'ch-ava').id
+  const liamId = placed.order.lines.find((l) => l.child_id === 'ch-liam').id
   await page.goto('/family/')
   const line = page.locator(`.line[data-line="${lineId}"]`)
   await expect(line).toContainText('Ava, Macaroni and cheese ×1')
   await expect(line.locator('.allergen-warning'), 'no warning before the allergy is ticked').toHaveCount(0)
+  const liamLine = page.locator(`.line[data-line="${liamId}"]`)
+  await expect(liamLine.locator('.allergen-pill'), "Liam's acknowledged milk keeps a red pill").toHaveText('Contains Milk')
+  await expect(liamLine.locator('button.ack-line')).toHaveCount(0)
+  await expect(liamLine.locator('.allergen-warning')).toHaveCount(0)
+  await expect(line.locator('.allergen-pill'), 'Ava has no allergy yet: no pill').toHaveCount(0)
+  await expect(line.locator('button.ack-line')).toHaveCount(0)
 
   await page.goto('/family/children/')
   await tap(page, page.locator('.child-row[data-child="ch-ava"] .edit-child'), 'Edit Ava')
@@ -104,11 +114,12 @@ test('an allergy ticked after ordering: home shows the red warning and "I unders
 
   await tap(page, line.locator('button.ack-line'), 'I understand, keep it')
   await expect(line.locator('.allergen-warning')).toHaveCount(0)
+  await expect(line.locator('.allergen-pill'), 'the pill stays once confirmed').toHaveText('Contains Milk')
   await expect(line.locator('button.ack-line')).toHaveCount(0)
   await expect(line).toBeVisible()
   expect((await kitchenLine()).acknowledged, 'the kitchen agrees').toBe(true)
   const lines = await familyOrdersViaApi(request, s.token)
-  expect(lines[0]).toMatchObject({ conflicts: ['milk'], acknowledged: true, ack_allergens: ['milk'] })
+  expect(lines.find((l) => l.id === lineId)).toMatchObject({ conflicts: ['milk'], acknowledged: true, ack_allergens: ['milk'] })
   await page.reload()
   await expect(line.locator('.allergen-warning'), 'still confirmed after a reload').toHaveCount(0)
 })
