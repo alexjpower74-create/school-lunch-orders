@@ -28,8 +28,29 @@ TBD-FINAL-QA: sha, port, every suite's passed / failed / skipped, negative contr
   closed lines. The same read-then-write race on `over_max` is a known gap.
 - **sl1 on sl2's staff pages:** a blank cut-off "days before" saved as 0 (the parents' rule silently became "on the day"), the
   same on class sort; the settings "Parents see" line stayed stale after Save; a double tap on the office adjustment recorded two
-  adjustments; refusal words shown away from the button tapped. TBD: sl2's fixes and their negative controls.
-- **sl2 on sl1's parent pages:** TBD.
+  adjustments; refusal words shown away from the button tapped. All four fixed by sl2 with tests; negative controls (h) blank
+  saved as 0, (i) adjustment guard removed (red on both runs, so the double-tap race is real in Playwright), (j) the rule line not
+  re-read, (l) a refused Undo shown in the wrong place all went red.
+- **sl2 on sl1's parent pages:** four real mismatches. (1) The kitchen label listed all of a child's allergies where the parent's
+  warning named only the conflict → labels now lead with the conflict (sl2, negative (k)). (2) The Worker's refusal and the page's
+  warning used different words for the same conflict → one wording everywhere (sl1). (3) **Safety gap:** a parent who ticked an
+  allergy after ordering saw nothing while the kitchen saw "Not confirmed by the parent" → the family line now carries its
+  conflicts, home shows the red warning with "I understand, keep it" or Cancel, and a new route records the confirmation (sl1,
+  Worker negative 14, page negative (g)). (4) The cart used prices cached when an item was added → the cart says when a price has
+  changed (sl1, page negative (h)).
+- **sl2 on its own labels (after the lead asked for conflict-first wording):** the extra allergy line can be clipped on a 1-inch
+  printed label, because the label hides overflow. A label that silently hides allergy words is the one failure this app cannot
+  have. Fixed by sl2 (a9cd1c8): shorter print wording ("ALLERGY: Eggs", "Also: Sesame seeds", "Gluten" on labels only,
+  "(not confirmed)" when the parent hasn't confirmed); labels drawn at their printed size on screen too; a fit step that, only
+  while a label still overflows, goes dense, then replaces the extra line with "More allergies: see the kitchen list", then shortens
+  the item and class lines, and never shortens the ALLERGY line; anything still too full is counted on the page. sl2 also found
+  that a flex line with hidden overflow could shrink to nothing without the label ever reporting overflow (`flex: none` on every
+  line). Test in print emulation: a SAMPLE child with all 12 allergies ordering the 4-allergen cookie, beside the normal children;
+  every label's content fits (scrollHeight ≤ clientHeight + 1, no line wider than its box) and the worst case shows its ALLERGY line
+  in full. Negative control (m), fit turned off, went red. Not checked on real label paper.
+- **Lead on the demo:** every seeded family owed money, so the office never showed a credit or "Paid up" → sl1 seeded one family
+  in credit and one paid up, with a test of the four balance signs. Acknowledged conflict lines on home had no allergen marking →
+  a red "Contains Milk" pill (sl1).
 - **Lead on the screenshots:** sl2's phone header took a quarter of the teacher's screen (tightened); sl1's sticky cart bar let
   card text read through at 390 (made solid, with a check and a negative control that makes it transparent again); the
   ingredients disclosure looked like an empty heading (chevron added).
