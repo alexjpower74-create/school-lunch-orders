@@ -48,15 +48,15 @@ Then open <http://127.0.0.1:8601/>. Everything is SAMPLE and seeded around today
 
 ## Tests
 
-From a QA worktree pinned to `TBD-FINAL-SHA`, port 8609:
+One run from a QA worktree pinned to `ffd6dc7` (the code on main), port 8609, 2026-09-14 21:56 NDT:
 
 | Suite | Command | Result |
 |---|---|---|
-| Worker (unit, empty D1, API, without TEST_MODE) | `npm run test:worker` | TBD-FINAL-QA |
-| Worker negative controls | `npm run test:negative` | TBD-FINAL-QA |
-| Playwright, chromium + webkit at 390 and 1280 | `npm run test:e2e` (after `cd app && npm ci`) | TBD-FINAL-QA |
-| Page negative controls (family, staff, journey) | `npm run test:e2e:negative` | TBD-FINAL-QA |
-| Allergen quotes | `npm run check:allergens` | TBD-FINAL-QA |
+| Worker (unit, empty D1, API, without TEST_MODE) | `npm run test:worker` | 64 passed, 0 failed (18 unit, 2 empty D1, 40 API, 4 without TEST_MODE) |
+| Worker negative controls | `npm run test:negative` | 14 of 14 red |
+| Playwright, chromium + webkit at 390 and 1280 | `npm run test:e2e` (after `cd app && npm ci`) | 192 passed, 8 skipped (allowed: settings at 390, the journey's 390 runs), 0 failed |
+| Page negative controls (family, staff, journey) | `npm run test:e2e:negative` | 8 of 8, 13 of 13, 1 of 1 red |
+| Allergen quotes | `npm run check:allergens` | 6 of 6 quotes found word for word; the self-test goes red |
 
 Details, negative controls and what the cross-reviews found: `docs/build-report.md`.
 
@@ -76,6 +76,13 @@ Not done tonight; Alexander's call. Full steps in `docs/DEPLOY.md`.
 - **Needs Alexander:** whether a real school, parent council or NLSchools lets this hold children's allergy information, and the
   privacy notice and year-end clean-out that would go with it; a person at the school checking every menu item's allergens against
   the real labels; the deploy.
-- **Known gaps:** TBD-FINAL-QA (see `docs/build-report.md`).
+- **Known gaps** (details in `docs/build-report.md`):
+  - Two orders sent at the same instant for the same child, day and item could together pass that item's daily maximum.
+  - The order page's cart bar keeps the price from when the page loaded (the cart page itself shows a changed price).
+  - Labels were checked in the browser's print layout, never on a real label sheet or printer; phones and printers are emulated.
+  - No privacy notice, no year-end clean-out of children's allergies, one school per deployment.
+  - Nothing is texted or emailed (on purpose); a lost family code means the office makes a new one.
+  - Two children with the same first name in one room are told apart only by what the parent types.
+  - Where a refused "New code" message appears on the office page has no test; no screen-reader pass was done.
 - **Contract and reasoning:** `PLAN.md` (the build contract), `docs/API.md` (every route and rule), `DECISIONS.md` (the calls made
   overnight), `docs/ALLERGENS.md` (sources).

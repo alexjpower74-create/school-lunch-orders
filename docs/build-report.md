@@ -5,7 +5,22 @@ Overnight build 2026-09-14. Lead `sl-lead` (contract, integration, QA, journey);
 
 ## Final QA
 
-TBD-FINAL-QA: sha, port, every suite's passed / failed / skipped, negative controls, allergen check.
+**Sha `ffd6dc7`** (main + sl1 `2a53574` + sl2 `6d59a0a`; main was fast-forwarded to exactly this commit), QA worktree pinned with
+`rig qa --ref`, port 8609, 2026-09-14 21:56 NDT. One run of the lead's final QA script, every exit code read directly, nothing
+re-run:
+
+| Check | Result |
+|---|---|
+| Worker suite (`worker/tests/run.mjs`) | **64 passed, 0 failed, 0 skipped**: unit 18, empty D1 2, API 40, and 4 on a Worker without TEST_MODE set up by `tools/first-setup.mjs` |
+| Worker negative controls | **14 of 14 red** |
+| Playwright, chromium + webkit at 390 and 1280, real input | **192 passed, 8 skipped, 0 failed**. Skips: 6 menu-grid and settings-screenshot cases at 390 (PLAN allows), and the journey's 2 runs under the 390 projects (it runs once per engine with its own 390 phone contexts) |
+| Family page negative controls | **8 of 8 red** |
+| Staff page negative controls | **13 of 13 red** |
+| Journey negative control | **1 of 1 red** |
+| Allergen quotes | **6 of 6** found word for word in the saved government pages; the self-test (one changed word) goes red |
+
+36 of 36 negative controls went red for the named check. The same script on `d558746` (before sl2's label fit fix) was also all
+green (Playwright 188 passed, staff negatives 12 of 12). Commits after `ffd6dc7` on main are documentation and screenshots only.
 
 ## QA history (every number from a worktree pinned to a sha, never the shared tree)
 
@@ -16,7 +31,10 @@ TBD-FINAL-QA: sha, port, every suite's passed / failed / skipped, negative contr
 | 21:0x | 5dacefa (sl2) | Playwright tests/staff after the phone header CSS | 78 passed, 6 skipped, 0 failed; merged |
 | 21:0x | 6ddd47e (sl1) | Worker suite; Worker negative controls | 60 passed, 0 failed; 13 of 13 red; merged |
 | 21:1x | 4292a4a (integration: sl1 0cc9e24 + sl2 ebce23e) | Worker suite; all Playwright | Worker 62 passed; Playwright 162 passed, 8 skipped, 2 failed: the journey in both engines, on stale "lunches" words in the lead's own spec (the page said "7 items for 3 families … $20.00", the hand-worked numbers). Not merged |
-| TBD | TBD | integration round 2 | TBD |
+| 21:2x | c66e6c0 (integration: sl1 5850220 + sl2 4bdf65c) | Worker suite; all Playwright | Worker 62 passed; Playwright 162 passed, 8 skipped, 2 failed: the journey in both engines at its last step, because the lead's spec reused a kitchen session that had correctly expired after 12 hours. Spec fixed; merged |
+| 21:3x | b5db569 (integration: sl1 662c3e5) | Worker suite; all Playwright | Worker 64 passed; Playwright 172 passed, 8 skipped, **0 failed**; merged |
+| 21:45 | d558746 (integration: sl1 2a53574 + sl2 36cefc0) | the whole final QA script | all green (Playwright 188 passed; 35 of 35 negative controls red) |
+| 21:56 | **ffd6dc7** (integration: sl1 2a53574 + sl2 6d59a0a) | the whole final QA script | **all green**, see Final QA; main fast-forwarded to it |
 
 ## Cross-reviews (every real defect crossed a slice boundary)
 
@@ -75,4 +93,21 @@ TBD-FINAL-QA: sha, port, every suite's passed / failed / skipped, negative contr
 
 ## Known gaps
 
-TBD-FINAL-QA.
+- **over_max race** (lead review, sl1): the check reads a child's existing lines, then the order batch writes, so two requests at
+  the same instant for the same child, day and item could together pass the maximum. A per-(child, date, item) guard row written
+  in the batch would close it.
+- **Order page cart bar price** (sl1): keeps the price from when the order page loaded until it reloads; the cart page shows
+  "Price changed" and the placed total is always the Worker's.
+- **Paper** (sl2): the label fit is measured in the browser's print layout (what is sent to the printer), not on a real Letter
+  sheet of 2⅝ × 1 inch labels. Real printer margins and scaling are untested.
+- **New code refusal placement** (sl2): a refused "New code" can only happen with a 401 or 403 from the Worker, which go to
+  sign-in or the forbidden screen, so its placement has no test.
+- **Privacy** (lead): children's first names, rooms and allergies are personal health information; there is no privacy notice,
+  no consent wording and no year-end clean-out. A school or NLSchools decides this before real use.
+- **Scope** (lead): one school per deployment; nothing is texted or emailed; a lost code means a new code from the office;
+  two children with the same first name in one room are told apart only by what the parent types; any teacher can open any
+  class (for substitutes).
+- **Devices** (all): Playwright emulation of phones (390) and laptops (1280) in Chromium and WebKit; no real phones, tablets or
+  printers, and no screen-reader pass.
+- A closure re-added at the same test instant after a DELETE would count the first closure's lines in its answer (the money is
+  right); only reachable with a pinned test clock (sl1).
