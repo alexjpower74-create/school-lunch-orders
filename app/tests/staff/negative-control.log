@@ -269,3 +269,45 @@ run: npx playwright test tests/staff/office.spec.mjs --project chromium-1280 --g
     .negative/staff-undo-error-place/results/staff-office-a-refused-und-e4606-ts-words-next-to-that-entry-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== staff negative:label-no-fit — 2026-09-15T00:11:25.617Z
+break: labels.js fit() does nothing, so a label too full for 1 inch is printed with its words cut off
+patched: app/public/kitchen/labels/labels.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "at print no label cuts off its words, even for a child with every allergy" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-label-no-fit/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:151:1 › at print no label cuts off its words, even for a child with every allergy (643ms)
+    Error: labels whose words are cut off at print
+    expect(received).toEqual(expected) // deep equality
+    - Expected  - 1
+    + Received  + 3
+    .negative/staff-label-no-fit/results/staff-kitchen-at-print-no--ebaf3--a-child-with-every-allergy-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:label-all-allergies — 2026-09-15T00:11:30.312Z
+break: the label's ALLERGY part lists every allergy the child has, not just the ones in this lunch
+patched: app/public/kitchen/labels/labels.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "a conflict names only its allergen, and the other allergies follow as "Also allergic to"" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-label-all-allergies/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:124:1 › a conflict names only its allergen, and the other allergies follow as "Also allergic to" (8.9s)
+    Error: Chloe's label-allergen names only the conflict
+    expect(locator).toHaveText(expected) failed
+    Locator:  locator('.label').filter({ hasText: 'Chloe' }).filter({ hasText: 'Oatmeal raisin cookie' }).locator('.label-allergen')
+    Expected: "ALLERGY: Eggs"
+    Received: "ALLERGY: Eggs and Sesame seeds"
+           - unexpected value "ALLERGY: Eggs and Sesame seeds"
+    .negative/staff-label-all-allergies/results/staff-kitchen-a-conflict-n-79893-follow-as-Also-allergic-to--chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== staff negative:label-allergen — 2026-09-15T00:11:43.444Z
+break: the kitchen label no longer renders the ALLERGY line for a conflict
+patched: app/public/kitchen/labels/labels.js
+run: npx playwright test tests/staff/kitchen.spec.mjs --project chromium-1280 --grep "one label per active line and Liam's names Milk" (E2E_PORT 8607, E2E_WORKER_DIR app/.negative/staff-label-allergen/worker)
+  ✘  1 [chromium-1280] › tests/staff/kitchen.spec.mjs:100:1 › one label per active line and Liam's names Milk (8.9s)
+    Error: Liam's label-allergen
+    expect(locator).toHaveText(expected) failed
+    Locator: locator('.label[data-line="ln_41677bbc3801b481"] .label-allergen')
+    Expected: "ALLERGY: Milk"
+    Error: element(s) not found
+    .negative/staff-label-allergen/results/staff-kitchen-one-label-pe-317bb--line-and-Liam-s-names-Milk-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended

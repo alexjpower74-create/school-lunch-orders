@@ -8,8 +8,8 @@ process.exit(pageNegative({
   why: "the label's ALLERGY part lists every allergy the child has, not just the ones in this lunch",
   patches: [{
     file: 'kitchen/labels/labels.js',
-    from: '`ALLERGY: ${allergenWords(info, l.conflicts)}. Contains',
-    to: '`ALLERGY: ${allergenWords(info, l.allergies)}. Contains',
+    from: "h('div', { class: 'label-allergen' }, `ALLERGY: ${words(l.conflicts)}`,",
+    to: "h('div', { class: 'label-allergen' }, `ALLERGY: ${words(l.allergies)}`,",
   }],
   spec: 'kitchen.spec.mjs',
   grep: 'a conflict names only its allergen, and the other allergies follow as "Also allergic to"',

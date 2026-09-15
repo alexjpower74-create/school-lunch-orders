@@ -1,8 +1,8 @@
 // Kitchen day page and labels: totals equal the orders, allergy rows first, the cut-off banner, print.
 import { expect, test } from '@playwright/test'
 import {
-  assertNoThirdParty, CODE, contrastOf, expectNoHorizontalScroll, expectTapTarget, familyToken, fresh, kitchenDayViaApi, nl, PIN, placeOrderViaApi,
-  setNow, shot, staffToken, tap, useStaffSession,
+  api, assertNoThirdParty, bearer, CODE, contrastOf, expectNoHorizontalScroll, expectTapTarget, familyToken, fresh, kitchenDayViaApi, nl, NOW,
+  PIN, placeOrderViaApi, setNow, shot, staffToken, tap, useStaffSession,
 } from '../helpers.mjs'
 import { EXPECT_CLASSES, EXPECT_ITEM_COUNT, EXPECT_ITEMS, EXPECT_LINES, orderThursday, THU } from './setup.mjs'
 
@@ -111,7 +111,7 @@ test("one label per active line and Liam's names Milk", async ({ page, context, 
   await expect(page.locator('.label')).toHaveCount(EXPECT_LINES)
 
   const liamMac = labels.find((l) => l.first_name === 'Liam' && l.item_name === 'Macaroni and cheese')
-  await expect(page.locator(`.label[data-line="${liamMac.line_id}"] .label-allergen`), "Liam's label-allergen").toHaveText('ALLERGY: Milk. Contains Milk.')
+  await expect(page.locator(`.label[data-line="${liamMac.line_id}"] .label-allergen`), "Liam's label-allergen").toHaveText('ALLERGY: Milk')
   const avaMac = labels.find((l) => l.first_name === 'Ava' && l.item_name === 'Macaroni and cheese')
   await expect(page.locator(`.label[data-line="${avaMac.line_id}"]`)).toContainText('Macaroni and cheese ×1')
   await expect(page.locator(`.label[data-line="${avaMac.line_id}"] .label-allergen`)).toHaveCount(0)
@@ -138,14 +138,59 @@ test('a conflict names only its allergen, and the other allergies follow as "Als
   await tap(page, page.locator('#print-labels'), 'print labels')
   const cookie = page.locator('.label').filter({ hasText: 'Chloe' }).filter({ hasText: 'Oatmeal raisin cookie' })
   await expect(cookie).toHaveCount(1)
-  await expect(cookie.locator('.label-allergen'), "Chloe's label-allergen names only the conflict").toHaveText('ALLERGY: Eggs. Contains Eggs.')
-  await expect(cookie.locator('.label-allergies')).toHaveText('Also allergic to: Sesame seeds')
+  await expect(cookie.locator('.label-allergen'), "Chloe's label-allergen names only the conflict").toHaveText('ALLERGY: Eggs')
+  await expect(cookie.locator('.label-allergies')).toHaveText('Also: Sesame seeds')
   const chili = page.locator('.label').filter({ hasText: 'Chloe' }).filter({ hasText: 'Beef chili with rice' })
   await expect(chili.locator('.label-allergen')).toHaveCount(0)
   await expect(chili.locator('.label-allergies')).toHaveText('Allergies on file: Eggs and Sesame seeds')
   const liam = page.locator('.label').filter({ hasText: 'Liam' })
-  await expect(liam.locator('.label-allergen')).toHaveText('ALLERGY: Milk. Contains Milk.')
+  await expect(liam.locator('.label-allergen')).toHaveText('ALLERGY: Milk')
   await expect(liam.locator('.label-allergies')).toHaveCount(0)
+})
+
+test('at print no label cuts off its words, even for a child with every allergy', async ({ page, context, request }) => {
+  // The worst case, on Thursday and in this test only: Zoe (Owen's family) has every allergy ticked and gets the cookie (4 allergens).
+  const info = await (await request.get('/api/info', { headers: { 'X-Test-Now': NOW } })).json()
+  const owen = await familyToken(request, CODE.owen)
+  const made = await api(request, 'POST', '/api/family/children',
+    { first_name: 'Zoe', class_id: 'room-3', allergies: info.allergens.map((a) => a.key) }, bearer(owen))
+  expect(made.status, `add the worst-case child: ${JSON.stringify(made.body)}`).toBe(201)
+  await placeOrderViaApi(request, owen, [{ child_id: made.body.child.id, date: THU, item_id: 'cookie', qty: 1, allergen_ack: true }])
+
+  await useStaffSession(context, request, PIN.kitchen)
+  await page.goto(`/kitchen/labels/?date=${THU}`)
+  await expect(page.locator('.label')).toHaveCount(EXPECT_LINES + 1)
+  await expect(page.locator('#labels-too-full'), 'no label reported too full').toBeHidden()
+  await page.emulateMedia({ media: 'print' })
+
+  const cut = await page.locator('.label').evaluateAll((els) => els
+    .filter((e) => e.scrollHeight > e.clientHeight + 1 ||
+      [...e.children].some((c) => !c.classList.contains('shorten') && c.scrollWidth > c.clientWidth + 1))
+    .map((e) => e.textContent))
+  expect(cut, 'labels whose words are cut off at print').toEqual([])
+
+  const zoe = page.locator('.label').filter({ hasText: 'Zoe' })
+  await expect(zoe.locator('.label-allergen'), "the worst case's ALLERGY line in full").toHaveText('ALLERGY: Eggs, Milk, Wheat and triticale and Gluten')
+  const inside = await zoe.evaluate((lab) => {
+    const a = lab.querySelector('.label-allergen').getBoundingClientRect()
+    const b = lab.getBoundingClientRect()
+    return a.top >= b.top - 0.5 && a.bottom <= b.bottom + 0.5 && a.left >= b.left - 0.5 && a.right <= b.right + 0.5
+  })
+  expect(inside, "the worst case's ALLERGY line sits inside its label").toBe(true)
+  const conflicts = ['eggs', 'milk', 'wheat_triticale', 'gluten']
+  const others = info.allergens.filter((a) => !conflicts.includes(a.key)).map((a) => (a.key === 'gluten' ? 'Gluten' : a.label))
+  const everyOther = `Also: ${others.slice(0, -1).join(', ')} and ${others.at(-1)}`
+  expect([everyOther, 'More allergies: see the kitchen list'], "the worst case's other allergies: every one, or the words to see the kitchen list")
+    .toContain((await zoe.locator('.label-allergies').textContent()).trim())
+
+  const jack = page.locator('.label').filter({ hasText: 'Jack' }).filter({ hasText: 'Macaroni and cheese' })
+  await expect(jack.locator('.label-item')).toHaveText('Macaroni and cheese ×1')
+  await expect(jack.locator('.label-class')).toHaveText('Room 4 · Grade 2')
+  await expect(jack.locator('.label-allergen, .label-allergies')).toHaveCount(0)
+  await expect(jack, 'a normal label keeps its normal type').not.toHaveClass(/dense/)
+  const liam = page.locator('.label').filter({ hasText: 'Liam' })
+  await expect(liam.locator('.label-allergen')).toHaveText('ALLERGY: Milk')
+  await expect(liam, "Liam's label keeps its normal type").not.toHaveClass(/dense/)
 })
 
 test('print emulation gives a white sheet and hides buttons', async ({ page, context, request }) => {
