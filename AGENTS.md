@@ -23,7 +23,10 @@ Read PLAN.md first (the Rig contract), then docs/API.md (the contract between sl
 
 ## Rules that bite here
 
-- **Local only.** `wrangler dev --local`. No `wrangler deploy`, `secret put`, `d1 create`, `--remote`, Pages or DNS.
+- **Deploys only when Alexander says so (he did on 2026-09-15).** Live at https://school-lunch-orders.alexjpower74.workers.dev
+  (Worker `school-lunch-orders`, D1 `school-lunch-orders`, SAMPLE seed). Day to day: `wrangler dev --local`; never `--remote`
+  or `wrangler deploy` without his word. Never set `TEST_MODE` on the live Worker.
+- **Public repo.** Run `check-no-personal-data .` before every push; no secrets, machine names or home paths.
 - **No payments, nothing sent.** The app shows the school's payment instructions; the office records what arrived.
 - **Red means allergen.** Only that child's own ticked allergies trigger the warning, and the server refuses an order line with a
   conflict unless the parent said "I understand". The app shows what the school listed; it never calls an item safe.

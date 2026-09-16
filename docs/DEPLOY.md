@@ -1,7 +1,17 @@
-# Deploying School Lunch Orders (for Alexander, when he decides to)
+# Deploying School Lunch Orders
 
-Nothing here has been run. Tonight's build is local only (`wrangler dev --local`). Every command below touches Cloudflare
-and is Alexander's call.
+## What is live (2026-09-15, Alexander's go)
+
+- App + API: <https://school-lunch-orders.alexjpower74.workers.dev/> (one Worker `school-lunch-orders`, version `0336c511`)
+- D1 `school-lunch-orders`, id `0a284cf1-d658-40e3-9a67-dea5b14d3b55`, migration `0001_init.sql` applied with `--remote`
+- Cron `0 7 * * *` deployed. No secrets, no vars. `TEST_MODE` is not set, so `/api/test/*` answers 404 (checked).
+- Data: the SAMPLE demo scenario. Because the seed route only exists under `TEST_MODE`, the seed was run against a local
+  copy (`wrangler dev --local --var TEST_MODE:1`, then `POST /api/test/seed`), the rows dumped with `sqlite3 .dump` (INSERTs
+  only, no `d1_migrations` or `_cf_METADATA`) and loaded with `wrangler d1 execute school-lunch-orders --remote --file`. Repeat
+  that to re-seed (empty the tables first) if the SAMPLE orders drift too far from today.
+- Redeploy: `cd worker && npx wrangler deploy`. Deploy does not migrate; new migrations need `--remote` first.
+
+Every command below touches Cloudflare and is Alexander's call. The steps are kept for a real school's own deployment.
 
 ## What it is on Cloudflare
 

@@ -2,7 +2,7 @@
   "name": "school-lunch-orders",
   "private": true,
   "type": "module",
-  "description": "Hot lunch pre-orders for a Newfoundland school: parents order on their phone, the kitchen gets totals with allergens flagged. Local build; see README.md.",
+  "description": "Hot lunch pre-orders for a Newfoundland school: parents order on their phone, the kitchen gets totals with allergens flagged. Live with SAMPLE data; see README.md.",
   "scripts": {
     "demo": "node demo.mjs",
     "test:worker": "cd worker && npm test",

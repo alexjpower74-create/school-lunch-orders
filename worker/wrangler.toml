@@ -1,4 +1,4 @@
-# School Lunch Orders Worker. Local only tonight: wrangler dev --local. Never deploy, never --remote.
+# School Lunch Orders Worker. Deployed 2026-09-15 (Alexander's go) with the SAMPLE school; see docs/DEPLOY.md.
 # TEST_MODE is never set here: tests pass --var TEST_MODE:1 on the command line.
 name = "school-lunch-orders"
 main = "src/index.js"
@@ -12,7 +12,7 @@ run_worker_first = ["/api/*"]
 [[d1_databases]]
 binding = "DB"
 database_name = "school-lunch-orders"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "0a284cf1-d658-40e3-9a67-dea5b14d3b55"
 migrations_dir = "migrations"
 
 # Daily housekeeping: expired sessions and old PIN / family-code attempts.

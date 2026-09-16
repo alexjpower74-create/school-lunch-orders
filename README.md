@@ -4,9 +4,21 @@ Hot lunch pre-orders for a Newfoundland school, its parent council or its lunch 
 envelopes. Parents order on their phone with a family code (no email, **no payments taken**); the kitchen gets totals by item and
 class with **allergens flagged** and prints labels; teachers mark lunches given out; the office keeps the ledger.
 
-Built overnight 2026-09-14 (lead `sl-lead`, slices `sl1` and `sl2`). **Local only, not deployed.**
+**Live (SAMPLE data, no payments): <https://school-lunch-orders.alexjpower74.workers.dev/>** — deployed 2026-09-15 on Alexander's go. Built overnight 2026-09-14 (lead `sl-lead`, slices `sl1` and `sl2`).
 
-## Open it
+## Try it live
+
+| Who | Where | Sign in |
+|---|---|---|
+| Parent (phone) | <https://school-lunch-orders.alexjpower74.workers.dev/> | family code `KQ7M-4RTX` (Liam, milk allergy, and Ava) · `W3PH-8JND` (Noah) · `C9VB-6FYE` (Emma, Jack, Chloe) · `T5ZA-2GUK` (Owen) |
+| Office + settings | <https://school-lunch-orders.alexjpower74.workers.dev/staff/> | PIN `3141` (Ms. Janes) |
+| Kitchen | <https://school-lunch-orders.alexjpower74.workers.dev/staff/> | PIN `2718` (Mr. Kean) |
+| Teacher, Room 4 | <https://school-lunch-orders.alexjpower74.workers.dev/staff/> | PIN `1618` (Ms. Oldford) · Room 8: `1414` (Mr. Pardy) |
+
+Everything on the live site is SAMPLE: a made-up school, families and menu, seeded around 2026-09-15. It takes no payments and
+sends nothing; anyone with a code above can change the SAMPLE orders.
+
+## Run it on your own computer
 
 ```sh
 cd ~/Projects/"School Lunch Orders" && npm run demo
@@ -60,9 +72,9 @@ One run from a QA worktree pinned to `ffd6dc7` (the code on main), port 8609, 20
 
 Details, negative controls and what the cross-reviews found: `docs/build-report.md`.
 
-## What deploying needs
+## How it is deployed
 
-Not done tonight; Alexander's call. Full steps in `docs/DEPLOY.md`.
+Done 2026-09-15 with the SAMPLE seed; what was created and the steps for a real school are in `docs/DEPLOY.md`.
 
 - Cloudflare **D1** database `school-lunch-orders` (migrations in `worker/migrations/`) and one **Worker** `school-lunch-orders`
   serving the API and the pages.
@@ -75,7 +87,7 @@ Not done tonight; Alexander's call. Full steps in `docs/DEPLOY.md`.
 
 - **Needs Alexander:** whether a real school, parent council or NLSchools lets this hold children's allergy information, and the
   privacy notice and year-end clean-out that would go with it; a person at the school checking every menu item's allergens against
-  the real labels; the deploy.
+  the real labels; a domain parents can type from paper.
 - **Known gaps** (details in `docs/build-report.md`):
   - Two orders sent at the same instant for the same child, day and item could together pass that item's daily maximum.
   - The order page's cart bar keeps the price from when the page loaded (the cart page itself shows a changed price).
