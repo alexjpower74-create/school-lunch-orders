@@ -1,18 +1,30 @@
 // Settings: a storm closure through the no-school form (preview numbers, credits to the cent, kitchen empty), the menu grid.
 import { expect, test } from '@playwright/test'
+import { assertNoThirdParty, expectNoHorizontalScroll, expectTapTarget, fresh, PIN, shot, tap, type, useStaffSession } from '../helpers.mjs'
 import {
-  api, assertNoThirdParty, bearer, expectNoHorizontalScroll, expectTapTarget, fresh, PIN, shot, staffToken, tap, type, useStaffSession,
-} from '../helpers.mjs'
-import { balancesViaApi, EXPECT_CREDIT, EXPECT_CREDIT_TOTAL, EXPECT_ITEM_COUNT, EXPECT_LINES, orderThursday, staffGet, THU } from './setup.mjs'
+  balancesViaApi,
+  EXPECT_CREDIT,
+  EXPECT_CREDIT_TOTAL,
+  EXPECT_ITEM_COUNT,
+  EXPECT_LINES,
+  orderThursday,
+  staffGet,
+  THU,
+} from './setup.mjs'
 
 const desktopOnly = (testInfo) =>
-  test.skip(testInfo.project.name.endsWith('-390'), 'The menu grid and settings screenshots are a desktop job (PLAN lets settings skip 390).')
+  test.skip(
+    testInfo.project.name.endsWith('-390'),
+    'The menu grid and settings screenshots are a desktop job (PLAN lets settings skip 390).',
+  )
 
 test.beforeEach(async ({ context, request }) => {
   await fresh(context, request)
   await orderThursday(request)
 })
-test.afterEach(async ({ context }) => { assertNoThirdParty(context) })
+test.afterEach(async ({ context }) => {
+  assertNoThirdParty(context)
+})
 
 async function openSettings(page, context, request, tab) {
   await useStaffSession(context, request, PIN.admin)
@@ -32,7 +44,12 @@ test('storm closure: confirm numbers equal the preview, credits to the cent', as
   await tap(page, page.locator('#add-no-school'), 'add no-school day')
 
   const preview = await staffGet(request, `/api/admin/no-school/preview?date=${THU}`)
-  expect(preview, 'the API preview = the hand-computed numbers').toMatchObject({ lines: EXPECT_LINES, item_count: EXPECT_ITEM_COUNT, families: 4, credit_cents: EXPECT_CREDIT_TOTAL })
+  expect(preview, 'the API preview = the hand-computed numbers').toMatchObject({
+    lines: EXPECT_LINES,
+    item_count: EXPECT_ITEM_COUNT,
+    families: 4,
+    credit_cents: EXPECT_CREDIT_TOTAL,
+  })
   await expect(page.locator('#no-school-confirm')).toBeVisible()
   await expect(page.locator('#confirm-items'), 'confirm-items = preview item_count').toHaveText(`${preview.item_count} items`)
   await expect(page.locator('#confirm-families'), 'confirm-families = preview families').toHaveText(`${preview.families} families`)
@@ -40,7 +57,9 @@ test('storm closure: confirm numbers equal the preview, credits to the cent', as
   await expect(page.locator('#no-school-preview')).toHaveText('This cancels 13 items for 4 families and credits $34.25 to their balances.')
 
   await tap(page, page.locator('#confirm-no-school'), 'yes, add the no-school day')
-  await expect(page.locator('#no-school-result')).toHaveText('Thu Sep 17 is now a no-school day. Cancelled 13 items for 4 families. Credited $34.25.')
+  await expect(page.locator('#no-school-result')).toHaveText(
+    'Thu Sep 17 is now a no-school day. Cancelled 13 items for 4 families. Credited $34.25.',
+  )
   await expect(page.locator(`.no-school-row[data-date="${THU}"]`)).toContainText('School closed')
 
   const after = await balancesViaApi(request)
@@ -56,7 +75,10 @@ test('storm closure: confirm numbers equal the preview, credits to the cent', as
   await page.goto('/office/')
   await expect(page.locator('.family-row')).toHaveCount(4)
   for (const [fam, cents] of Object.entries(after)) {
-    await expect(page.locator(`.family-row[data-family="${fam}"] .balance`), `${fam} office balance after the closure`).toHaveAttribute('data-balance-cents', String(cents))
+    await expect(page.locator(`.family-row[data-family="${fam}"] .balance`), `${fam} office balance after the closure`).toHaveAttribute(
+      'data-balance-cents',
+      String(cents),
+    )
   }
 })
 
@@ -103,9 +125,14 @@ test('menu grid: fill from usual days on an empty week', async ({ page, context,
   const week = await staffGet(request, '/api/admin/menu?week=2026-12-21')
   for (const day of week.days) {
     const weekday = new Date(`${day.date}T12:00:00Z`).getUTCDay()
-    const usual = items.filter((it) => it.active && it.days.includes(weekday)).map((it) => it.id).sort()
+    const usual = items
+      .filter((it) => it.active && it.days.includes(weekday))
+      .map((it) => it.id)
+      .sort()
     expect([...day.item_ids].sort(), `${day.date} filled from usual days (API)`).toEqual(usual)
-    const ticked = await page.locator(`input.menu-cell[data-date="${day.date}"]:checked`).evaluateAll((els) => els.map((e) => e.dataset.item).sort())
+    const ticked = await page
+      .locator(`input.menu-cell[data-date="${day.date}"]:checked`)
+      .evaluateAll((els) => els.map((e) => e.dataset.item).sort())
     expect(ticked, `${day.date} ticks on the page`).toEqual(usual)
   }
 })

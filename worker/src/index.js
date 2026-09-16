@@ -13,8 +13,7 @@ import { testReset, testSeed } from './testroutes.js'
 import { localDate } from './time.js'
 
 // auth: null (anyone), 'family', 'staff' (the area is the path's second segment: staff, kitchen, teacher, office, admin), 'test'.
-const route = (method, path, auth, fn) =>
-  ({ method, re: new RegExp(`^${path.replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`), auth, fn })
+const route = (method, path, auth, fn) => ({ method, re: new RegExp(`^${path.replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`), auth, fn })
 
 const ROUTES = [
   route('GET', '/api/info', null, info),
@@ -102,7 +101,7 @@ export default {
   },
 
   // Daily: expired sessions and wrong-try records older than a day.
-  async scheduled(event, env) {
+  async scheduled(_event, env) {
     const nowIso = new Date().toISOString()
     const dayAgo = new Date(Date.now() - 24 * 3600e3).toISOString()
     await env.DB.batch([

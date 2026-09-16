@@ -9,11 +9,13 @@ let sending = false
 function renderDots() {
   const dots = $('#pin-dots')
   const slots = Math.max(4, pin.length)
-  dots.replaceChildren(...Array.from({ length: slots }, (_, i) => {
-    const d = document.createElement('span')
-    d.className = `pin-dot${i < pin.length ? ' on' : ''}`
-    return d
-  }))
+  dots.replaceChildren(
+    ...Array.from({ length: slots }, (_, i) => {
+      const d = document.createElement('span')
+      d.className = `pin-dot${i < pin.length ? ' on' : ''}`
+      return d
+    }),
+  )
   dots.setAttribute('aria-label', pin.length ? `${pin.length} ${pin.length === 1 ? 'digit' : 'digits'} typed` : 'No digits yet')
 }
 
@@ -58,11 +60,16 @@ document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return
   if (/^\d$/.test(e.key)) press(e.key)
   else if (e.key === 'Backspace') press('back')
-  else if (e.key === 'Enter' && document.activeElement?.tagName !== 'A') { e.preventDefault(); submit() }
+  else if (e.key === 'Enter' && document.activeElement?.tagName !== 'A') {
+    e.preventDefault()
+    submit()
+  }
 })
 
 $('[data-sticky-header]').append(brand())
 renderDots()
-getInfo().then((info) => {
-  if (info.school_name) $('[data-sticky-header] .brand').replaceWith(brand(info.school_name, info.sample))
-}).catch(() => {})
+getInfo()
+  .then((info) => {
+    if (info.school_name) $('[data-sticky-header] .brand').replaceWith(brand(info.school_name, info.sample))
+  })
+  .catch(() => {})

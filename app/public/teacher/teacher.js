@@ -18,27 +18,57 @@ const canMark = () => day.is_today && day.status === 'school_day'
 
 function row(child) {
   const flag = child.lines.some((l) => l.conflicts.length) ? 'conflict' : child.allergies.length ? 'allergy' : 'none'
-  const flagWords = flag === 'conflict'
-    ? h('span', { class: 'child-flag' }, h('span', { class: 'pill pill-allergy' }, 'ALLERGY'), ' ',
-      h('span', { class: 'allergy-words' }, child.lines.filter((l) => l.conflicts.length)
-        .map((l) => `${allergenWords(info, l.conflicts)} in ${l.item_name}`).join('; ')))
-    : flag === 'allergy'
-      ? h('span', { class: 'child-flag allergy-words' }, `Allergies on file: ${allergenWords(info, child.allergies)}`)
-      : null
+  const flagWords =
+    flag === 'conflict'
+      ? h(
+          'span',
+          { class: 'child-flag' },
+          h('span', { class: 'pill pill-allergy' }, 'ALLERGY'),
+          ' ',
+          h(
+            'span',
+            { class: 'allergy-words' },
+            child.lines
+              .filter((l) => l.conflicts.length)
+              .map((l) => `${allergenWords(info, l.conflicts)} in ${l.item_name}`)
+              .join('; '),
+          ),
+        )
+      : flag === 'allergy'
+        ? h('span', { class: 'child-flag allergy-words' }, `Allergies on file: ${allergenWords(info, child.allergies)}`)
+        : null
   const state = child.state || 'waiting'
-  return h('li', { class: 'child-row', dataset: { child: child.child_id, state, flag } },
-    h('div', {},
+  return h(
+    'li',
+    { class: 'child-row', dataset: { child: child.child_id, state, flag } },
+    h(
+      'div',
+      {},
       h('span', { class: 'child-name' }, child.first_name),
       h('span', { class: `pill state-pill ${state}` }, child.state_label || 'Waiting'),
       h('span', { class: 'child-lunch' }, child.lines.map((l) => `${l.item_name} ×${l.qty}`).join(', ')),
-      flagWords),
+      flagWords,
+    ),
     canMark()
-      ? h('div', { class: 'marks' },
-        ['delivered', 'absent'].map((s) => h('button', {
-          type: 'button', class: 'btn mark', dataset: { state: s }, 'aria-pressed': String(child.state === s),
-          onclick: (e) => mark(child.child_id, s, e.currentTarget),
-        }, s === 'delivered' ? 'Given out' : 'Absent')))
-      : null)
+      ? h(
+          'div',
+          { class: 'marks' },
+          ['delivered', 'absent'].map((s) =>
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'btn mark',
+                dataset: { state: s },
+                'aria-pressed': String(child.state === s),
+                onclick: (e) => mark(child.child_id, s, e.currentTarget),
+              },
+              s === 'delivered' ? 'Given out' : 'Absent',
+            ),
+          ),
+        )
+      : null,
+  )
 }
 
 function render() {
@@ -57,9 +87,11 @@ function render() {
   note.hidden = !note.textContent
   renderCounts(day.counts)
   const list = $('#class-list')
-  list.replaceChildren(...(day.children.length
-    ? day.children.map(row)
-    : [h('li', { class: 'card empty-list' }, `Nobody in ${cls.name} has a lunch ordered for ${day.date_label}.`)]))
+  list.replaceChildren(
+    ...(day.children.length
+      ? day.children.map(row)
+      : [h('li', { class: 'card empty-list' }, `Nobody in ${cls.name} has a lunch ordered for ${day.date_label}.`)]),
+  )
 }
 
 async function load() {
@@ -84,7 +116,9 @@ async function mark(childId, pressed, button) {
   const child = day.children.find((c) => c.child_id === childId)
   const state = child.state === pressed ? null : pressed
   const buttons = [...button.parentElement.querySelectorAll('button')]
-  buttons.forEach((b) => { b.disabled = true })
+  buttons.forEach((b) => {
+    b.disabled = true
+  })
   try {
     const res = await staffApi('POST', '/api/teacher/mark', { body: { date: day.date, child_id: childId, state } })
     day.children = day.children.map((c) => (c.child_id === childId ? res.child : c))
@@ -93,7 +127,9 @@ async function mark(childId, pressed, button) {
     $(`.child-row[data-child="${CSS.escape(childId)}"]`).replaceWith(row(res.child))
     clearMessage($('#teacher-error'))
   } catch (err) {
-    buttons.forEach((b) => { b.disabled = false })
+    buttons.forEach((b) => {
+      b.disabled = false
+    })
     if (!handled(err)) showError($('#teacher-error'), err)
   }
 }
@@ -107,7 +143,10 @@ async function main() {
   classId = classes.some((c) => c.id === params.get('class')) ? params.get('class') : mine
   date = params.get('date')
   $('#class-pick').replaceChildren(...classes.map((c) => h('option', { value: c.id }, classWords(c.name, c.grade))))
-  $('#class-pick').addEventListener('change', (e) => { classId = e.target.value; load() })
+  $('#class-pick').addEventListener('change', (e) => {
+    classId = e.target.value
+    load()
+  })
   $('#teacher-date').addEventListener('change', (e) => {
     if (!e.target.value) return
     date = e.target.value === info.today ? null : e.target.value
@@ -116,4 +155,6 @@ async function main() {
   await load()
 }
 
-main().catch((err) => { if (!handled(err)) showError($('#teacher-error'), err) })
+main().catch((err) => {
+  if (!handled(err)) showError($('#teacher-error'), err)
+})

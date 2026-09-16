@@ -4,8 +4,12 @@ import { expect, test } from '@playwright/test'
 import { api, assertNoThirdParty, expectTapTarget, fresh, NOW, PIN, SCHOOL, tap, type, useStaffSession } from '../helpers.mjs'
 import { staffGet } from './setup.mjs'
 
-test.beforeEach(async ({ context, request }) => { await fresh(context, request) })
-test.afterEach(async ({ context }) => { assertNoThirdParty(context) })
+test.beforeEach(async ({ context, request }) => {
+  await fresh(context, request)
+})
+test.afterEach(async ({ context }) => {
+  assertNoThirdParty(context)
+})
 
 async function openTab(page, context, request, tab) {
   await useStaffSession(context, request, PIN.admin)
@@ -43,14 +47,21 @@ test('school settings save and come back after a reload', async ({ page, context
   await page.locator('#year-end').fill('2027-06-18')
   await tap(page, page.locator('#save-school'), 'save school')
   await expect(page.locator('#school-saved'), 'school-saved').toHaveText('Saved.')
-  await expect(page.locator('#cutoff-rule'), "the parents' rule line after saving, without a reload")
-    .toHaveText('Parents see: "Order by 8:30 AM 2 school days before."')
+  await expect(page.locator('#cutoff-rule'), "the parents' rule line after saving, without a reload").toHaveText(
+    'Parents see: "Order by 8:30 AM 2 school days before."',
+  )
   await expect(page.locator('#school-error')).toBeHidden()
   await expect(page.locator('#year-end')).not.toHaveAttribute('aria-invalid', 'true')
 
   const { school } = await settings(request)
   expect(school, 'the API school after saving').toMatchObject({
-    school_name: name, payment_instructions: pay, cutoff_days_before: 2, cutoff_time: '08:30', year_start: '2026-09-08', year_end: '2027-06-18', sample: true,
+    school_name: name,
+    payment_instructions: pay,
+    cutoff_days_before: 2,
+    cutoff_time: '08:30',
+    year_start: '2026-09-08',
+    year_end: '2027-06-18',
+    sample: true,
   })
   const info = await (await request.get('/api/info', { headers: { 'X-Test-Now': NOW } })).json()
   expect(info.cutoff_rule_label).toContain('8:30 AM')
@@ -102,12 +113,19 @@ test('a new item saves with price in dollars, allergens, days and max', async ({
   await tap(page, page.locator('#save-item'), 'save item')
   await expect(page.locator('#item-saved'), 'item-saved').toHaveText('Saved Pea soup (SAMPLE).')
   // What the office sees in the list straight after saving: the price typed in dollars, stored as cents, shown in dollars.
-  await expect(page.locator('.item-row').filter({ hasText: 'Pea soup (SAMPLE)' }), 'the new item row price').toContainText('Pea soup (SAMPLE) · $3.75')
+  await expect(page.locator('.item-row').filter({ hasText: 'Pea soup (SAMPLE)' }), 'the new item row price').toContainText(
+    'Pea soup (SAMPLE) · $3.75',
+  )
 
   const item = (await settings(request)).items.find((i) => i.name === 'Pea soup (SAMPLE)')
   expect(item, 'the new item is in the API').toBeTruthy()
   expect({ ...item, allergens: [...item.allergens].sort() }, 'the API item after saving').toMatchObject({
-    price_cents: 375, allergens: ['gluten', 'wheat_triticale'], days: [1, 3], max_per_child: 2, vegetarian: true, active: true,
+    price_cents: 375,
+    allergens: ['gluten', 'wheat_triticale'],
+    days: [1, 3],
+    max_per_child: 2,
+    vegetarian: true,
+    active: true,
     ingredients: 'Split peas, carrots, onion, wheat roll (SAMPLE)',
   })
 
@@ -138,7 +156,11 @@ test('editing an item changes price, allergens, days and max, and the API agrees
 
   const mac = (await settings(request)).items.find((i) => i.id === 'mac')
   expect({ ...mac, allergens: [...mac.allergens].sort() }, 'the API item after editing').toMatchObject({
-    price_cents: 425, allergens: ['gluten', 'milk', 'mustard', 'wheat_triticale'], days: [4], max_per_child: null, active: true,
+    price_cents: 425,
+    allergens: ['gluten', 'milk', 'mustard', 'wheat_triticale'],
+    days: [4],
+    max_per_child: null,
+    active: true,
   })
 
   await page.reload()
@@ -171,7 +193,10 @@ test('a new class saves, then an edit saves, each after a reload', async ({ page
   await type(page, page.locator('#class-sort'), '8', { clear: true })
   await tap(page, page.locator('#save-class'), 'save class')
   await expect(page.locator('#class-saved')).toHaveText('Saved Room 10.')
-  expect((await settings(request)).classes.find((c) => c.id === made.id), 'the API class after editing').toMatchObject({ name: 'Room 10', grade: 'Grades 5 and 6', sort: 8 })
+  expect(
+    (await settings(request)).classes.find((c) => c.id === made.id),
+    'the API class after editing',
+  ).toMatchObject({ name: 'Room 10', grade: 'Grades 5 and 6', sort: 8 })
   await page.reload()
   await expect(page.locator(`.class-row[data-class="${made.id}"]`)).toContainText('Room 10 · Grades 5 and 6')
 })
@@ -209,7 +234,10 @@ test('the last office PIN cannot be switched off, and the refusal is in words', 
   await setBox(page, page.locator('#staff-active'), false, 'PIN works off')
   await tap(page, page.locator('#save-staff'), 'save staff')
   await expect(page.locator('#staff-error')).toHaveText('The school needs at least one office PIN.')
-  expect((await settings(request)).staff.find((s) => s.id === 'st-office'), 'still active in the API').toMatchObject({ active: true, role: 'admin' })
+  expect(
+    (await settings(request)).staff.find((s) => s.id === 'st-office'),
+    'still active in the API',
+  ).toMatchObject({ active: true, role: 'admin' })
   await page.reload()
   await expect(page.locator('.staff-row[data-staff="st-office"]')).not.toContainText('PIN off')
 })

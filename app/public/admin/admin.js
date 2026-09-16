@@ -2,7 +2,18 @@
 // classes, staff PINs. Everything reads GET /api/admin/settings and saves through the routes in docs/API.md.
 import { h, money, plural } from '../common/ui.js'
 import {
-  $, $$, allergenWords, busy, classWords, clearMessage, dollarsValue, handled, parseDollars, showError, staffApi, startStaffPage,
+  $,
+  $$,
+  allergenWords,
+  busy,
+  classWords,
+  clearMessage,
+  dollarsValue,
+  handled,
+  parseDollars,
+  showError,
+  staffApi,
+  startStaffPage,
 } from '../staff/staff.js'
 
 const TABS = ['school', 'menu', 'days', 'items', 'classes', 'staff']
@@ -81,8 +92,12 @@ async function saveSchool() {
     year_end: $('#year-end').value,
   }
   const fields = {
-    school_name: '#school-name', payment_instructions: '#payment-instructions-input', cutoff_days_before: '#cutoff-days',
-    cutoff_time: '#cutoff-time', year_start: '#year-start', year_end: '#year-end',
+    school_name: '#school-name',
+    payment_instructions: '#payment-instructions-input',
+    cutoff_days_before: '#cutoff-days',
+    cutoff_time: '#cutoff-time',
+    year_start: '#year-start',
+    year_end: '#year-end',
   }
   if (days === null) {
     fieldError(error, { message: 'Type how many school days before, from 0 to 5.', field: 'cutoff_days_before' }, fields)
@@ -116,26 +131,61 @@ async function loadMenu(week) {
 function renderMenu() {
   $('#menu-week-label').textContent = menu.week_label
   const items = settings.items.filter((it) => it.active)
-  const head = h('thead', {}, h('tr', {},
-    h('th', { scope: 'col' }, 'Item'),
-    menu.days.map((d) => h('th', { scope: 'col', dataset: { date: d.date } }, d.date_label,
-      d.status !== 'school_day'
-        ? h('span', { class: 'day-status' }, h('span', { class: 'pill pill-status' }, d.no_school?.kind_label || d.status_label))
-        : d.date < info.today ? h('span', { class: 'day-status faint' }, 'Past') : null))))
-  const body = h('tbody', {}, items.map((it) => h('tr', { dataset: { item: it.id } },
-    h('th', { scope: 'row' }, it.name, h('span', { class: 'item-price' }, money(it.price_cents))),
-    menu.days.map((d) => {
-      if (d.status !== 'school_day') return h('td', { class: 'off' }, '—')
-      const qty = d.ordered?.[it.id] || 0
-      const input = h('input', {
-        type: 'checkbox', class: 'menu-cell', dataset: { date: d.date, item: it.id },
-        'aria-label': `${it.name} on ${d.date_label}`, disabled: d.date < info.today,
-      })
-      input.checked = d.item_ids.includes(it.id)
-      input.addEventListener('change', () => saveMenuDay(d.date, it.id, input))
-      return h('td', {}, h('span', { class: 'cell' }, input,
-        qty ? h('span', { class: 'ordered', dataset: { date: d.date, item: it.id } }, `${qty} ordered`) : null))
-    }))))
+  const head = h(
+    'thead',
+    {},
+    h(
+      'tr',
+      {},
+      h('th', { scope: 'col' }, 'Item'),
+      menu.days.map((d) =>
+        h(
+          'th',
+          { scope: 'col', dataset: { date: d.date } },
+          d.date_label,
+          d.status !== 'school_day'
+            ? h('span', { class: 'day-status' }, h('span', { class: 'pill pill-status' }, d.no_school?.kind_label || d.status_label))
+            : d.date < info.today
+              ? h('span', { class: 'day-status faint' }, 'Past')
+              : null,
+        ),
+      ),
+    ),
+  )
+  const body = h(
+    'tbody',
+    {},
+    items.map((it) =>
+      h(
+        'tr',
+        { dataset: { item: it.id } },
+        h('th', { scope: 'row' }, it.name, h('span', { class: 'item-price' }, money(it.price_cents))),
+        menu.days.map((d) => {
+          if (d.status !== 'school_day') return h('td', { class: 'off' }, '—')
+          const qty = d.ordered?.[it.id] || 0
+          const input = h('input', {
+            type: 'checkbox',
+            class: 'menu-cell',
+            dataset: { date: d.date, item: it.id },
+            'aria-label': `${it.name} on ${d.date_label}`,
+            disabled: d.date < info.today,
+          })
+          input.checked = d.item_ids.includes(it.id)
+          input.addEventListener('change', () => saveMenuDay(d.date, it.id, input))
+          return h(
+            'td',
+            {},
+            h(
+              'span',
+              { class: 'cell' },
+              input,
+              qty ? h('span', { class: 'ordered', dataset: { date: d.date, item: it.id } }, `${qty} ordered`) : null,
+            ),
+          )
+        }),
+      ),
+    ),
+  )
   $('#menu-grid').replaceChildren(head, body)
 }
 
@@ -177,23 +227,32 @@ async function fillWeek() {
 
 // ---------- no-school days ----------
 function renderNoSchool() {
-  $('#no-school-list').replaceChildren(...(settings.no_school_days.length
-    ? settings.no_school_days.map((d) => {
-      const actions = h('div', { class: 'actions' })
-      const showRemove = () => actions.replaceChildren(
-        h('button', { type: 'button', class: 'btn btn-quiet remove-no-school', onclick: askRemove }, 'Remove'))
-      function askRemove() {
-        actions.replaceChildren(
-          h('button', { type: 'button', class: 'btn btn-warn confirm-remove-no-school', onclick: (e) => removeNoSchool(d.date, e.currentTarget) },
-            'Yes, remove it'),
-          h('button', { type: 'button', class: 'btn btn-quiet', onclick: showRemove }, 'Keep'))
-      }
-      if (d.date >= info.today) showRemove()
-      return h('li', { class: 'row no-school-row', dataset: { date: d.date } },
-        h('div', {}, h('strong', {}, d.date_label), ` · ${d.kind_label}`, d.note ? h('span', { class: 'sub' }, d.note) : null),
-        actions)
-    })
-    : [h('li', { class: 'hint' }, 'No no-school days yet.')]))
+  $('#no-school-list').replaceChildren(
+    ...(settings.no_school_days.length
+      ? settings.no_school_days.map((d) => {
+          const actions = h('div', { class: 'actions' })
+          const showRemove = () =>
+            actions.replaceChildren(h('button', { type: 'button', class: 'btn btn-quiet remove-no-school', onclick: askRemove }, 'Remove'))
+          function askRemove() {
+            actions.replaceChildren(
+              h(
+                'button',
+                { type: 'button', class: 'btn btn-warn confirm-remove-no-school', onclick: (e) => removeNoSchool(d.date, e.currentTarget) },
+                'Yes, remove it',
+              ),
+              h('button', { type: 'button', class: 'btn btn-quiet', onclick: showRemove }, 'Keep'),
+            )
+          }
+          if (d.date >= info.today) showRemove()
+          return h(
+            'li',
+            { class: 'row no-school-row', dataset: { date: d.date } },
+            h('div', {}, h('strong', {}, d.date_label), ` · ${d.kind_label}`, d.note ? h('span', { class: 'sub' }, d.note) : null),
+            actions,
+          )
+        })
+      : [h('li', { class: 'hint' }, 'No no-school days yet.')]),
+  )
 }
 
 async function addNoSchool() {
@@ -222,14 +281,41 @@ async function addNoSchool() {
     confirmBox.replaceChildren(
       h('p', {}, h('strong', {}, `Make ${preview.date_label} a no-school day (${kindWords})?`)),
       preview.lines
-        ? h('p', { id: 'no-school-preview' }, 'This cancels ',
-          h('strong', { id: 'confirm-items' }, plural(preview.item_count, 'item')), ' for ',
-          h('strong', { id: 'confirm-families' }, plural(preview.families, 'family', 'families')), ' and credits ',
-          h('strong', { id: 'confirm-credit', class: 'money' }, money(preview.credit_cents)), ' to their balances.')
+        ? h(
+            'p',
+            { id: 'no-school-preview' },
+            'This cancels ',
+            h('strong', { id: 'confirm-items' }, plural(preview.item_count, 'item')),
+            ' for ',
+            h('strong', { id: 'confirm-families' }, plural(preview.families, 'family', 'families')),
+            ' and credits ',
+            h('strong', { id: 'confirm-credit', class: 'money' }, money(preview.credit_cents)),
+            ' to their balances.',
+          )
         : h('p', { id: 'no-school-preview' }, `Nothing is ordered for ${preview.date_label}, so nothing is cancelled or credited.`),
-      h('div', { class: 'toolbar' },
-        h('button', { type: 'button', class: 'btn btn-primary', id: 'confirm-no-school', onclick: confirmNoSchool }, 'Yes, add the no-school day'),
-        h('button', { type: 'button', class: 'btn btn-quiet', id: 'cancel-no-school', onclick: () => { confirmBox.hidden = true; pendingNoSchool = null } }, 'Cancel')))
+      h(
+        'div',
+        { class: 'toolbar' },
+        h(
+          'button',
+          { type: 'button', class: 'btn btn-primary', id: 'confirm-no-school', onclick: confirmNoSchool },
+          'Yes, add the no-school day',
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'btn btn-quiet',
+            id: 'cancel-no-school',
+            onclick: () => {
+              confirmBox.hidden = true
+              pendingNoSchool = null
+            },
+          },
+          'Cancel',
+        ),
+      ),
+    )
     confirmBox.hidden = false
   })
 }
@@ -243,9 +329,12 @@ async function confirmNoSchool(e) {
       pendingNoSchool = null
       $('#no-school-confirm').hidden = true
       const c = res.cancelled
-      flash($('#no-school-result'), c.lines
-        ? `${res.day.date_label} is now a no-school day. Cancelled ${plural(c.item_count, 'item')} for ${plural(c.families, 'family', 'families')}. Credited ${money(c.credit_cents)}.`
-        : `${res.day.date_label} is now a no-school day. Nothing was ordered, so nothing was credited.`)
+      flash(
+        $('#no-school-result'),
+        c.lines
+          ? `${res.day.date_label} is now a no-school day. Cancelled ${plural(c.item_count, 'item')} for ${plural(c.families, 'family', 'families')}. Credited ${money(c.credit_cents)}.`
+          : `${res.day.date_label} is now a no-school day. Nothing was ordered, so nothing was credited.`,
+      )
       $('#no-school-note').value = ''
       await reloadSettings()
       renderNoSchool()
@@ -272,25 +361,51 @@ async function removeNoSchool(date, button) {
 
 // ---------- items ----------
 function renderItems() {
-  $('#item-list').replaceChildren(...settings.items.map((it) => h('li', {
-    class: 'row item-row', dataset: { item: it.id }, 'aria-current': editing.item === it.id ? 'true' : null,
-  },
-  h('div', {},
-    h('strong', {}, it.name), ` · ${money(it.price_cents)}`,
-    it.active ? null : h('span', { class: 'pill' }, 'Not on offer'),
-    h('span', { class: 'sub' }, [
-      it.allergens.length ? `Contains ${allergenWords(info, it.allergens)}` : 'No listed allergens',
-      it.days.length ? it.days.map((d) => DAY_WORDS[d]).join(', ') : 'No usual days',
-      it.max_per_child ? `Max ${it.max_per_child}` : null,
-      it.vegetarian ? 'Vegetarian' : null,
-    ].filter(Boolean).join(' · '))),
-  h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn edit-item', onclick: () => editItem(it.id) }, 'Edit')))))
+  $('#item-list').replaceChildren(
+    ...settings.items.map((it) =>
+      h(
+        'li',
+        {
+          class: 'row item-row',
+          dataset: { item: it.id },
+          'aria-current': editing.item === it.id ? 'true' : null,
+        },
+        h(
+          'div',
+          {},
+          h('strong', {}, it.name),
+          ` · ${money(it.price_cents)}`,
+          it.active ? null : h('span', { class: 'pill' }, 'Not on offer'),
+          h(
+            'span',
+            { class: 'sub' },
+            [
+              it.allergens.length ? `Contains ${allergenWords(info, it.allergens)}` : 'No listed allergens',
+              it.days.length ? it.days.map((d) => DAY_WORDS[d]).join(', ') : 'No usual days',
+              it.max_per_child ? `Max ${it.max_per_child}` : null,
+              it.vegetarian ? 'Vegetarian' : null,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          ),
+        ),
+        h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn edit-item', onclick: () => editItem(it.id) }, 'Edit')),
+      ),
+    ),
+  )
 }
 
 function editItem(id) {
   editing.item = id
   const it = settings.items.find((x) => x.id === id) || {
-    name: '', price_cents: null, ingredients: '', allergens: [], vegetarian: false, days: [], max_per_child: null, active: true,
+    name: '',
+    price_cents: null,
+    ingredients: '',
+    allergens: [],
+    vegetarian: false,
+    days: [],
+    max_per_child: null,
+    active: true,
   }
   $('#item-form-title').textContent = id ? `Edit ${it.name}` : 'New item'
   $('#item-name').value = it.name
@@ -348,11 +463,25 @@ async function saveItem() {
 
 // ---------- classes ----------
 function renderClasses() {
-  $('#class-list').replaceChildren(...settings.classes.map((c) => h('li', {
-    class: 'row class-row', dataset: { class: c.id }, 'aria-current': editing.class === c.id ? 'true' : null,
-  },
-  h('div', {}, h('strong', {}, classWords(c.name, c.grade)), h('span', { class: 'sub' }, `${plural(c.child_count ?? 0, 'child', 'children')} · order ${c.sort}`)),
-  h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn edit-class', onclick: () => editClass(c.id) }, 'Edit')))))
+  $('#class-list').replaceChildren(
+    ...settings.classes.map((c) =>
+      h(
+        'li',
+        {
+          class: 'row class-row',
+          dataset: { class: c.id },
+          'aria-current': editing.class === c.id ? 'true' : null,
+        },
+        h(
+          'div',
+          {},
+          h('strong', {}, classWords(c.name, c.grade)),
+          h('span', { class: 'sub' }, `${plural(c.child_count ?? 0, 'child', 'children')} · order ${c.sort}`),
+        ),
+        h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn edit-class', onclick: () => editClass(c.id) }, 'Edit')),
+      ),
+    ),
+  )
 }
 
 function editClass(id) {
@@ -398,18 +527,39 @@ async function saveClass() {
 function renderStaffClassOptions() {
   const select = $('#staff-class')
   const value = select.value
-  select.replaceChildren(h('option', { value: '' }, 'No class'), ...settings.classes.map((c) => h('option', { value: c.id }, classWords(c.name, c.grade))))
+  select.replaceChildren(
+    h('option', { value: '' }, 'No class'),
+    ...settings.classes.map((c) => h('option', { value: c.id }, classWords(c.name, c.grade))),
+  )
   select.value = value
 }
 
 function renderStaff() {
   const classNames = new Map(settings.classes.map((c) => [c.id, c.name]))
-  $('#staff-list').replaceChildren(...settings.staff.map((s) => h('li', {
-    class: 'row staff-row', dataset: { staff: s.id }, 'aria-current': editing.staff === s.id ? 'true' : null,
-  },
-  h('div', {}, h('strong', {}, s.name), s.active ? null : h('span', { class: 'pill' }, 'PIN off'),
-    h('span', { class: 'sub' }, [ROLE_WORDS[s.role] || s.role, s.class_id ? classNames.get(s.class_id) : null].filter(Boolean).join(' · '))),
-  h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn edit-staff', onclick: () => editStaff(s.id) }, 'Edit')))))
+  $('#staff-list').replaceChildren(
+    ...settings.staff.map((s) =>
+      h(
+        'li',
+        {
+          class: 'row staff-row',
+          dataset: { staff: s.id },
+          'aria-current': editing.staff === s.id ? 'true' : null,
+        },
+        h(
+          'div',
+          {},
+          h('strong', {}, s.name),
+          s.active ? null : h('span', { class: 'pill' }, 'PIN off'),
+          h(
+            'span',
+            { class: 'sub' },
+            [ROLE_WORDS[s.role] || s.role, s.class_id ? classNames.get(s.class_id) : null].filter(Boolean).join(' · '),
+          ),
+        ),
+        h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn edit-staff', onclick: () => editStaff(s.id) }, 'Edit')),
+      ),
+    ),
+  )
 }
 
 function editStaff(id) {
@@ -460,8 +610,11 @@ async function main() {
   await reloadSettings()
   $('#no-school-date').value = info.today // a storm closure is added on the day
 
-  $('#item-allergens').replaceChildren(...settings.allergens.map((a) =>
-    h('label', { class: 'check-row' }, h('input', { type: 'checkbox', name: 'item-allergen', value: a.key }), ` ${a.label}`)))
+  $('#item-allergens').replaceChildren(
+    ...settings.allergens.map((a) =>
+      h('label', { class: 'check-row' }, h('input', { type: 'checkbox', name: 'item-allergen', value: a.key }), ` ${a.label}`),
+    ),
+  )
   renderSchool()
   renderNoSchool()
   renderItems()
@@ -473,17 +626,38 @@ async function main() {
   editStaff(null)
 
   for (const b of $$('button.tab')) b.addEventListener('click', () => showTab(b.dataset.tab))
-  $('#school-form').addEventListener('submit', (e) => { e.preventDefault(); saveSchool() })
+  $('#school-form').addEventListener('submit', (e) => {
+    e.preventDefault()
+    saveSchool()
+  })
   $('#menu-prev').addEventListener('click', () => menu && loadMenu(menu.prev_week))
   $('#menu-next').addEventListener('click', () => menu && loadMenu(menu.next_week))
   $('#fill-week').addEventListener('click', fillWeek)
   $('#add-no-school').addEventListener('click', addNoSchool)
-  $('#new-item').addEventListener('click', () => { editItem(null); $('#item-name').focus() })
-  $('#item-form').addEventListener('submit', (e) => { e.preventDefault(); saveItem() })
-  $('#new-class').addEventListener('click', () => { editClass(null); $('#class-name').focus() })
-  $('#class-form').addEventListener('submit', (e) => { e.preventDefault(); saveClass() })
-  $('#new-staff').addEventListener('click', () => { editStaff(null); $('#staff-name').focus() })
-  $('#staff-form').addEventListener('submit', (e) => { e.preventDefault(); saveStaff() })
+  $('#new-item').addEventListener('click', () => {
+    editItem(null)
+    $('#item-name').focus()
+  })
+  $('#item-form').addEventListener('submit', (e) => {
+    e.preventDefault()
+    saveItem()
+  })
+  $('#new-class').addEventListener('click', () => {
+    editClass(null)
+    $('#class-name').focus()
+  })
+  $('#class-form').addEventListener('submit', (e) => {
+    e.preventDefault()
+    saveClass()
+  })
+  $('#new-staff').addEventListener('click', () => {
+    editStaff(null)
+    $('#staff-name').focus()
+  })
+  $('#staff-form').addEventListener('submit', (e) => {
+    e.preventDefault()
+    saveStaff()
+  })
   showTab(location.hash.slice(1))
 }
 

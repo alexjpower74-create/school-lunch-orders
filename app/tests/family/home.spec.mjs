@@ -1,14 +1,32 @@
 // "/family/" and "/family/history/": cancel before the cut-off, the balance in plain words, and a storm closure's credit.
 import { expect, test } from '@playwright/test'
 import {
-  CODE, PIN, api, bearer, familyOrdersViaApi, fresh, kitchenDayViaApi, noSchoolViaApi, paymentViaApi, placeOrderViaApi, staffToken, tap, useFamilySession,
+  CODE,
+  PIN,
+  api,
+  bearer,
+  familyOrdersViaApi,
+  fresh,
+  kitchenDayViaApi,
+  noSchoolViaApi,
+  paymentViaApi,
+  placeOrderViaApi,
+  staffToken,
+  tap,
+  useFamilySession,
 } from '../helpers.mjs'
 
 test.beforeEach(async ({ context, request }) => fresh(context, request))
 
-test('cancel before the cut-off: the line goes and #balance-text changes by exactly the line total; no Cancel after the cut-off', async ({ page, context, request }) => {
+test('cancel before the cut-off: the line goes and #balance-text changes by exactly the line total; no Cancel after the cut-off', async ({
+  page,
+  context,
+  request,
+}) => {
   const s = await useFamilySession(context, request, CODE.liamAva)
-  await placeOrderViaApi(request, s.token, [{ child_id: 'ch-ava', date: '2026-09-16', item_id: 'apple', qty: 1 }], { now: '2026-09-15T11:00:00Z' })
+  await placeOrderViaApi(request, s.token, [{ child_id: 'ch-ava', date: '2026-09-16', item_id: 'apple', qty: 1 }], {
+    now: '2026-09-15T11:00:00Z',
+  })
   const placed = await placeOrderViaApi(request, s.token, [
     { child_id: 'ch-ava', date: '2026-09-17', item_id: 'chili', qty: 1 },
     { child_id: 'ch-liam', date: '2026-09-21', item_id: 'apple', qty: 2 },
@@ -37,7 +55,11 @@ test('cancel before the cut-off: the line goes and #balance-text changes by exac
   expect(ledger.body.balance_cents).toBe(after)
 })
 
-test('balance phrases: owing, all paid up and a credit, with the payment instructions only while owing', async ({ page, context, request }) => {
+test('balance phrases: owing, all paid up and a credit, with the payment instructions only while owing', async ({
+  page,
+  context,
+  request,
+}) => {
   const s = await useFamilySession(context, request, CODE.liamAva)
   const office = await staffToken(request, PIN.admin)
   await placeOrderViaApi(request, s.token, [{ child_id: 'ch-ava', date: '2026-09-17', item_id: 'mac', qty: 1 }])
@@ -77,7 +99,11 @@ test('a storm closure added through the API shows as a credit in history', async
   await expect(page.locator('.line[data-status="closed"]').first()).toContainText('No school, credited')
 })
 
-test('an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees', async ({ page, context, request }) => {
+test('an allergy ticked after ordering: home shows the red warning and "I understand, keep it" confirms it; the kitchen agrees', async ({
+  page,
+  context,
+  request,
+}) => {
   const s = await useFamilySession(context, request, CODE.liamAva)
   const placed = await placeOrderViaApi(request, s.token, [
     { child_id: 'ch-ava', date: '2026-09-17', item_id: 'mac', qty: 1 },
@@ -109,7 +135,8 @@ test('an allergy ticked after ordering: home shows the red warning and "I unders
   await expect(line.locator('button.ack-line')).toHaveText('I understand, keep it')
   await expect(line.locator('button.cancel-line')).toBeVisible()
   const kitchen = await staffToken(request, PIN.kitchen)
-  const kitchenLine = async () => (await kitchenDayViaApi(request, kitchen, '2026-09-17')).children.flatMap((c) => c.lines).find((l) => l.line_id === lineId)
+  const kitchenLine = async () =>
+    (await kitchenDayViaApi(request, kitchen, '2026-09-17')).children.flatMap((c) => c.lines).find((l) => l.line_id === lineId)
   expect((await kitchenLine()).acknowledged, 'the kitchen shows it not confirmed').toBe(false)
 
   await tap(page, line.locator('button.ack-line'), 'I understand, keep it')

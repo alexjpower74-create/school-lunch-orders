@@ -24,14 +24,15 @@ export async function buildSetupSql(o) {
   const school = (o.school || '').trim()
   const admin = (o.admin || '').trim()
   if (!school || school.length > 80) throw new Error('--school: the school name, 1 to 80 characters.')
-  if (!admin || admin.length > 60) throw new Error('--admin: the office person\'s name, 1 to 60 characters.')
+  if (!admin || admin.length > 60) throw new Error("--admin: the office person's name, 1 to 60 characters.")
   if (!/^\d{4,6}$/.test(o.pin || '')) throw new Error('--pin: 4 to 6 digits.')
   const payment = (o.payment || 'Ask the office how to pay.').trim()
   if (payment.length > 600) throw new Error('--payment: up to 600 characters.')
   const start = o.yearStart ?? null
   const end = o.yearEnd ?? null
   if ((start === null) !== (end === null)) throw new Error('--year-start and --year-end go together.')
-  if (start !== null && (!validDate(start) || !validDate(end) || end <= start)) throw new Error('--year-start and --year-end: dates, start before end.')
+  if (start !== null && (!validDate(start) || !validDate(end) || end <= start))
+    throw new Error('--year-start and --year-end: dates, start before end.')
   const salt = hex(crypto.getRandomValues(new Uint8Array(16)))
   const hash = await hashPin(o.pin, salt)
   const id = `st_${hex(crypto.getRandomValues(new Uint8Array(8)))}`
@@ -44,7 +45,15 @@ export async function buildSetupSql(o) {
 }
 
 function parseArgs(argv) {
-  const names = { '--school': 'school', '--admin': 'admin', '--pin': 'pin', '--payment': 'payment', '--year-start': 'yearStart', '--year-end': 'yearEnd', '--out': 'out' }
+  const names = {
+    '--school': 'school',
+    '--admin': 'admin',
+    '--pin': 'pin',
+    '--payment': 'payment',
+    '--year-start': 'yearStart',
+    '--year-end': 'yearEnd',
+    '--out': 'out',
+  }
   const o = {}
   for (let i = 0; i < argv.length; i += 2) {
     if (!names[argv[i]] || argv[i + 1] === undefined) throw new Error(`Unknown or empty option ${argv[i]}.`)

@@ -25,7 +25,13 @@ export async function getSettings(c) {
     classes: cl.results.map((r) => ({ ...classOut(r), child_count: r.child_count })),
     staff: st.results.map(staffOut),
     items: it.results.map(itemOut),
-    no_school_days: ns.results.map((r) => ({ date: r.date, date_label: dateLabel(r.date), kind: r.kind, kind_label: KIND_LABELS[r.kind], note: r.note })),
+    no_school_days: ns.results.map((r) => ({
+      date: r.date,
+      date_label: dateLabel(r.date),
+      kind: r.kind,
+      kind_label: KIND_LABELS[r.kind],
+      note: r.note,
+    })),
     allergens: ALLERGENS,
   })
 }
@@ -35,15 +41,18 @@ export async function putSchool(c) {
   const school_name = textField(body, 'school_name', 1, 80, 'Type the school name (up to 80 characters).')
   const payment_instructions = textField(body, 'payment_instructions', 1, 600, 'Type how families pay (up to 600 characters).')
   const cutoff_days_before = intField(body, 'cutoff_days_before', 0, 5, 'Choose 0 to 5 school days before.')
-  if (typeof body.cutoff_time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(body.cutoff_time)) throw bad('cutoff_time', 'Choose a time like 09:00.')
+  if (typeof body.cutoff_time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(body.cutoff_time))
+    throw bad('cutoff_time', 'Choose a time like 09:00.')
   if (!isValidDate(body.year_start)) throw bad('year_start', 'Choose the first day of the school year.')
   if (!isValidDate(body.year_end) || body.year_end <= body.year_start) throw bad('year_end', 'Choose a last day after the first day.')
   const cur = await c.db.prepare('SELECT sample FROM school WHERE id = 1').first()
-  await c.db.prepare(`INSERT INTO school (id, school_name, sample, payment_instructions, cutoff_days_before, cutoff_time, year_start, year_end)
+  await c.db
+    .prepare(`INSERT INTO school (id, school_name, sample, payment_instructions, cutoff_days_before, cutoff_time, year_start, year_end)
     VALUES (1, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET school_name = excluded.school_name,
     payment_instructions = excluded.payment_instructions, cutoff_days_before = excluded.cutoff_days_before,
     cutoff_time = excluded.cutoff_time, year_start = excluded.year_start, year_end = excluded.year_end`)
-    .bind(school_name, cur?.sample ? 1 : 0, payment_instructions, cutoff_days_before, body.cutoff_time, body.year_start, body.year_end).run()
+    .bind(school_name, cur?.sample ? 1 : 0, payment_instructions, cutoff_days_before, body.cutoff_time, body.year_start, body.year_end)
+    .run()
   return json({ school: schoolOut(await c.db.prepare('SELECT * FROM school WHERE id = 1').first()) })
 }
 
@@ -68,14 +77,25 @@ function itemInput(body) {
   return { name, price_cents, ingredients, allergens, vegetarian, days: [...days].sort(), max_per_child: max ?? null, active }
 }
 
-const itemBinds = (i) => [i.name, i.price_cents, i.ingredients, JSON.stringify(i.allergens), i.vegetarian ? 1 : 0, JSON.stringify(i.days),
-  i.max_per_child, i.active ? 1 : 0]
+const itemBinds = (i) => [
+  i.name,
+  i.price_cents,
+  i.ingredients,
+  JSON.stringify(i.allergens),
+  i.vegetarian ? 1 : 0,
+  JSON.stringify(i.days),
+  i.max_per_child,
+  i.active ? 1 : 0,
+]
 
 export async function addItem(c) {
   const i = itemInput(await readJson(c))
   const id = randomId('item')
-  await c.db.prepare(`INSERT INTO items (name, price_cents, ingredients, allergens, vegetarian, days, max_per_child, active, id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(...itemBinds(i), id).run()
+  await c.db
+    .prepare(`INSERT INTO items (name, price_cents, ingredients, allergens, vegetarian, days, max_per_child, active, id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(...itemBinds(i), id)
+    .run()
   return json({ item: itemOut(await c.db.prepare('SELECT * FROM items WHERE id = ?').bind(id).first()) }, 201)
 }
 
@@ -83,13 +103,22 @@ export async function putItem(c, { id }) {
   const old = await c.db.prepare('SELECT * FROM items WHERE id = ?').bind(id).first()
   if (!old) throw notFound("That item isn't on the list.")
   const i = itemInput(await readJson(c))
-  const stmts = [c.db.prepare(`UPDATE items SET name = ?, price_cents = ?, ingredients = ?, allergens = ?, vegetarian = ?, days = ?,
-    max_per_child = ?, active = ? WHERE id = ?`).bind(...itemBinds(i), id)]
+  const stmts = [
+    c.db
+      .prepare(`UPDATE items SET name = ?, price_cents = ?, ingredients = ?, allergens = ?, vegetarian = ?, days = ?,
+    max_per_child = ?, active = ? WHERE id = ?`)
+      .bind(...itemBinds(i), id),
+  ]
   if (!i.active) {
-    const r = await c.db.prepare("SELECT COALESCE(SUM(qty), 0) AS q FROM lines WHERE item_id = ? AND status = 'active' AND date >= ?")
-      .bind(id, c.today).first()
+    const r = await c.db
+      .prepare("SELECT COALESCE(SUM(qty), 0) AS q FROM lines WHERE item_id = ? AND status = 'active' AND date >= ?")
+      .bind(id, c.today)
+      .first()
     if (r.q > 0) {
-      throw conflict('bad_state', `${r.q} of ${old.name} ${r.q === 1 ? 'is' : 'are'} ordered for days still to come. Leave it on until those days pass.`)
+      throw conflict(
+        'bad_state',
+        `${r.q} of ${old.name} ${r.q === 1 ? 'is' : 'are'} ordered for days still to come. Leave it on until those days pass.`,
+      )
     }
     stmts.push(c.db.prepare('DELETE FROM menu WHERE item_id = ? AND date >= ?').bind(id, c.today))
   }
@@ -101,25 +130,39 @@ export async function putItem(c, { id }) {
 
 async function menuDays(db, cal, dates) {
   const [m, o] = await db.batch([
-    db.prepare('SELECT m.date, m.item_id FROM menu m JOIN items i ON i.id = m.item_id WHERE m.date BETWEEN ? AND ? ORDER BY i.seq')
+    db
+      .prepare('SELECT m.date, m.item_id FROM menu m JOIN items i ON i.id = m.item_id WHERE m.date BETWEEN ? AND ? ORDER BY i.seq')
       .bind(dates[0], dates[dates.length - 1]),
-    db.prepare(`SELECT date, item_id, SUM(qty) AS qty FROM lines WHERE status = 'active' AND date BETWEEN ? AND ? GROUP BY date, item_id`)
+    db
+      .prepare(`SELECT date, item_id, SUM(qty) AS qty FROM lines WHERE status = 'active' AND date BETWEEN ? AND ? GROUP BY date, item_id`)
       .bind(dates[0], dates[dates.length - 1]),
   ])
   return dates.map((date) => {
     const st = staffStatus(cal, date)
     const ordered = {}
     for (const r of o.results) if (r.date === date) ordered[r.item_id] = r.qty
-    return { date, date_label: dateLabel(date), status: st.status, status_label: st.status_label, no_school: noSchoolInfo(cal, date),
-      item_ids: m.results.filter((r) => r.date === date).map((r) => r.item_id), ordered }
+    return {
+      date,
+      date_label: dateLabel(date),
+      status: st.status,
+      status_label: st.status_label,
+      no_school: noSchoolInfo(cal, date),
+      item_ids: m.results.filter((r) => r.date === date).map((r) => r.item_id),
+      ordered,
+    }
   })
 }
 
 async function menuWeek(c, cal, anyDate) {
   const monday = weekStart(anyDate)
   const dates = [0, 1, 2, 3, 4].map((i) => addDays(monday, i))
-  return { week_start: monday, week_label: weekLabel(monday), prev_week: addDays(monday, -7), next_week: addDays(monday, 7),
-    days: await menuDays(c.db, cal, dates) }
+  return {
+    week_start: monday,
+    week_label: weekLabel(monday),
+    prev_week: addDays(monday, -7),
+    next_week: addDays(monday, 7),
+    days: await menuDays(c.db, cal, dates),
+  }
 }
 
 export async function getMenu(c) {
@@ -135,17 +178,24 @@ export async function putMenuDay(c, { date }) {
   if (!isSchoolDay(cal, date)) throw bad('date', `${dateLabel(date)} is not a school day.`)
   const body = await readJson(c)
   const ids = body.item_ids
-  if (!Array.isArray(ids) || ids.some((x) => typeof x !== 'string') || new Set(ids).size !== ids.length) throw bad('item_ids', 'Tick items from the list.')
+  if (!Array.isArray(ids) || ids.some((x) => typeof x !== 'string') || new Set(ids).size !== ids.length)
+    throw bad('item_ids', 'Tick items from the list.')
   const { results: active } = await c.db.prepare('SELECT id, name FROM items WHERE active = 1').all()
   const activeIds = new Set(active.map((i) => i.id))
   if (ids.some((x) => !activeIds.has(x))) throw bad('item_ids', 'Only items on offer can go on the menu.')
   if (date < c.today) throw conflict('bad_state', 'That day has passed.')
-  const { results: ordered } = await c.db.prepare(`SELECT l.item_id, i.name, SUM(l.qty) AS qty FROM lines l JOIN items i ON i.id = l.item_id
-    WHERE l.date = ? AND l.status = 'active' GROUP BY l.item_id, i.name ORDER BY i.seq`).bind(date).all()
+  const { results: ordered } = await c.db
+    .prepare(`SELECT l.item_id, i.name, SUM(l.qty) AS qty FROM lines l JOIN items i ON i.id = l.item_id
+    WHERE l.date = ? AND l.status = 'active' GROUP BY l.item_id, i.name ORDER BY i.seq`)
+    .bind(date)
+    .all()
   const left = ordered.find((r) => !ids.includes(r.item_id))
   if (left) {
-    throw conflict('bad_state', `${left.qty} of ${left.name} ${left.qty === 1 ? 'is' : 'are'} already ordered for ${dateLabel(date)}. ` +
-      'Keep it on the menu, or make the day a no-school day.')
+    throw conflict(
+      'bad_state',
+      `${left.qty} of ${left.name} ${left.qty === 1 ? 'is' : 'are'} already ordered for ${dateLabel(date)}. ` +
+        'Keep it on the menu, or make the day a no-school day.',
+    )
   }
   await c.db.batch([
     c.db.prepare('DELETE FROM menu WHERE date = ?').bind(date),
@@ -182,8 +232,11 @@ export async function fillMenuWeek(c) {
 
 // The preview: what closing a day would cancel and credit now (that day's active lines, per family, at their own totals).
 async function closurePlan(db, date) {
-  const { results } = await db.prepare(`SELECT id, family_id, qty, unit_price_cents, total_cents FROM lines
-    WHERE date = ? AND status = 'active' ORDER BY family_id, seq`).bind(date).all()
+  const { results } = await db
+    .prepare(`SELECT id, family_id, qty, unit_price_cents, total_cents FROM lines
+    WHERE date = ? AND status = 'active' ORDER BY family_id, seq`)
+    .bind(date)
+    .all()
   const credit = new Map()
   let item_count = 0
   for (const r of results) {
@@ -220,15 +273,22 @@ export async function addNoSchool(c) {
   // first (later orders are refused), then one credit per family from the active lines' own totals, then those lines close.
   await c.db.batch([
     c.db.prepare('INSERT INTO no_school (date, kind, note, created_at) VALUES (?, ?, ?, ?)').bind(date, body.kind, note, c.nowIso),
-    c.db.prepare(`INSERT INTO entries (id, family_id, at, date, kind, amount_cents, label, method, note)
+    c.db
+      .prepare(`INSERT INTO entries (id, family_id, at, date, kind, amount_cents, label, method, note)
       SELECT 'ent_' || lower(hex(randomblob(8))), family_id, ?, ?, 'closure', -SUM(total_cents), ?, NULL, ? FROM lines
-      WHERE date = ? AND status = 'active' GROUP BY family_id`).bind(c.nowIso, c.today, label, note, date),
+      WHERE date = ? AND status = 'active' GROUP BY family_id`)
+      .bind(c.nowIso, c.today, label, note, date),
     c.db.prepare("UPDATE lines SET status = 'closed', changed_at = ? WHERE date = ? AND status = 'active'").bind(c.nowIso, date),
   ])
   // What was done, read back: the lines this batch closed and the credits it wrote.
   const [l, e] = await c.db.batch([
-    c.db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(qty), 0) AS q FROM lines WHERE date = ? AND status = 'closed' AND changed_at = ?").bind(date, c.nowIso),
-    c.db.prepare("SELECT COUNT(*) AS n, COALESCE(-SUM(amount_cents), 0) AS cents FROM entries WHERE kind = 'closure' AND label = ? AND at = ?")
+    c.db
+      .prepare("SELECT COUNT(*) AS n, COALESCE(SUM(qty), 0) AS q FROM lines WHERE date = ? AND status = 'closed' AND changed_at = ?")
+      .bind(date, c.nowIso),
+    c.db
+      .prepare(
+        "SELECT COUNT(*) AS n, COALESCE(-SUM(amount_cents), 0) AS cents FROM entries WHERE kind = 'closure' AND label = ? AND at = ?",
+      )
       .bind(label, c.nowIso),
   ])
   const cancelled = { lines: l.results[0].n, item_count: l.results[0].q, families: e.results[0].n, credit_cents: e.results[0].cents }
@@ -280,7 +340,10 @@ async function staffInput(c, body, { exceptId, pinRequired }) {
     pin = body.pin
   }
   const class_id = body.class_id ?? null
-  if (class_id !== null && (typeof class_id !== 'string' || !(await c.db.prepare('SELECT id FROM classes WHERE id = ?').bind(class_id).first()))) {
+  if (
+    class_id !== null &&
+    (typeof class_id !== 'string' || !(await c.db.prepare('SELECT id FROM classes WHERE id = ?').bind(class_id).first()))
+  ) {
     throw bad('class_id', 'Choose a class from the list.')
   }
   if (pin && (await staffByPin(c.db, pin, { includeInactive: true, exceptId }))) {
@@ -293,8 +356,10 @@ export async function addStaff(c) {
   const s = await staffInput(c, await readJson(c), { exceptId: null, pinRequired: true })
   const id = randomId('st')
   const salt = randomSaltHex()
-  await c.db.prepare('INSERT INTO staff (id, name, role, pin_hash, pin_salt, class_id, active) VALUES (?, ?, ?, ?, ?, ?, 1)')
-    .bind(id, s.name, s.role, await hashPin(s.pin, salt), salt, s.class_id).run()
+  await c.db
+    .prepare('INSERT INTO staff (id, name, role, pin_hash, pin_salt, class_id, active) VALUES (?, ?, ?, ?, ?, ?, 1)')
+    .bind(id, s.name, s.role, await hashPin(s.pin, salt), salt, s.class_id)
+    .run()
   return json({ staff: staffOut(await c.db.prepare('SELECT * FROM staff WHERE id = ?').bind(id).first()) }, 201)
 }
 
@@ -308,7 +373,11 @@ export async function putStaff(c, { id }) {
     const r = await c.db.prepare("SELECT COUNT(*) AS n FROM staff WHERE role = 'admin' AND active = 1 AND id != ?").bind(id).first()
     if (r.n === 0) throw conflict('bad_state', 'The school needs at least one office PIN.')
   }
-  const stmts = [c.db.prepare('UPDATE staff SET name = ?, role = ?, class_id = ?, active = ? WHERE id = ?').bind(s.name, s.role, s.class_id, active ? 1 : 0, id)]
+  const stmts = [
+    c.db
+      .prepare('UPDATE staff SET name = ?, role = ?, class_id = ?, active = ? WHERE id = ?')
+      .bind(s.name, s.role, s.class_id, active ? 1 : 0, id),
+  ]
   if (s.pin) {
     const salt = randomSaltHex()
     stmts.push(c.db.prepare('UPDATE staff SET pin_hash = ?, pin_salt = ? WHERE id = ?').bind(await hashPin(s.pin, salt), salt, id))

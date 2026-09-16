@@ -1,6 +1,21 @@
 // "/family/" The family's balance, what is coming up (with Cancel before the cut-off) and their children.
 import {
-  $, ApiError, allergenTools, balancePhrase, classWords, familyApi, getInfo, h, icon, money, renderHeader, requireSession, run, say, signOut, warningText,
+  $,
+  ApiError,
+  allergenTools,
+  balancePhrase,
+  classWords,
+  familyApi,
+  getInfo,
+  h,
+  icon,
+  money,
+  renderHeader,
+  requireSession,
+  run,
+  say,
+  signOut,
+  warningText,
 } from './family.js'
 
 const s = requireSession()
@@ -16,28 +31,59 @@ function renderBalance(cents, instructions) {
 }
 
 function renderChildren(children, tools) {
-  $('children').replaceChildren(...children.map((c) => h('article', { class: 'card child-card', dataset: { child: c.id } },
-    h('h3', {}, c.first_name),
-    h('p', { class: 'where' }, classWords(c)),
-    c.allergies.length
-      ? h('div', { class: 'pills', 'aria-label': `${c.first_name}'s allergies` }, c.allergies.map((k) => h('span', { class: 'pill allergy' }, tools.label(k))))
-      : h('p', { class: 'muted small', style: 'margin:0' }, 'No allergies ticked'))))
+  $('children').replaceChildren(
+    ...children.map((c) =>
+      h(
+        'article',
+        { class: 'card child-card', dataset: { child: c.id } },
+        h('h3', {}, c.first_name),
+        h('p', { class: 'where' }, classWords(c)),
+        c.allergies.length
+          ? h(
+              'div',
+              { class: 'pills', 'aria-label': `${c.first_name}'s allergies` },
+              c.allergies.map((k) => h('span', { class: 'pill allergy' }, tools.label(k))),
+            )
+          : h('p', { class: 'muted small', style: 'margin:0' }, 'No allergies ticked'),
+      ),
+    ),
+  )
   if (!children.length) $('children').replaceChildren(h('p', { class: 'muted' }, 'No children added yet.'))
 }
 
 function lineRow(line, instructions, tools) {
   // Red means allergen on every screen: a lunch holding one of this child's allergens keeps a "Contains Milk" pill, even once the
   // parent has said "I understand".
-  const li = h('li', { class: 'line line-row', dataset: { line: line.id } },
+  const li = h(
+    'li',
+    { class: 'line line-row', dataset: { line: line.id } },
     h('span', { class: 'what' }, `${line.first_name}, ${line.item_name} ×${line.qty}`),
-    line.conflicts.length ? h('span', { class: 'pill allergen-pill match', dataset: { allergen: line.conflicts.join(' ') } }, `Contains ${tools.words(line.conflicts)}`) : null,
-    h('span', { class: 'money' }, money(line.total_cents)))
+    line.conflicts.length
+      ? h(
+          'span',
+          { class: 'pill allergen-pill match', dataset: { allergen: line.conflicts.join(' ') } },
+          `Contains ${tools.words(line.conflicts)}`,
+        )
+      : null,
+    h('span', { class: 'money' }, money(line.total_cents)),
+  )
   const error = h('p', { class: 'error', role: 'alert', hidden: true })
   // An allergy ticked after ordering: the kitchen sees "Not confirmed by the parent", so the parent sees the same red warning.
   const needsAck = !line.acknowledged
-  const late = needsAck && line.conflicts.length ? h('div', { class: 'late-allergy' },
-    h('p', { class: 'allergen-warning' }, icon('alert'), h('span', {}, warningText(line.first_name, tools.words(line.conflicts), line.item_name))),
-    h('p', { class: 'late-note' }, 'You ticked this allergy after ordering.')) : null
+  const late =
+    needsAck && line.conflicts.length
+      ? h(
+          'div',
+          { class: 'late-allergy' },
+          h(
+            'p',
+            { class: 'allergen-warning' },
+            icon('alert'),
+            h('span', {}, warningText(line.first_name, tools.words(line.conflicts), line.item_name)),
+          ),
+          h('p', { class: 'late-note' }, 'You ticked this allergy after ordering.'),
+        )
+      : null
   const ackButton = late ? h('button', { class: 'btn big ack-line', type: 'button', onclick: doAck }, 'I understand, keep it') : null
   async function doAck(ev) {
     ev.currentTarget.disabled = true
@@ -61,12 +107,22 @@ function lineRow(line, instructions, tools) {
 
   const actions = h('div', { class: 'row' })
   const cancelSlot = h('span', { class: 'row' })
-  const showCancel = () => cancelSlot.replaceChildren(h('button', { class: 'btn warn cancel-line', type: 'button', onclick: askConfirm }, 'Cancel'))
+  const showCancel = () =>
+    cancelSlot.replaceChildren(h('button', { class: 'btn warn cancel-line', type: 'button', onclick: askConfirm }, 'Cancel'))
   function askConfirm() {
-    cancelSlot.replaceChildren(h('div', { class: 'confirm' },
-      h('p', {}, `Cancel ${line.first_name}'s ${line.item_name} on ${line.date_label}? ${money(line.total_cents)} comes off your balance.`),
-      h('button', { class: 'btn primary confirm-cancel', type: 'button', onclick: doCancel }, 'Yes, cancel it'),
-      h('button', { class: 'btn keep-line', type: 'button', onclick: showCancel }, 'Keep it')))
+    cancelSlot.replaceChildren(
+      h(
+        'div',
+        { class: 'confirm' },
+        h(
+          'p',
+          {},
+          `Cancel ${line.first_name}'s ${line.item_name} on ${line.date_label}? ${money(line.total_cents)} comes off your balance.`,
+        ),
+        h('button', { class: 'btn primary confirm-cancel', type: 'button', onclick: doCancel }, 'Yes, cancel it'),
+        h('button', { class: 'btn keep-line', type: 'button', onclick: showCancel }, 'Keep it'),
+      ),
+    )
     cancelSlot.querySelector('.confirm-cancel').focus()
   }
   async function doCancel(ev) {
@@ -101,9 +157,20 @@ function renderUpcoming(lines, instructions, tools) {
     if (!byDay.has(l.date)) byDay.set(l.date, [])
     byDay.get(l.date).push(l)
   }
-  box.replaceChildren(...[...byDay.values()].map((dayLines) => h('section', { class: 'day-group' },
-    h('h3', {}, dayLines[0].date_label),
-    h('ul', { class: 'list' }, dayLines.map((l) => lineRow(l, instructions, tools))))))
+  box.replaceChildren(
+    ...[...byDay.values()].map((dayLines) =>
+      h(
+        'section',
+        { class: 'day-group' },
+        h('h3', {}, dayLines[0].date_label),
+        h(
+          'ul',
+          { class: 'list' },
+          dayLines.map((l) => lineRow(l, instructions, tools)),
+        ),
+      ),
+    ),
+  )
 }
 
 async function start() {
@@ -116,7 +183,11 @@ async function start() {
   $('first-steps').hidden = fam.children.length > 0
   $('order-lunches').hidden = fam.children.length === 0
   renderBalance(fam.balance_cents, fam.payment_instructions)
-  renderUpcoming(orders.lines.filter((l) => l.status === 'active'), fam.payment_instructions, tools)
+  renderUpcoming(
+    orders.lines.filter((l) => l.status === 'active'),
+    fam.payment_instructions,
+    tools,
+  )
   renderChildren(fam.children, tools)
   $('sign-out').addEventListener('click', signOut)
   $('loading').hidden = true

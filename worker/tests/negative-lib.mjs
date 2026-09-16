@@ -11,7 +11,7 @@ const WORKER = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const LOG = path.join(WORKER, 'tests', 'negative-control.log')
 const SKIP = new Set(['.negative', '.wrangler', 'node_modules', '.logs'])
 
-const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 // patches: [{ file, from, to }] — `from` must occur exactly once in the file.
 // NEG_PORT overrides the port (default 8605, inspector +10), so the lead's QA can run the controls on its own port.
@@ -46,7 +46,8 @@ export async function negative({ name, why, patches, args, expectRed, port = Num
   const out = await new Promise((resolve) => {
     let buf = ''
     const child = spawn(process.execPath, [path.join(copy, 'tests', 'run.mjs'), '--fresh', ...args], {
-      cwd: copy, env: { ...process.env, PORT: String(port), TEST_REPORTER: 'tap', NO_COLOR: '1' },
+      cwd: copy,
+      env: { ...process.env, PORT: String(port), TEST_REPORTER: 'tap', NO_COLOR: '1' },
     })
     child.stdout.on('data', (d) => (buf += d))
     child.stderr.on('data', (d) => (buf += d))
@@ -54,9 +55,15 @@ export async function negative({ name, why, patches, args, expectRed, port = Num
   })
 
   // No home-folder paths in the committed log: show paths relative to the copy's worker/.
-  const lines = out.buf.split(pathToFileURL(copy).href).join('worker').split(copy + path.sep).join('worker/').split(copy).join('worker')
+  const lines = out.buf
+    .split(pathToFileURL(copy).href)
+    .join('worker')
+    .split(copy + path.sep)
+    .join('worker/')
+    .split(copy)
+    .join('worker')
     .split('\n')
-  const missing = expectRed.filter((t) => !new RegExp(`not ok \\d+ - ${escape(t)}`).test(lines.join('\n')))
+  const missing = expectRed.filter((t) => !new RegExp(`not ok \\d+ - ${escapeRe(t)}`).test(lines.join('\n')))
   const red = out.code !== 0 && missing.length === 0
   // Keep the red lines and the assertion detail under each, not the whole run.
   const detail = []
@@ -67,7 +74,8 @@ export async function negative({ name, why, patches, args, expectRed, port = Num
   const result = red
     ? `RESULT: RED as intended (exit ${out.code}); red tests: ${expectRed.join(' | ')}`
     : `RESULT: STAYED GREEN — the check measured nothing (exit ${out.code}; not red: ${missing.join(' | ') || 'none'})`
-  const text = `${header}patched: ${patches.map((p) => p.file).join(', ')}\nrun: node tests/run.mjs --fresh ${args.join(' ')} (PORT ${port})\n` +
+  const text =
+    `${header}patched: ${patches.map((p) => p.file).join(', ')}\nrun: node tests/run.mjs --fresh ${args.join(' ')} (PORT ${port})\n` +
     `${summary.join('\n')}\n${detail.join('\n')}\n${result}\n`
   appendFileSync(LOG, text)
   console.log(text)

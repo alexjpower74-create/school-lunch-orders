@@ -1,7 +1,19 @@
 // Teacher's class list on Thu Sep 17 at noon: Given out / Absent counts come from the API answer and survive a reload.
 import { expect, test } from '@playwright/test'
 import {
-  api, assertNoThirdParty, bearer, expectNoHorizontalScroll, expectTapTarget, fresh, nl, PIN, setNow, shot, staffToken, tap, useStaffSession,
+  api,
+  assertNoThirdParty,
+  bearer,
+  expectNoHorizontalScroll,
+  expectTapTarget,
+  fresh,
+  nl,
+  PIN,
+  setNow,
+  shot,
+  staffToken,
+  tap,
+  useStaffSession,
 } from '../helpers.mjs'
 import { FRI, orderThursday, THU } from './setup.mjs'
 
@@ -12,7 +24,9 @@ test.beforeEach(async ({ context, request }) => {
   await fresh(context, request, { now: THU_NOON })
   await orderThursday(request) // placed at the Tue anchor, before Thursday's cut-off
 })
-test.afterEach(async ({ context }) => { assertNoThirdParty(context) })
+test.afterEach(async ({ context }) => {
+  assertNoThirdParty(context)
+})
 
 async function openRoom4(page, context, request, now = THU_NOON) {
   await useStaffSession(context, request, PIN.oldford, { now })

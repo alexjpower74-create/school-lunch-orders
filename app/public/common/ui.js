@@ -33,7 +33,8 @@ export function listWords(words) {
 }
 
 /** Escape text for HTML. */
-export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+export const esc = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 
 /**
  * h('button', { class: 'ack', dataset: { item: 'mac' }, onclick }, 'I understand, add it')

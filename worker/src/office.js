@@ -23,10 +23,16 @@ async function familiesWithBalances(db) {
     if (!kids.has(r.family_id)) kids.set(r.family_id, [])
     kids.get(r.family_id).push({ id: r.id, first_name: r.first_name, class_name: r.class_name ?? '' })
   }
-  return f.results.map((r) => ({
-    id: r.id, label: r.label, children: kids.get(r.id) || [], balance_cents: r.balance_cents, last_payment_at: r.last_payment_at ?? null,
-    last_payment_label: r.last_payment_at ? dateLabel(localDate(r.last_payment_at)) : null,
-  })).sort((a, b) => b.balance_cents - a.balance_cents || (a.label < b.label ? -1 : a.label > b.label ? 1 : 0))
+  return f.results
+    .map((r) => ({
+      id: r.id,
+      label: r.label,
+      children: kids.get(r.id) || [],
+      balance_cents: r.balance_cents,
+      last_payment_at: r.last_payment_at ?? null,
+      last_payment_label: r.last_payment_at ? dateLabel(localDate(r.last_payment_at)) : null,
+    }))
+    .sort((a, b) => b.balance_cents - a.balance_cents || (a.label < b.label ? -1 : a.label > b.label ? 1 : 0))
 }
 
 export async function officeFamilies(c) {
@@ -92,7 +98,10 @@ export async function familyDetail(c, { id }) {
   const lines = ln.results.map((r) => lineOut(r, cal, c.now))
   const entries = en.results.map(entryOut)
   return json({
-    family, children: ch.results.map(childOut), balance_cents: entries.reduce((s, e) => (e.voided ? s : s + e.amount_cents), 0), entries,
+    family,
+    children: ch.results.map(childOut),
+    balance_cents: entries.reduce((s, e) => (e.voided ? s : s + e.amount_cents), 0),
+    entries,
     upcoming: { lines, total_cents: lines.reduce((s, l) => s + l.total_cents, 0) },
   })
 }
@@ -109,8 +118,16 @@ export async function recordPayment(c) {
   if (!METHODS.includes(body.method)) throw bad('method', 'Choose how it was paid.')
   const note = textField(body, 'note', 0, 200, 'Keep the note under 200 characters.')
   const id = randomId('ent')
-  await insertEntry(c.db, { id, family_id: fam.id, at: c.nowIso, kind: 'payment', amount_cents: -amount, label: paymentLabel(body.method),
-    method: body.method, note }).run()
+  await insertEntry(c.db, {
+    id,
+    family_id: fam.id,
+    at: c.nowIso,
+    kind: 'payment',
+    amount_cents: -amount,
+    label: paymentLabel(body.method),
+    method: body.method,
+    note,
+  }).run()
   const entry = await c.db.prepare('SELECT * FROM entries WHERE id = ?').bind(id).first()
   return json({ entry: entryOut(entry), balance_cents: await balanceOf(c.db, fam.id) }, 201)
 }
@@ -122,7 +139,15 @@ export async function recordAdjustment(c) {
   if (amount === 0) throw bad('amount_cents', 'Type an amount that is not zero, up to $10,000.00 either way.')
   const note = textField(body, 'note', 1, 200, 'Say why in the note (up to 200 characters).')
   const id = randomId('ent')
-  await insertEntry(c.db, { id, family_id: fam.id, at: c.nowIso, kind: 'adjustment', amount_cents: amount, label: 'Adjustment', note }).run()
+  await insertEntry(c.db, {
+    id,
+    family_id: fam.id,
+    at: c.nowIso,
+    kind: 'adjustment',
+    amount_cents: amount,
+    label: 'Adjustment',
+    note,
+  }).run()
   const entry = await c.db.prepare('SELECT * FROM entries WHERE id = ?').bind(id).first()
   return json({ entry: entryOut(entry), balance_cents: await balanceOf(c.db, fam.id) }, 201)
 }
@@ -136,9 +161,14 @@ export async function voidEntry(c, { id }) {
   return json({ entry: entryOut({ ...e, voided: 1 }), balance_cents: await balanceOf(c.db, e.family_id) })
 }
 
-const csvResponse = (text, filename) => new Response(text, {
-  headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store' },
-})
+const csvResponse = (text, filename) =>
+  new Response(text, {
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    },
+  })
 
 export async function ledgerCsv(c) {
   const cal = await loadCal(c.db)
@@ -147,12 +177,24 @@ export async function ledgerCsv(c) {
   const to = q('to') || c.today
   if (!isValidDate(from)) throw bad('from', 'Choose a start date.')
   if (!isValidDate(to)) throw bad('to', 'Choose an end date.')
-  const { results } = await c.db.prepare(`SELECT e.*, f.label AS family_label FROM entries e JOIN families f ON f.id = e.family_id
-    WHERE e.date BETWEEN ? AND ? ORDER BY e.at, e.seq`).bind(from, to).all()
+  const { results } = await c.db
+    .prepare(`SELECT e.*, f.label AS family_label FROM entries e JOIN families f ON f.id = e.family_id
+    WHERE e.date BETWEEN ? AND ? ORDER BY e.at, e.seq`)
+    .bind(from, to)
+    .all()
   const rows = [['Date', 'Time', 'Family', 'Kind', 'Description', 'Amount', 'Method', 'Note', 'Voided'].map(textCell)]
   for (const e of results) {
-    rows.push([textCell(e.date), textCell(timeLabel(e.at)), textCell(e.family_label), textCell(ENTRY_KIND_WORDS[e.kind]), textCell(e.label),
-      amountCell(e.amount_cents), textCell(e.method ? METHOD_LABELS[e.method] : ''), textCell(e.note), textCell(e.voided ? 'yes' : '')])
+    rows.push([
+      textCell(e.date),
+      textCell(timeLabel(e.at)),
+      textCell(e.family_label),
+      textCell(ENTRY_KIND_WORDS[e.kind]),
+      textCell(e.label),
+      amountCell(e.amount_cents),
+      textCell(e.method ? METHOD_LABELS[e.method] : ''),
+      textCell(e.note),
+      textCell(e.voided ? 'yes' : ''),
+    ])
   }
   return csvResponse(csvText(rows), `lunch-ledger-${from}-to-${to}.csv`)
 }
@@ -161,7 +203,11 @@ export async function balancesCsv(c) {
   const families = await familiesWithBalances(c.db)
   const rows = [['Family', 'Children', 'Balance'].map(textCell)]
   for (const f of families) {
-    rows.push([textCell(f.label), textCell(f.children.map((k) => `${k.first_name} (${k.class_name})`).join('; ')), amountCell(f.balance_cents)])
+    rows.push([
+      textCell(f.label),
+      textCell(f.children.map((k) => `${k.first_name} (${k.class_name})`).join('; ')),
+      amountCell(f.balance_cents),
+    ])
   }
   return csvResponse(csvText(rows), `lunch-balances-${c.today}.csv`)
 }

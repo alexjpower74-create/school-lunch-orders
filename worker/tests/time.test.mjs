@@ -2,7 +2,17 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  addDays, dateLabel, daysBetween, isValidDate, localDate, localHHMM, localInstant, longLabel, nextMidnight, startOfDate, timeLabel,
+  addDays,
+  dateLabel,
+  daysBetween,
+  isValidDate,
+  localDate,
+  localHHMM,
+  localInstant,
+  longLabel,
+  nextMidnight,
+  startOfDate,
+  timeLabel,
 } from '../src/time.js'
 
 const iso = (d) => d.toISOString()

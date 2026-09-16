@@ -7,9 +7,27 @@ beforeEach(() => reset())
 
 const KIDS = { 'fam-1': ['ch-liam', 'ch-ava'], 'fam-2': ['ch-noah'], 'fam-3': ['ch-emma', 'ch-jack', 'ch-chloe'], 'fam-4': ['ch-owen'] }
 const MENUS = {
-  '2026-09-17': [['chili', 1], ['mac', 1], ['milk', 2], ['apple', 2], ['cookie', 1]],
-  '2026-09-18': [['pizza', 2], ['fishcakes', 1], ['milk', 2], ['apple', 2], ['cookie', 1]],
-  '2026-09-21': [['soup', 1], ['wrap', 1], ['milk', 2], ['apple', 2], ['cookie', 1]],
+  '2026-09-17': [
+    ['chili', 1],
+    ['mac', 1],
+    ['milk', 2],
+    ['apple', 2],
+    ['cookie', 1],
+  ],
+  '2026-09-18': [
+    ['pizza', 2],
+    ['fishcakes', 1],
+    ['milk', 2],
+    ['apple', 2],
+    ['cookie', 1],
+  ],
+  '2026-09-21': [
+    ['soup', 1],
+    ['wrap', 1],
+    ['milk', 2],
+    ['apple', 2],
+    ['cookie', 1],
+  ],
 }
 const SEED = 91817
 const sum = (xs) => xs.reduce((s, x) => s + x, 0)
@@ -31,7 +49,10 @@ test('kitchen totals = sum of orders: random orders over two days plus cancellat
       }
     }
     if (fam === 'fam-2') {
-      const forced = [['2026-09-17', 'milk'], ['2026-09-18', 'apple']]
+      const forced = [
+        ['2026-09-17', 'milk'],
+        ['2026-09-18', 'apple'],
+      ]
       const kept = lines.filter((l) => !forced.some(([d, i]) => l.date === d && l.item_id === i))
       lines.length = 0
       lines.push(...kept, ...forced.map(([date, item_id]) => ({ child_id: 'ch-noah', date, item_id, qty: 2 })))
@@ -45,7 +66,10 @@ test('kitchen totals = sum of orders: random orders over two days plus cancellat
       if (rnd() < 0.25) assert.equal((await call('POST', `/api/family/lines/${l.id}/cancel`, { token: tokens[fam] })).status, 200)
     }
   }
-  assert.equal((await call('POST', '/api/admin/no-school', { token: office, body: { date: '2026-09-21', kind: 'closure', note: '' } })).status, 201)
+  assert.equal(
+    (await call('POST', '/api/admin/no-school', { token: office, body: { date: '2026-09-21', kind: 'closure', note: '' } })).status,
+    201,
+  )
 
   const all = []
   for (const fam of Object.keys(KIDS)) all.push(...(await get('/api/family/orders', tokens[fam])).body.lines)
@@ -55,24 +79,41 @@ test('kitchen totals = sum of orders: random orders over two days plus cancellat
     const active = all.filter((l) => l.date === date && l.status === 'active')
     const k = (await get(`/api/kitchen/day?date=${date}`, kitchen)).body
     const want = sum(active.map((l) => l.qty))
-    if (date !== '2026-09-21') assert.ok(active.some((l) => l.qty === 2), `${date} has a qty 2 line`)
+    if (date !== '2026-09-21')
+      assert.ok(
+        active.some((l) => l.qty === 2),
+        `${date} has a qty 2 line`,
+      )
     assert.equal(sum(k.items.map((i) => i.qty)), want, `${date}: Σ items[].qty = Σ qty of active lines`)
     assert.equal(k.totals.item_count, want, `${date}: totals.item_count = Σ qty of active lines`)
     assert.equal(k.totals.line_count, active.length, `${date}: line_count`)
     assert.equal(k.totals.children, new Set(active.map((l) => l.child_id)).size)
-    for (const item of k.items) assert.equal(item.qty, sum(active.filter((l) => l.item_id === item.item_id).map((l) => l.qty)), `${date} ${item.item_id}`)
+    for (const item of k.items)
+      assert.equal(item.qty, sum(active.filter((l) => l.item_id === item.item_id).map((l) => l.qty)), `${date} ${item.item_id}`)
     for (const cl of k.classes) {
       assert.equal(cl.qty, sum(cl.items.map((i) => i.qty)), `${date} class ${cl.class_id}: qty = Σ items`)
       assert.ok(cl.qty >= 1)
     }
     assert.equal(sum(k.classes.map((c) => c.qty)), want)
-    assert.deepEqual(k.classes.map((c) => c.sort), [...k.classes.map((c) => c.sort)].sort((a, b) => a - b), 'classes by sort')
-    for (let i = 1; i < k.items.length; i++) assert.ok(k.items[i - 1].qty > k.items[i].qty || (k.items[i - 1].qty === k.items[i].qty && k.items[i - 1].name <= k.items[i].name), 'items: qty desc, then name')
+    assert.deepEqual(
+      k.classes.map((c) => c.sort),
+      [...k.classes.map((c) => c.sort)].sort((a, b) => a - b),
+      'classes by sort',
+    )
+    for (let i = 1; i < k.items.length; i++)
+      assert.ok(
+        k.items[i - 1].qty > k.items[i].qty || (k.items[i - 1].qty === k.items[i].qty && k.items[i - 1].name <= k.items[i].name),
+        'items: qty desc, then name',
+      )
 
     const seen = k.children.flatMap((ch) => ch.lines.map((l) => l.line_id))
     assert.deepEqual([...seen].sort(), active.map((l) => l.id).sort(), `${date}: every active line under exactly one child`)
     const ranks = k.children.map((ch) => RANK[ch.flag])
-    assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b), `${date}: flag order conflict, allergy, none`)
+    assert.deepEqual(
+      ranks,
+      [...ranks].sort((a, b) => a - b),
+      `${date}: flag order conflict, allergy, none`,
+    )
     for (const ch of k.children) {
       const hasConflict = ch.lines.some((l) => l.conflicts.length)
       assert.equal(ch.flag, hasConflict ? 'conflict' : ch.allergies.length ? 'allergy' : null, `${date} ${ch.child_id}`)
@@ -93,24 +134,49 @@ test('kitchen totals = sum of orders: random orders over two days plus cancellat
 test('kitchen: a new allergy ticked after ordering shows as a conflict with acknowledged false', async () => {
   const fam = await familyToken('fam-1')
   const kitchen = await staffToken('kitchen')
-  await order(fam, [{ child_id: 'ch-ava', date: '2026-09-17', item_id: 'mac', qty: 1 }, { child_id: 'ch-liam', date: '2026-09-17', item_id: 'mac', qty: 1, allergen_ack: true },
-    { child_id: 'ch-liam', date: '2026-09-17', item_id: 'chili', qty: 1 }])
+  await order(fam, [
+    { child_id: 'ch-ava', date: '2026-09-17', item_id: 'mac', qty: 1 },
+    { child_id: 'ch-liam', date: '2026-09-17', item_id: 'mac', qty: 1, allergen_ack: true },
+    { child_id: 'ch-liam', date: '2026-09-17', item_id: 'chili', qty: 1 },
+  ])
   const noah = await familyToken('fam-2')
   await order(noah, [{ child_id: 'ch-noah', date: '2026-09-17', item_id: 'chili', qty: 1 }])
   await order(await familyToken('fam-4'), [{ child_id: 'ch-owen', date: '2026-09-17', item_id: 'apple', qty: 1 }])
   let k = (await get('/api/kitchen/day?date=2026-09-17', kitchen)).body
-  assert.deepEqual(k.children.map((c) => [c.first_name, c.flag]), [['Liam', 'conflict'], ['Noah', 'allergy'], ['Owen', null], ['Ava', null]],
-    'conflict first, then allergy (Room 1 Noah), then the rest by class sort')
+  assert.deepEqual(
+    k.children.map((c) => [c.first_name, c.flag]),
+    [
+      ['Liam', 'conflict'],
+      ['Noah', 'allergy'],
+      ['Owen', null],
+      ['Ava', null],
+    ],
+    'conflict first, then allergy (Room 1 Noah), then the rest by class sort',
+  )
   const liam = k.children[0]
-  assert.deepEqual(liam.lines.map((l) => [l.item_name, l.conflicts, l.acknowledged]), [['Beef chili with rice', [], true], ['Macaroni and cheese', ['milk'], true]])
+  assert.deepEqual(
+    liam.lines.map((l) => [l.item_name, l.conflicts, l.acknowledged]),
+    [
+      ['Beef chili with rice', [], true],
+      ['Macaroni and cheese', ['milk'], true],
+    ],
+  )
 
-  assert.equal((await call('PUT', '/api/family/children/ch-ava', { token: fam, body: { first_name: 'Ava', class_id: 'room-5', allergies: ['milk'] } })).status, 200)
+  assert.equal(
+    (await call('PUT', '/api/family/children/ch-ava', { token: fam, body: { first_name: 'Ava', class_id: 'room-5', allergies: ['milk'] } }))
+      .status,
+    200,
+  )
   k = (await get('/api/kitchen/day?date=2026-09-17', kitchen)).body
   const ava = k.children.find((c) => c.child_id === 'ch-ava')
   assert.equal(ava.flag, 'conflict')
   assert.deepEqual(ava.lines[0].conflicts, ['milk'])
   assert.equal(ava.lines[0].acknowledged, false)
-  assert.deepEqual(k.children.slice(0, 2).map((c) => c.first_name), ['Liam', 'Ava'], 'conflicts by class sort: Room 4 then Room 8')
+  assert.deepEqual(
+    k.children.slice(0, 2).map((c) => c.first_name),
+    ['Liam', 'Ava'],
+    'conflicts by class sort: Room 4 then Room 8',
+  )
   const label = (await get('/api/kitchen/labels?date=2026-09-17', kitchen)).body.labels.find((l) => l.first_name === 'Ava')
   assert.deepEqual([label.conflicts, label.allergies, label.acknowledged], [['milk'], ['milk'], false])
   const lines = (await get('/api/family/orders', fam)).body.lines
@@ -144,21 +210,43 @@ test('kitchen: default date, statuses, and orders_open flips at the cut-off', as
 test('teacher: today only, no lunch → 409, counts come back in the answer, null clears, absent credits nothing', async () => {
   const fam1 = await familyToken('fam-1')
   const fam3 = await familyToken('fam-3')
-  await order(fam1, [{ child_id: 'ch-liam', date: '2026-09-17', item_id: 'mac', qty: 1, allergen_ack: true }, { child_id: 'ch-ava', date: '2026-09-17', item_id: 'chili', qty: 1 }])
-  await order(fam3, [{ child_id: 'ch-jack', date: '2026-09-17', item_id: 'chili', qty: 1 }, { child_id: 'ch-jack', date: '2026-09-17', item_id: 'apple', qty: 2 }])
+  await order(fam1, [
+    { child_id: 'ch-liam', date: '2026-09-17', item_id: 'mac', qty: 1, allergen_ack: true },
+    { child_id: 'ch-ava', date: '2026-09-17', item_id: 'chili', qty: 1 },
+  ])
+  await order(fam3, [
+    { child_id: 'ch-jack', date: '2026-09-17', item_id: 'chili', qty: 1 },
+    { child_id: 'ch-jack', date: '2026-09-17', item_id: 'apple', qty: 2 },
+  ])
   const T = '2026-09-17T15:00:00Z' // Thu Sep 17, 12:30 PM
   const teacher = await staffToken('oldford', T)
   const classes = (await get('/api/teacher/classes', teacher, T)).body
   assert.equal(classes.my_class_id, 'room-2')
   assert.equal(classes.classes.length, 7)
-  assert.equal((await get('/api/teacher/classes', await staffToken('admin', T), T)).body.my_class_id, 'room-k', 'an admin gets the first class')
+  assert.equal(
+    (await get('/api/teacher/classes', await staffToken('admin', T), T)).body.my_class_id,
+    'room-k',
+    'an admin gets the first class',
+  )
 
   const day = (await get('/api/teacher/day', teacher, T)).body
   assert.equal(day.date, '2026-09-17')
   assert.equal(day.is_today, true)
   assert.equal(day.class.name, 'Room 4')
-  assert.deepEqual(day.children.map((c) => [c.first_name, c.flag, c.state, c.state_label]), [['Jack', null, null, 'Waiting'], ['Liam', 'conflict', null, 'Waiting']])
-  assert.deepEqual(day.children[0].lines.map((l) => [l.item_name, l.qty]), [['Apple slices', 2], ['Beef chili with rice', 1]])
+  assert.deepEqual(
+    day.children.map((c) => [c.first_name, c.flag, c.state, c.state_label]),
+    [
+      ['Jack', null, null, 'Waiting'],
+      ['Liam', 'conflict', null, 'Waiting'],
+    ],
+  )
+  assert.deepEqual(
+    day.children[0].lines.map((l) => [l.item_name, l.qty]),
+    [
+      ['Apple slices', 2],
+      ['Beef chili with rice', 1],
+    ],
+  )
   assert.deepEqual(day.counts, { children: 2, delivered: 0, absent: 0, waiting: 2 })
 
   const mark = (body, now = T) => call('POST', '/api/teacher/mark', { token: teacher, body, now })
@@ -185,7 +273,11 @@ test('teacher: today only, no lunch → 409, counts come back in the answer, nul
   assert.equal((await mark({ date: '2026-09-17', child_id: 'ch-nobody', state: 'absent' })).status, 404)
 
   const other = (await get('/api/teacher/day?class_id=room-5', teacher, T)).body
-  assert.deepEqual(other.children.map((c) => c.first_name), ['Ava'], 'any teacher may look at any class')
+  assert.deepEqual(
+    other.children.map((c) => c.first_name),
+    ['Ava'],
+    'any teacher may look at any class',
+  )
   assert.equal((await get('/api/teacher/day?class_id=room-99', teacher, T)).status, 404)
   const tomorrow = (await get('/api/teacher/day?date=2026-09-18', teacher, T)).body
   assert.equal(tomorrow.is_today, false)

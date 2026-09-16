@@ -14,7 +14,9 @@ export async function call(method, path, { body, token, now = NOW, ip, headers =
   const r = await fetch(BASE + path, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) })
   const text = await r.text()
   let parsed = text
-  try { parsed = JSON.parse(text) } catch {}
+  try {
+    parsed = JSON.parse(text)
+  } catch {}
   return { status: r.status, body: parsed, text, headers: r.headers }
 }
 

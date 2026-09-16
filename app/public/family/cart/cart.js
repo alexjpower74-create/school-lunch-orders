@@ -1,8 +1,23 @@
 // "/family/cart/" The cart by day, then child. A conflicting line needs its "I understand" tick before Place order works. A
 // refusal from the Worker stays on screen, marks the line and removes nothing.
 import {
-  $, ApiError, allergenTools, balancePhrase, familyApi, getInfo, h, icon, menuWeek, money, readCart, renderHeader, requireSession, run, say,
-  warningText, writeCart,
+  $,
+  ApiError,
+  allergenTools,
+  balancePhrase,
+  familyApi,
+  getInfo,
+  h,
+  icon,
+  menuWeek,
+  money,
+  readCart,
+  renderHeader,
+  requireSession,
+  run,
+  say,
+  warningText,
+  writeCart,
 } from '../family.js'
 
 const s = requireSession()
@@ -21,8 +36,12 @@ async function rows() {
     const conflicts = item && c ? state.tools.conflicts(item.allergens, c.allergies) : []
     out.push({ line, day: d, item, child: c, conflicts })
   }
-  return out.sort((a, b) => byName(a.line.date, b.line.date) || byName(a.child?.first_name || '', b.child?.first_name || '') ||
-    byName(a.item?.name || '', b.item?.name || ''))
+  return out.sort(
+    (a, b) =>
+      byName(a.line.date, b.line.date) ||
+      byName(a.child?.first_name || '', b.child?.first_name || '') ||
+      byName(a.item?.name || '', b.item?.name || ''),
+  )
 }
 
 function save() {
@@ -48,41 +67,86 @@ async function render() {
     if (!kids.has(name)) kids.set(name, [])
     kids.get(name).push({ ...r, index })
   })
-  $('cart-lines').replaceChildren(...[...days].map(([date, kids]) => {
-    const label = [...kids.values()][0][0].day?.date_label || date
-    return h('section', { class: 'cart-day' }, h('h2', {}, label), [...kids].map(([name, items]) => h('div', { class: 'cart-child' },
-      h('h3', {}, name), items.map((r) => cartLine(r)))))
-  }))
+  $('cart-lines').replaceChildren(
+    ...[...days].map(([date, kids]) => {
+      const label = [...kids.values()][0][0].day?.date_label || date
+      return h(
+        'section',
+        { class: 'cart-day' },
+        h('h2', {}, label),
+        [...kids].map(([name, items]) =>
+          h(
+            'div',
+            { class: 'cart-child' },
+            h('h3', {}, name),
+            items.map((r) => cartLine(r)),
+          ),
+        ),
+      )
+    }),
+  )
   await updatePlace()
 }
 
 function cartLine({ line, item, child, day, conflicts, index }) {
   const words = state.tools.words(conflicts)
-  const problem = !item ? 'This item is no longer on the menu for that day.' : day && day.status !== 'open' ? day.cutoff_label || day.status_label : ''
+  const problem = !item
+    ? 'This item is no longer on the menu for that day.'
+    : day && day.status !== 'open'
+      ? day.cutoff_label || day.status_label
+      : ''
   // Prices come from the menu as it is now; say so when it changed after the item went in the cart.
-  const priceChanged = item && Number.isInteger(line.price_cents) && line.price_cents !== item.price_cents
-    ? `Price changed: now ${money(item.price_cents)} each (was ${money(line.price_cents)}).` : ''
-  return h('article', { class: 'card cart-line', dataset: { child: line.child_id, date: line.date, item: line.item_id, index: String(index) } },
-    h('div', { class: 'line-main' },
+  const priceChanged =
+    item && Number.isInteger(line.price_cents) && line.price_cents !== item.price_cents
+      ? `Price changed: now ${money(item.price_cents)} each (was ${money(line.price_cents)}).`
+      : ''
+  return h(
+    'article',
+    { class: 'card cart-line', dataset: { child: line.child_id, date: line.date, item: line.item_id, index: String(index) } },
+    h(
+      'div',
+      { class: 'line-main' },
       h('span', { class: 'what' }, `${item?.name || line.item_id} ×${line.qty}`),
       h('span', { class: 'money' }, item ? money(item.price_cents * line.qty) : ''),
-      h('button', { class: 'btn remove-line', type: 'button', 'aria-label': `Remove ${item?.name || 'this item'} for ${child?.first_name || 'this child'}`,
-        onclick: () => {
-          state.cart = state.cart.filter((l) => l !== line)
-          save()
-          render()
-        } }, 'Remove')),
-    conflicts.length ? h('p', { class: 'allergen-warning' }, icon('alert'), h('span', {}, warningText(child.first_name, words, item.name))) : null,
-    conflicts.length ? h('label', { class: 'check-row' },
-      h('input', { type: 'checkbox', class: 'ack-check', checked: line.allergen_ack === true, onchange: (ev) => {
-        line.allergen_ack = ev.currentTarget.checked
-        save()
-        updatePlace()
-      } }),
-      h('span', { class: 'box' }, icon('check')),
-      h('span', {}, `I understand ${child.first_name} is allergic to ${words}`)) : null,
+      h(
+        'button',
+        {
+          class: 'btn remove-line',
+          type: 'button',
+          'aria-label': `Remove ${item?.name || 'this item'} for ${child?.first_name || 'this child'}`,
+          onclick: () => {
+            state.cart = state.cart.filter((l) => l !== line)
+            save()
+            render()
+          },
+        },
+        'Remove',
+      ),
+    ),
+    conflicts.length
+      ? h('p', { class: 'allergen-warning' }, icon('alert'), h('span', {}, warningText(child.first_name, words, item.name)))
+      : null,
+    conflicts.length
+      ? h(
+          'label',
+          { class: 'check-row' },
+          h('input', {
+            type: 'checkbox',
+            class: 'ack-check',
+            checked: line.allergen_ack === true,
+            onchange: (ev) => {
+              line.allergen_ack = ev.currentTarget.checked
+              save()
+              updatePlace()
+            },
+          }),
+          h('span', { class: 'box' }, icon('check')),
+          h('span', {}, `I understand ${child.first_name} is allergic to ${words}`),
+        )
+      : null,
     priceChanged ? h('p', { class: 'line-problem price-changed' }, priceChanged) : null,
-    problem ? h('p', { class: 'line-problem' }, problem) : null)
+    problem ? h('p', { class: 'line-problem' }, problem) : null,
+  )
 }
 
 function showPlaced(answer) {
@@ -110,7 +174,13 @@ async function placeOrder() {
   for (const el of document.querySelectorAll('.cart-line[data-error]')) el.removeAttribute('data-error')
   try {
     const answer = await familyApi('POST', '/api/family/orders', {
-      lines: list.map((r) => ({ child_id: r.line.child_id, date: r.line.date, item_id: r.line.item_id, qty: r.line.qty, allergen_ack: r.line.allergen_ack === true })),
+      lines: list.map((r) => ({
+        child_id: r.line.child_id,
+        date: r.line.date,
+        item_id: r.line.item_id,
+        qty: r.line.qty,
+        allergen_ack: r.line.allergen_ack === true,
+      })),
     })
     state.cart = []
     save()

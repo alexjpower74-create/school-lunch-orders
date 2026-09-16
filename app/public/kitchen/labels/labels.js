@@ -19,21 +19,37 @@ function label(l, words, sample) {
   if (l.conflicts.length) {
     const others = l.allergies.filter((k) => !l.conflicts.includes(k))
     allergy = [
-      h('div', { class: 'label-allergen' }, `ALLERGY: ${words(l.conflicts)}`,
-        l.acknowledged ? null : h('span', { class: 'label-unconfirmed' }, ' (not confirmed)')),
+      h(
+        'div',
+        { class: 'label-allergen' },
+        `ALLERGY: ${words(l.conflicts)}`,
+        l.acknowledged ? null : h('span', { class: 'label-unconfirmed' }, ' (not confirmed)'),
+      ),
       others.length
-        ? h('div', { class: 'label-allergies', dataset: { full: `Also: ${words(others)}`, fallback: 'More allergies: see the kitchen list' } }, `Also: ${words(others)}`)
+        ? h(
+            'div',
+            { class: 'label-allergies', dataset: { full: `Also: ${words(others)}`, fallback: 'More allergies: see the kitchen list' } },
+            `Also: ${words(others)}`,
+          )
         : null,
     ]
   } else if (l.allergies.length) {
     const full = `Allergies on file: ${words(l.allergies)}`
     allergy = h('div', { class: 'label-allergies', dataset: { full, fallback: 'Allergies on file: see the kitchen list' } }, full)
   }
-  return h('article', { class: 'label', dataset: { line: l.line_id } },
-    h('div', { class: 'label-top' }, h('span', { class: 'label-name' }, l.first_name), sample ? h('span', { class: 'label-sample' }, 'SAMPLE') : null),
+  return h(
+    'article',
+    { class: 'label', dataset: { line: l.line_id } },
+    h(
+      'div',
+      { class: 'label-top' },
+      h('span', { class: 'label-name' }, l.first_name),
+      sample ? h('span', { class: 'label-sample' }, 'SAMPLE') : null,
+    ),
     h('div', { class: 'label-class' }, classWords(l.class_name, l.grade)),
     h('div', { class: 'label-item' }, `${l.item_name} ×${l.qty}`),
-    allergy)
+    allergy,
+  )
 }
 
 const overflows = (el) => el.scrollHeight > el.clientHeight + 1
@@ -46,7 +62,9 @@ function fit(el) {
   if (also) also.textContent = also.dataset.full
   const steps = [
     () => el.classList.add('dense'),
-    () => { if (also) also.textContent = also.dataset.fallback },
+    () => {
+      if (also) also.textContent = also.dataset.fallback
+    },
     () => el.querySelector('.label-item')?.classList.add('shorten'),
     () => el.querySelector('.label-class')?.classList.add('shorten'),
   ]

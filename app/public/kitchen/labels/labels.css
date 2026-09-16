@@ -1,10 +1,25 @@
 /* Kitchen labels, drawn at their printed size on screen and on paper: 2 5/8 x 1 inch, 3 across, 30 a sheet (Avery 5160-style).
    The label box is identical in both media (decoration uses box-shadow, never border), so labels.js can check on screen that no
    word is cut off at print. The allergen line is bold with a border and the word ALLERGY, so it reads in black and white. */
-.labels-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
-.labels-toolbar h1 { margin: 0; font-size: 28px; }
+.labels-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.labels-toolbar h1 {
+  margin: 0;
+  font-size: 28px;
+}
 
-.sheet { display: grid; grid-template-columns: repeat(auto-fill, 2.625in); gap: 12px; justify-content: start; }
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 2.625in);
+  gap: 12px;
+  justify-content: start;
+}
 .label {
   box-sizing: border-box;
   width: 2.625in;
@@ -22,28 +37,95 @@
   break-inside: avoid;
 }
 /* No line may be squeezed smaller than its words: overflow must show up in the label's scrollHeight, never be hidden inside a line. */
-.label > * { flex: none; }
-.label-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-.label-name { font-size: 13pt; font-weight: 800; line-height: 1.1; }
-.label-sample { flex: none; font-size: 6pt; font-weight: 700; letter-spacing: 0.08em; border: 1px solid #000000; border-radius: 999px; padding: 0 4px; }
-.label-class { font-size: 7.5pt; }
-.label-item { font-size: 8.5pt; font-weight: 600; }
-.label-allergen { margin-top: 1px; padding: 0 3px; border: 1.5pt solid #b00000; border-radius: 2px; color: #b00000; font-size: 7.5pt; font-weight: 800; }
-.label-unconfirmed { font-weight: 600; }
-.label-allergies { font-size: 7pt; font-weight: 700; }
+.label > * {
+  flex: none;
+}
+.label-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+.label-name {
+  font-size: 13pt;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.label-sample {
+  flex: none;
+  font-size: 6pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border: 1px solid #000000;
+  border-radius: 999px;
+  padding: 0 4px;
+}
+.label-class {
+  font-size: 7.5pt;
+}
+.label-item {
+  font-size: 8.5pt;
+  font-weight: 600;
+}
+.label-allergen {
+  margin-top: 1px;
+  padding: 0 3px;
+  border: 1.5pt solid #b00000;
+  border-radius: 2px;
+  color: #b00000;
+  font-size: 7.5pt;
+  font-weight: 800;
+}
+.label-unconfirmed {
+  font-weight: 600;
+}
+.label-allergies {
+  font-size: 7pt;
+  font-weight: 700;
+}
 
 /* Denser type for a crowded label (labels.js adds it only when the words would not fit). */
-.label.dense .label-name { font-size: 10.5pt; }
-.label.dense .label-class, .label.dense .label-item { font-size: 7pt; }
-.label.dense .label-allergen { font-size: 6.5pt; }
-.label.dense .label-allergies { font-size: 6pt; }
+.label.dense .label-name {
+  font-size: 10.5pt;
+}
+.label.dense .label-class,
+.label.dense .label-item {
+  font-size: 7pt;
+}
+.label.dense .label-allergen {
+  font-size: 6.5pt;
+}
+.label.dense .label-allergies {
+  font-size: 6pt;
+}
 /* Only the item and class lines are ever shortened to one line; never an allergy line. */
-.label .label-item.shorten, .label .label-class.shorten { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.label .label-item.shorten,
+.label .label-class.shorten {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-@page { size: letter; margin: 0.5in 0.1875in; }
+@page {
+  size: letter;
+  margin: 0.5in 0.1875in;
+}
 @media print {
-  .labels-main { padding: 0; margin: 0; max-width: none; }
-  .sheet { grid-template-columns: repeat(3, 2.625in); gap: 0 0.125in; }
-  .label { border-radius: 0; box-shadow: none; }
-  .label-allergen { border-color: #000000; color: #000000; }
+  .labels-main {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+  }
+  .sheet {
+    grid-template-columns: repeat(3, 2.625in);
+    gap: 0 0.125in;
+  }
+  .label {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .label-allergen {
+    border-color: #000000;
+    color: #000000;
+  }
 }

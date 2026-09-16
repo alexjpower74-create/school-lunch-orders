@@ -48,14 +48,22 @@ test('family sign-in rate limit: 10 wrong codes from one IP, then 429 even for t
   assert.equal(locked.status, 429, locked.text)
   assert.equal(locked.body.code, 'rate_limited')
   assert.equal(locked.body.error, 'Too many tries. Wait 15 minutes, then try again.')
-  assert.equal((await call('POST', '/api/family/signin', { body: { code: CODE['fam-1'] }, ip: 'another-ip' })).status, 200, 'other IPs are not locked')
+  assert.equal(
+    (await call('POST', '/api/family/signin', { body: { code: CODE['fam-1'] }, ip: 'another-ip' })).status,
+    200,
+    'other IPs are not locked',
+  )
   const later = await call('POST', '/api/family/signin', { body: { code: CODE['fam-1'] }, ip, now: '2026-09-15T13:45:01Z' })
   assert.equal(later.status, 200, 'the window has passed')
 })
 
 test('staff sign-in: each SAMPLE PIN gives its role; a wrong PIN is 401 on field pin; 5 wrong PINs → 429', async () => {
-  const want = { admin: ['admin', 'st-office', null], kitchen: ['kitchen', 'st-kitchen', null], oldford: ['teacher', 'st-oldford', 'room-2'],
-    pardy: ['teacher', 'st-pardy', 'room-5'] }
+  const want = {
+    admin: ['admin', 'st-office', null],
+    kitchen: ['kitchen', 'st-kitchen', null],
+    oldford: ['teacher', 'st-oldford', 'room-2'],
+    pardy: ['teacher', 'st-pardy', 'room-5'],
+  }
   for (const [who, [role, id, classId]] of Object.entries(want)) {
     const r = await call('POST', '/api/staff/signin', { body: { pin: PIN[who] } })
     assert.equal(r.status, 200, r.text)
@@ -81,9 +89,18 @@ test('staff sign-in: each SAMPLE PIN gives its role; a wrong PIN is 401 on field
 })
 
 test('role matrix: every role × one route per area → 200 / 403 / 401', async () => {
-  const routes = { staff: '/api/staff/me', kitchen: '/api/kitchen/day', teacher: '/api/teacher/classes', office: '/api/office/families',
-    admin: '/api/admin/settings' }
-  const allowed = { admin: ['staff', 'kitchen', 'teacher', 'office', 'admin'], kitchen: ['staff', 'kitchen'], oldford: ['staff', 'teacher'] }
+  const routes = {
+    staff: '/api/staff/me',
+    kitchen: '/api/kitchen/day',
+    teacher: '/api/teacher/classes',
+    office: '/api/office/families',
+    admin: '/api/admin/settings',
+  }
+  const allowed = {
+    admin: ['staff', 'kitchen', 'teacher', 'office', 'admin'],
+    kitchen: ['staff', 'kitchen'],
+    oldford: ['staff', 'teacher'],
+  }
   const fam = await familyToken('fam-1')
   for (const who of Object.keys(allowed)) {
     const token = await staffToken(who)
@@ -101,8 +118,20 @@ test('role matrix: every role × one route per area → 200 / 403 / 401', async 
     assert.equal((await get(path, 'x'.repeat(43))).status, 401, `made-up token on ${path}`)
   }
   const office = await staffToken('admin')
-  assert.equal((await call('POST', '/api/office/payments', { token: await staffToken('kitchen'), body: { family_id: 'fam-1', amount_cents: 100, method: 'cash' } })).status, 403)
-  assert.equal((await call('POST', '/api/admin/no-school', { token: await staffToken('oldford'), body: { date: '2026-09-17', kind: 'closure' } })).status, 403)
+  assert.equal(
+    (
+      await call('POST', '/api/office/payments', {
+        token: await staffToken('kitchen'),
+        body: { family_id: 'fam-1', amount_cents: 100, method: 'cash' },
+      })
+    ).status,
+    403,
+  )
+  assert.equal(
+    (await call('POST', '/api/admin/no-school', { token: await staffToken('oldford'), body: { date: '2026-09-17', kind: 'closure' } }))
+      .status,
+    403,
+  )
   assert.equal((await get('/api/office/families', office)).status, 200)
 })
 
@@ -125,7 +154,10 @@ test("family isolation: fam-2's token on fam-1's child, line and cancel → 404,
   const child = { first_name: 'Hacked', class_id: 'room-2', allergies: [] }
   assert.equal((await call('PUT', '/api/family/children/ch-ava', { token: fam2, body: child })).status, 404)
   assert.equal((await call('DELETE', '/api/family/children/ch-ava', { token: fam2 })).status, 404)
-  const o = await call('POST', '/api/family/orders', { token: fam2, body: { lines: [{ child_id: 'ch-ava', date: '2026-09-18', item_id: 'apple', qty: 1 }] } })
+  const o = await call('POST', '/api/family/orders', {
+    token: fam2,
+    body: { lines: [{ child_id: 'ch-ava', date: '2026-09-18', item_id: 'apple', qty: 1 }] },
+  })
   assert.equal(o.status, 404)
   assert.equal(o.body.index, 0)
   const cancel = await call('POST', `/api/family/lines/${line.id}/cancel`, { token: fam2 })
@@ -142,19 +174,31 @@ test("family isolation: fam-2's token on fam-1's child, line and cancel → 404,
 
 test('children: add with two allergies, edit, validation, at most 8, remove refused while lunches are ordered', async () => {
   const token = await familyToken('fam-4')
-  const add = await call('POST', '/api/family/children', { token, body: { first_name: '  Mia  ', class_id: 'room-3', allergies: ['sesame', 'eggs'] } })
+  const add = await call('POST', '/api/family/children', {
+    token,
+    body: { first_name: '  Mia  ', class_id: 'room-3', allergies: ['sesame', 'eggs'] },
+  })
   assert.equal(add.status, 201, add.text)
   assert.match(add.body.child.id, /^ch_[0-9a-f]{16}$/)
-  assert.deepEqual({ ...add.body.child, id: 'x' },
-    { id: 'x', first_name: 'Mia', class_id: 'room-3', class_name: 'Room 5', grade: 'Grade 3', allergies: ['eggs', 'sesame'] })
+  assert.deepEqual(
+    { ...add.body.child, id: 'x' },
+    { id: 'x', first_name: 'Mia', class_id: 'room-3', class_name: 'Room 5', grade: 'Grade 3', allergies: ['eggs', 'sesame'] },
+  )
   const id = add.body.child.id
-  const edit = await call('PUT', `/api/family/children/${id}`, { token, body: { first_name: "Mia-Rose O'Dea", class_id: 'room-4', allergies: ['eggs'] } })
+  const edit = await call('PUT', `/api/family/children/${id}`, {
+    token,
+    body: { first_name: "Mia-Rose O'Dea", class_id: 'room-4', allergies: ['eggs'] },
+  })
   assert.equal(edit.status, 200, edit.text)
   assert.equal(edit.body.child.first_name, "Mia-Rose O'Dea")
   assert.equal(edit.body.child.class_name, 'Room 7')
   assert.deepEqual(edit.body.child.allergies, ['eggs'])
   const fam = (await get('/api/family', token)).body
-  assert.deepEqual(fam.children.map((c) => c.first_name), ["Mia-Rose O'Dea", 'Owen'], 'by first name')
+  assert.deepEqual(
+    fam.children.map((c) => c.first_name),
+    ["Mia-Rose O'Dea", 'Owen'],
+    'by first name',
+  )
   assert.equal(fam.classes.length, 7)
   assert.equal(fam.balance_cents, 0)
 
@@ -172,7 +216,12 @@ test('children: add with two allergies, edit, validation, at most 8, remove refu
     assert.equal(r.status, 400, JSON.stringify(body))
     assert.equal(r.body.field, field, JSON.stringify(body))
   }
-  for (let i = 0; i < 6; i++) assert.equal((await call('POST', '/api/family/children', { token, body: { first_name: `Kid ${'ABCDEF'[i]}`, class_id: 'room-1', allergies: [] } })).status, 201)
+  for (let i = 0; i < 6; i++)
+    assert.equal(
+      (await call('POST', '/api/family/children', { token, body: { first_name: `Kid ${'ABCDEF'[i]}`, class_id: 'room-1', allergies: [] } }))
+        .status,
+      201,
+    )
   const ninth = await call('POST', '/api/family/children', { token, body: { first_name: 'Nine', class_id: 'room-1', allergies: [] } })
   assert.equal(ninth.status, 409)
   assert.equal(ninth.body.code, 'bad_state')
@@ -185,10 +234,20 @@ test('children: add with two allergies, edit, validation, at most 8, remove refu
   assert.equal(refused.body.error, 'Liam has lunches ordered for days still to come. Cancel them first.')
   assert.equal((await call('POST', `/api/family/lines/${placed.order.lines[0].id}/cancel`, { token: fam1 })).status, 200)
   assert.equal((await call('DELETE', '/api/family/children/ch-liam', { token: fam1 })).status, 200)
-  assert.deepEqual((await get('/api/family', fam1)).body.children.map((c) => c.id), ['ch-ava'])
+  assert.deepEqual(
+    (await get('/api/family', fam1)).body.children.map((c) => c.id),
+    ['ch-ava'],
+  )
   assert.equal((await get('/api/family/orders', fam1)).body.lines[0].first_name, 'Liam', 'past lines keep their history')
-  assert.equal((await call('PUT', '/api/family/children/ch-liam', { token: fam1, body: { first_name: 'Liam', class_id: 'room-2', allergies: [] } })).status, 404)
-  const again = await call('POST', '/api/family/orders', { token: fam1, body: { lines: [{ child_id: 'ch-liam', date: '2026-09-18', item_id: 'apple', qty: 1 }] } })
+  assert.equal(
+    (await call('PUT', '/api/family/children/ch-liam', { token: fam1, body: { first_name: 'Liam', class_id: 'room-2', allergies: [] } }))
+      .status,
+    404,
+  )
+  const again = await call('POST', '/api/family/orders', {
+    token: fam1,
+    body: { lines: [{ child_id: 'ch-liam', date: '2026-09-18', item_id: 'apple', qty: 1 }] },
+  })
   assert.equal(again.status, 404, 'a removed child cannot be ordered for')
 })
 

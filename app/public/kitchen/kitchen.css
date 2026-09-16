@@ -1,21 +1,51 @@
 /* Kitchen day page. sl2-owned. */
-.kitchen-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; margin-bottom: 16px; }
-.date-pick input { width: auto; }
-#class-totals td:nth-child(2) { color: var(--muted); font-size: 15px; }
-.item-name { font-weight: 600; }
-.lunch-line { display: block; }
+.kitchen-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.date-pick input {
+  width: auto;
+}
+#class-totals td:nth-child(2) {
+  color: var(--muted);
+  font-size: 15px;
+}
+.item-name {
+  font-weight: 600;
+}
+.lunch-line {
+  display: block;
+}
 
 @media (max-width: 899px) {
-  .kitchen-grid { grid-template-columns: minmax(0, 1fr); }
+  .kitchen-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 @media (max-width: 699px) {
-  .page-head .toolbar { width: 100%; }
-  .page-head .toolbar .btn { flex: 1 1 auto; }
-  .date-pick { flex: 1 1 100%; }
-  .date-pick input { width: 100%; }
-  #children td:first-child strong { font-size: 18px; }
+  .page-head .toolbar {
+    width: 100%;
+  }
+  .page-head .toolbar .btn {
+    flex: 1 1 auto;
+  }
+  .date-pick {
+    flex: 1 1 100%;
+  }
+  .date-pick input {
+    width: 100%;
+  }
+  #children td:first-child strong {
+    font-size: 18px;
+  }
 }
 @media print {
-  .kitchen-grid { grid-template-columns: 1fr 1fr; }
-  .stats { grid-template-columns: repeat(3, 1fr); }
+  .kitchen-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

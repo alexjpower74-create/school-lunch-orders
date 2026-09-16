@@ -40,7 +40,9 @@ test('a wrong code shows #code-error and stays on sign-in', async ({ page }) => 
   await expect(page.locator('#code-error')).toHaveText('Type your family code. It is on the paper from the school.')
   await type(page, page.locator('#code'), 'KQ7M-4RTY')
   await tap(page, page.locator('#sign-in'), 'Sign in')
-  await expect(page.locator('#code-error')).toHaveText("That family code doesn't match. Check the paper from the school, or ask the office.")
+  await expect(page.locator('#code-error')).toHaveText(
+    "That family code doesn't match. Check the paper from the school, or ask the office.",
+  )
   await expect(page.locator('#code-error')).toHaveAttribute('role', 'alert')
   await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/$/)
   expect(await page.evaluate(() => localStorage.getItem('school-lunch:family'))).toBeNull()

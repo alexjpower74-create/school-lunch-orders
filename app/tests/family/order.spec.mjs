@@ -1,7 +1,20 @@
 // "/family/order/" and "/family/cart/": the red warning for the child with the allergy and not for a sibling, "I understand"
 // required and stored, a closed day, and a refusal at the cut-off that removes nothing.
 import { expect, test } from '@playwright/test'
-import { CODE, PIN, api, bearer, contrastOf, familyOrdersViaApi, fresh, nl, setNow, staffToken, tap, useFamilySession } from '../helpers.mjs'
+import {
+  CODE,
+  PIN,
+  api,
+  bearer,
+  contrastOf,
+  familyOrdersViaApi,
+  fresh,
+  nl,
+  setNow,
+  staffToken,
+  tap,
+  useFamilySession,
+} from '../helpers.mjs'
 
 test.beforeEach(async ({ context, request }) => fresh(context, request))
 
@@ -25,7 +38,9 @@ test('allergen warning for Liam and not for Ava', async ({ page, context, reques
   await expect(mac.locator('.allergen-pill.match')).toHaveText(['Milk'])
   expect(await contrastOf(mac.locator('.allergen-warning')), 'red warning contrast').toBeGreaterThanOrEqual(4.5)
   await expect(card(page, 'chili')).not.toHaveAttribute('data-conflict', 'true')
-  await expect(page.getByText('The red warning uses the allergens the school listed for each item. Ask the school about anything else.')).toBeVisible()
+  await expect(
+    page.getByText('The red warning uses the allergens the school listed for each item. Ask the school about anything else.'),
+  ).toBeVisible()
 
   await tap(page, page.locator('button.child-tab[data-child="ch-ava"]'), 'Ava')
   await expect(page.locator('button.child-tab[data-child="ch-ava"]')).toHaveAttribute('aria-pressed', 'true')
@@ -39,7 +54,11 @@ test('allergen warning for Liam and not for Ava', async ({ page, context, reques
   await expect(page.locator('#cart-total')).toHaveText('$4.00')
 })
 
-test('"I understand" is required: the tap adds 1, the cart keeps the tick, unticking disables Place order, and the order stores ack_allergens', async ({ page, context, request }) => {
+test('"I understand" is required: the tap adds 1, the cart keeps the tick, unticking disables Place order, and the order stores ack_allergens', async ({
+  page,
+  context,
+  request,
+}) => {
   const s = await useFamilySession(context, request, CODE.liamAva)
   await openThursday(page)
   await tap(page, page.locator('button.child-tab[data-child="ch-liam"]'), 'Liam')
@@ -74,13 +93,22 @@ test('"I understand" is required: the tap adds 1, the cart keeps the tick, untic
   await expect(page.locator('#order-placed h2')).toHaveText('Order placed')
   await expect(page.locator('#placed-total')).toHaveText('$8.00')
   await expect(page.locator('#new-balance')).toHaveText('You owe $8.00')
-  await expect(page.locator('#payment-instructions')).toContainText('Pay by Interac e-Transfer to lunch-orders@example.org (SAMPLE address)')
+  await expect(page.locator('#payment-instructions')).toContainText(
+    'Pay by Interac e-Transfer to lunch-orders@example.org (SAMPLE address)',
+  )
   const lines = await familyOrdersViaApi(request, s.token)
-  expect(lines.map((l) => [l.first_name, l.item_id, l.ack_allergens])).toEqual([['Ava', 'mac', []], ['Liam', 'mac', ['milk']]])
+  expect(lines.map((l) => [l.first_name, l.item_id, l.ack_allergens])).toEqual([
+    ['Ava', 'mac', []],
+    ['Liam', 'mac', ['milk']],
+  ])
   expect(await page.evaluate((id) => localStorage.getItem(`school-lunch:cart:${id}`), s.family.id)).toBe('[]')
 })
 
-test('a closed day has no steppers; placing after the cut-off shows #order-error naming the day, marks the line and stores nothing', async ({ page, context, request }) => {
+test('a closed day has no steppers; placing after the cut-off shows #order-error naming the day, marks the line and stores nothing', async ({
+  page,
+  context,
+  request,
+}) => {
   const s = await useFamilySession(context, request, CODE.liamAva)
   await page.goto('/family/order/')
   await tap(page, page.locator('button.day[data-date="2026-09-16"]'), 'Wed Sep 16')
@@ -120,7 +148,11 @@ test('max per child stops the + at the limit', async ({ page, context, request }
   await expect(milk.locator('.qty-plus')).toBeEnabled()
 })
 
-test('a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total', async ({ page, context, request }) => {
+test('a price change after adding: the cart shows the current price, says it changed, and its total equals the placed total', async ({
+  page,
+  context,
+  request,
+}) => {
   await useFamilySession(context, request, CODE.liamAva)
   await openThursday(page)
   await tap(page, page.locator('button.child-tab[data-child="ch-ava"]'), 'Ava')

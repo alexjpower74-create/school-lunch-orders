@@ -33,7 +33,10 @@ const unhex = (s) => new Uint8Array(s.match(/../g).map((h) => parseInt(h, 16)))
 export async function hashPin(pin, saltHex) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: unhex(saltHex), iterations: PBKDF2_ITERATIONS }, key, 256)
+    { name: 'PBKDF2', hash: 'SHA-256', salt: unhex(saltHex), iterations: PBKDF2_ITERATIONS },
+    key,
+    256,
+  )
   return hex(bits)
 }
 
@@ -52,7 +55,10 @@ export const codeHash = (code) => sha256Hex(normalizeCode(code))
 // 32 random bytes → 43 base64url characters.
 export function randomToken(bytes = 32) {
   const b = crypto.getRandomValues(new Uint8Array(bytes))
-  return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return btoa(String.fromCharCode(...b))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
 }
 
 export const randomId = (prefix) => `${prefix}_${hex(crypto.getRandomValues(new Uint8Array(8)))}`
@@ -61,8 +67,10 @@ export const randomSaltHex = () => hex(crypto.getRandomValues(new Uint8Array(16)
 // ---------- wrong-try guards (per client IP, 15-minute window) ----------
 
 async function assertAllowed(c, table, max) {
-  const r = await c.db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ip = ? AND at > ?`)
-    .bind(clientIp(c.request, c.env), new Date(c.now.getTime() - TRY_WINDOW_MS).toISOString()).first()
+  const r = await c.db
+    .prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ip = ? AND at > ?`)
+    .bind(clientIp(c.request, c.env), new Date(c.now.getTime() - TRY_WINDOW_MS).toISOString())
+    .first()
   if (r.n >= max) throw new ApiError(429, 'rate_limited', TOO_MANY)
 }
 const recordWrong = (c, table) =>
@@ -88,8 +96,10 @@ async function createSession(c, kind, subjectId) {
   const token = randomToken()
   const ms = kind === 'family' ? FAMILY_SESSION_MS : STAFF_SESSION_MS
   const expires = new Date(c.now.getTime() + ms).toISOString()
-  await c.db.prepare('INSERT INTO sessions (token_hash, kind, subject_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?)')
-    .bind(await sha256Hex(token), kind, subjectId, c.nowIso, expires).run()
+  await c.db
+    .prepare('INSERT INTO sessions (token_hash, kind, subject_id, created_at, expires_at) VALUES (?, ?, ?, ?, ?)')
+    .bind(await sha256Hex(token), kind, subjectId, c.nowIso, expires)
+    .run()
   return { token, expires_at: expires }
 }
 
@@ -98,8 +108,10 @@ async function sessionOf(c, kind) {
   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : ''
   if (!token) throw unauthorized(SIGN_IN_AGAIN)
   const hash = await sha256Hex(token)
-  const row = await c.db.prepare('SELECT * FROM sessions WHERE token_hash = ? AND kind = ? AND expires_at > ?')
-    .bind(hash, kind, c.nowIso).first()
+  const row = await c.db
+    .prepare('SELECT * FROM sessions WHERE token_hash = ? AND kind = ? AND expires_at > ?')
+    .bind(hash, kind, c.nowIso)
+    .first()
   if (!row) throw unauthorized(SIGN_IN_AGAIN)
   return row
 }
@@ -129,7 +141,12 @@ export async function familySignIn(c) {
   const body = await readJson(c)
   await assertCodeAllowed(c)
   const code = normalizeCode(body.code)
-  const fam = code ? await c.db.prepare('SELECT id, label FROM families WHERE code_hash = ?').bind(await codeHash(code)).first() : null
+  const fam = code
+    ? await c.db
+        .prepare('SELECT id, label FROM families WHERE code_hash = ?')
+        .bind(await codeHash(code))
+        .first()
+    : null
   if (!fam) {
     await recordWrong(c, 'code_attempts')
     throw unauthorized(WRONG_CODE, { field: 'code' })

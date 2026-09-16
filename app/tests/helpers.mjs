@@ -17,8 +17,15 @@ export const BASE = `http://127.0.0.1:${PORT}`
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
 // nl('2026-09-17', '12:00') → the ISO instant of noon St. John's time that day (NDT −2:30 or NST −3:30, whichever is in effect).
-const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/St_Johns', year: 'numeric', month: '2-digit', day: '2-digit',
-  hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+const fmt = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/St_Johns',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
 export function nl(date, hhmm) {
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = hhmm.split(':').map(Number)
@@ -73,10 +80,16 @@ export async function newContext(browser, kind, { now = NOW } = {}) {
 // ---------- API setup helpers (setup only; never for the thing under test) ----------
 let ipSeq = 0
 export async function api(request, method, url, data, headers = {}, { now = NOW } = {}) {
-  const r = await request.fetch(url, { method, data, headers: { 'X-Test-Now': now, 'X-Test-IP': `setup-${process.pid}-${++ipSeq}`, ...headers } })
+  const r = await request.fetch(url, {
+    method,
+    data,
+    headers: { 'X-Test-Now': now, 'X-Test-IP': `setup-${process.pid}-${++ipSeq}`, ...headers },
+  })
   const text = await r.text()
   let body = text
-  try { body = JSON.parse(text) } catch {}
+  try {
+    body = JSON.parse(text)
+  } catch {}
   return { status: r.status(), body, type: r.headers()['content-type'] || '', headers: r.headers() }
 }
 
@@ -99,13 +112,16 @@ export const staffToken = async (request, pin, opts) => (await staffSignIn(reque
 // The page opens already signed in, exactly as the sign-in page leaves localStorage (common/api.js session.set). Written once
 // per tab (a sessionStorage flag), so a sign-out inside the test is not undone by the next navigation.
 async function seedSession(context, key, value) {
-  await context.addInitScript(([k, v]) => {
-    try {
-      if (sessionStorage.getItem(`seeded:${k}`)) return
-      localStorage.setItem(k, v)
-      sessionStorage.setItem(`seeded:${k}`, '1')
-    } catch {}
-  }, [key, JSON.stringify(value)])
+  await context.addInitScript(
+    ([k, v]) => {
+      try {
+        if (sessionStorage.getItem(`seeded:${k}`)) return
+        localStorage.setItem(k, v)
+        sessionStorage.setItem(`seeded:${k}`, '1')
+      } catch {}
+    },
+    [key, JSON.stringify(value)],
+  )
 }
 export async function useFamilySession(context, request, code, opts) {
   const s = await familySignIn(request, code, opts)
@@ -154,10 +170,13 @@ export async function paymentViaApi(request, adminToken, { family_id, amount_cen
 export const isCoarse = (page) => page.evaluate(() => matchMedia('(pointer: coarse)').matches)
 
 async function hitTest(locator, x, y) {
-  return locator.evaluate((el, [px, py]) => {
-    const t = document.elementFromPoint(px, py)
-    return t === el || el.contains(t) ? '' : t ? t.outerHTML.slice(0, 160) : 'nothing'
-  }, [x, y])
+  return locator.evaluate(
+    (el, [px, py]) => {
+      const t = document.elementFromPoint(px, py)
+      return t === el || el.contains(t) ? '' : t ? t.outerHTML.slice(0, 160) : 'nothing'
+    },
+    [x, y],
+  )
 }
 
 /** Hit-test the centre with elementFromPoint, then a real touch (coarse pointer) or mouse click. */
@@ -170,11 +189,15 @@ export async function tap(page, locator, label = String(locator)) {
   // data-sticky-header / data-sticky-footer; only then is the target scrolled to the middle first. Anything else on top fails.
   const [headerBottom, footerTop] = await page.evaluate(() => [
     Math.max(0, ...[...document.querySelectorAll('[data-sticky-header]')].map((h) => h.getBoundingClientRect().bottom)),
-    Math.min(innerHeight, ...[...document.querySelectorAll('[data-sticky-footer]')].filter((f) => f.getBoundingClientRect().height > 0)
-      .map((f) => f.getBoundingClientRect().top)),
+    Math.min(
+      innerHeight,
+      ...[...document.querySelectorAll('[data-sticky-footer]')]
+        .filter((f) => f.getBoundingClientRect().height > 0)
+        .map((f) => f.getBoundingClientRect().top),
+    ),
   ])
   const cy = box.y + box.height / 2
-  const insideSticky = (el) => locator.evaluate((node) => !!node.closest('[data-sticky-header], [data-sticky-footer]'))
+  const insideSticky = () => locator.evaluate((node) => !!node.closest('[data-sticky-header], [data-sticky-footer]'))
   if ((cy < headerBottom || cy > footerTop) && !(await insideSticky())) {
     await locator.evaluate((el) => el.scrollIntoView({ block: 'center' }))
     box = await locator.boundingBox()
@@ -190,7 +213,10 @@ export async function tap(page, locator, label = String(locator)) {
 export async function type(page, locator, text, { clear = false } = {}) {
   await tap(page, locator)
   await expect(locator).toBeFocused()
-  if (clear) { await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Backspace') }
+  if (clear) {
+    await page.keyboard.press('ControlOrMeta+a')
+    await page.keyboard.press('Backspace')
+  }
   // Touch projects send text the way a phone's on-screen keyboard does (insertText): Chromium's emulated touch silently drops
   // key presses typed straight after a touch tap (found on Firewood Orders). Mouse projects use real key presses.
   if (await isCoarse(page)) await page.keyboard.insertText(String(text))
@@ -204,7 +230,7 @@ export async function keypad(page, pin, submit) {
 }
 
 /** Size + hit-test for a tap target (size from the box is fine; occlusion only from elementFromPoint). */
-export async function expectTapTarget(page, locator, min = 44, label = String(locator)) {
+export async function expectTapTarget(_page, locator, min = 44, label = String(locator)) {
   await locator.scrollIntoViewIfNeeded()
   const box = await locator.boundingBox()
   expect(box, `${label}: no box`).not.toBeNull()
@@ -224,18 +250,29 @@ export async function contrastOf(locator) {
   return locator.evaluate((el) => {
     const parse = (s) => (s.match(/[\d.]+/g) || []).map(Number)
     const lum = ([r, g, b]) => {
-      const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 }
+      const f = (c) => {
+        c /= 255
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+      }
       return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
     }
     const fg = parse(getComputedStyle(el).color)
-    let n = el; let bg = null
+    let n = el
+    let bg = null
     while (n && n.nodeType === 1) {
       const cs = getComputedStyle(n)
       const c = parse(cs.backgroundColor)
-      if (c.length >= 3 && (c.length === 3 || c[3] > 0.99)) { bg = c; break }
-      if (cs.backgroundImage && cs.backgroundImage.includes('gradient')) {
+      if (c.length >= 3 && (c.length === 3 || c[3] > 0.99)) {
+        bg = c
+        break
+      }
+      if (cs.backgroundImage?.includes('gradient')) {
         const stops = cs.backgroundImage.match(/rgba?\([^)]*\)/g) || []
-        const ratios = stops.map((s) => { const b = parse(s); const [a, d] = [lum(fg), lum(b)].sort((x, y) => y - x); return (a + 0.05) / (d + 0.05) })
+        const ratios = stops.map((s) => {
+          const b = parse(s)
+          const [a, d] = [lum(fg), lum(b)].sort((x, y) => y - x)
+          return (a + 0.05) / (d + 0.05)
+        })
         if (ratios.length) return Math.min(...ratios)
       }
       n = n.parentElement

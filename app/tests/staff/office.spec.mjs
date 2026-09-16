@@ -2,8 +2,21 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import {
-  api, assertNoThirdParty, bearer, CODE, expectNoHorizontalScroll, expectTapTarget, fresh, isCoarse, paymentViaApi, PIN, shot, staffToken, tap,
-  type, useStaffSession,
+  api,
+  assertNoThirdParty,
+  bearer,
+  CODE,
+  expectNoHorizontalScroll,
+  expectTapTarget,
+  fresh,
+  isCoarse,
+  paymentViaApi,
+  PIN,
+  shot,
+  staffToken,
+  tap,
+  type,
+  useStaffSession,
 } from '../helpers.mjs'
 import { orderThursday, staffGet } from './setup.mjs'
 
@@ -11,7 +24,9 @@ test.beforeEach(async ({ context, request }) => {
   await fresh(context, request)
   await orderThursday(request)
 })
-test.afterEach(async ({ context }) => { assertNoThirdParty(context) })
+test.afterEach(async ({ context }) => {
+  assertNoThirdParty(context)
+})
 
 async function openOffice(page, context, request) {
   await useStaffSession(context, request, PIN.admin)
@@ -33,7 +48,10 @@ test('record a payment by typing, then undo it', async ({ page, context, request
   await tap(page, page.locator('#record-payment'), 'record payment')
   await expect(page.locator('#family-balance'), '#family-balance after the payment').toHaveAttribute('data-balance-cents', '625')
   await expect(page.locator('#family-balance')).toHaveText('Owes $6.25')
-  await expect(page.locator('.family-row[data-family="fam-1"] .balance'), 'row balance after the payment').toHaveAttribute('data-balance-cents', '625')
+  await expect(page.locator('.family-row[data-family="fam-1"] .balance'), 'row balance after the payment').toHaveAttribute(
+    'data-balance-cents',
+    '625',
+  )
   expect((await staffGet(request, '/api/office/families/fam-1')).balance_cents, 'API balance after the payment').toBe(625)
 
   const payment = page.locator('#ledger .entry[data-kind="payment"]').first()
@@ -121,8 +139,9 @@ test('a refused undo shows its words next to that entry', async ({ page, context
   // Someone at another office desk undoes the same payment before this one confirms.
   expect((await api(request, 'POST', `/api/office/entries/${id}/void`, undefined, bearer(office))).status, 'undone elsewhere').toBe(200)
   await tap(page, page.locator(`#ledger .entry[data-entry="${id}"] button.confirm-void`), 'yes, undo it')
-  await expect(page.locator(`#ledger .entry[data-entry="${id}"] .entry-error`), 'the refusal next to the entry that was tapped')
-    .toHaveText('That entry is already undone.')
+  await expect(page.locator(`#ledger .entry[data-entry="${id}"] .entry-error`), 'the refusal next to the entry that was tapped').toHaveText(
+    'That entry is already undone.',
+  )
   await expect(page.locator('#payment-error'), 'nothing in the payment form').toBeHidden()
 })
 
@@ -162,13 +181,22 @@ test('ledger CSV downloads by a real click', async ({ page, context, request }) 
   const rows = readFileSync(await ledger.path(), 'utf8').split('\r\n')
   expect(rows[0], 'ledger CSV header').toBe('Date,Time,Family,Kind,Description,Amount,Method,Note,Voided')
   const fam1 = rows.filter((r) => r.includes('Liam and Ava (SAMPLE)'))
-  expect(fam1.some((r) => r.includes(',10.50,')), `fam-1 order 10.50 in ${JSON.stringify(fam1)}`).toBe(true)
-  expect(fam1.some((r) => r.includes(',-5.00,')), `fam-1 payment -5.00 in ${JSON.stringify(fam1)}`).toBe(true)
+  expect(
+    fam1.some((r) => r.includes(',10.50,')),
+    `fam-1 order 10.50 in ${JSON.stringify(fam1)}`,
+  ).toBe(true)
+  expect(
+    fam1.some((r) => r.includes(',-5.00,')),
+    `fam-1 payment -5.00 in ${JSON.stringify(fam1)}`,
+  ).toBe(true)
 
   const [balances] = await Promise.all([page.waitForEvent('download'), tap(page, page.locator('#balances-csv'), 'balances CSV')])
   const brows = readFileSync(await balances.path(), 'utf8').split('\r\n')
   expect(brows[0], 'balances CSV header').toBe('Family,Children,Balance')
-  expect(brows.find((r) => r.includes('Liam and Ava (SAMPLE)')), 'fam-1 balance 5.50').toMatch(/,5\.50$/)
+  expect(
+    brows.find((r) => r.includes('Liam and Ava (SAMPLE)')),
+    'fam-1 balance 5.50',
+  ).toMatch(/,5\.50$/)
 })
 
 test('office tap targets, no sideways scroll, screenshots', async ({ page, context, request }, testInfo) => {
@@ -177,7 +205,16 @@ test('office tap targets, no sideways scroll, screenshots', async ({ page, conte
   await expectNoHorizontalScroll(page)
   await shot(page, testInfo, 'staff', 'office')
   await openFamily(page, 'fam-3')
-  for (const sel of ['#payment-amount', '#payment-method', '#record-payment', '#new-code', '#close-family', '#ledger-csv', '#add-family', '.family-row[data-family="fam-1"]']) {
+  for (const sel of [
+    '#payment-amount',
+    '#payment-method',
+    '#record-payment',
+    '#new-code',
+    '#close-family',
+    '#ledger-csv',
+    '#add-family',
+    '.family-row[data-family="fam-1"]',
+  ]) {
     await expectTapTarget(page, page.locator(sel), 44, sel)
   }
   await expectNoHorizontalScroll(page)

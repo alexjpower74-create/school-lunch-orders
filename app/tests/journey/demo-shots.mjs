@@ -23,7 +23,10 @@ async function shot(page, name) {
 }
 async function context(device) {
   const c = await browser.newContext({ ...device, baseURL: BASE })
-  await c.route((url) => !['127.0.0.1', 'localhost'].includes(url.hostname), (r) => r.abort())
+  await c.route(
+    (url) => !['127.0.0.1', 'localhost'].includes(url.hostname),
+    (r) => r.abort(),
+  )
   return c
 }
 async function staff(page, pin, landing) {
@@ -34,7 +37,10 @@ async function staff(page, pin, landing) {
 }
 
 // ---- parent on a phone ----
-for (const [device, suffix] of [[PHONE, '390'], [DESKTOP, '1280']]) {
+for (const [device, suffix] of [
+  [PHONE, '390'],
+  [DESKTOP, '1280'],
+]) {
   const c = await context(device)
   const p = await c.newPage()
   await p.goto('/')

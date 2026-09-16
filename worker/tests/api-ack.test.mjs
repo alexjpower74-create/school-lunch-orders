@@ -24,11 +24,19 @@ test('allergy ticked after ordering: the family line and the kitchen show it unc
   const liam = byItem(placed.order.lines, 'ch-liam', 'mac')
   assert.deepEqual([liam.conflicts, liam.acknowledged, liam.ack_allergens], [['milk'], true, ['milk']])
 
-  assert.equal((await call('PUT', '/api/family/children/ch-ava', { token: fam, body: { first_name: 'Ava', class_id: 'room-5', allergies: ['milk'] } })).status, 200)
+  assert.equal(
+    (await call('PUT', '/api/family/children/ch-ava', { token: fam, body: { first_name: 'Ava', class_id: 'room-5', allergies: ['milk'] } }))
+      .status,
+    200,
+  )
   let lines = (await get('/api/family/orders', fam)).body.lines
   assert.deepEqual([byItem(lines, 'ch-ava', 'mac').conflicts, byItem(lines, 'ch-ava', 'mac').acknowledged], [['milk'], false])
   let day = (await get('/api/kitchen/day?date=2026-09-17', kitchen)).body
-  assert.deepEqual([kitchenLine(day, avaMac.id).conflicts, kitchenLine(day, avaMac.id).acknowledged], [['milk'], false], 'the kitchen agrees')
+  assert.deepEqual(
+    [kitchenLine(day, avaMac.id).conflicts, kitchenLine(day, avaMac.id).acknowledged],
+    [['milk'], false],
+    'the kitchen agrees',
+  )
 
   const ack = await call('POST', `/api/family/lines/${avaMac.id}/ack`, { token: fam })
   assert.equal(ack.status, 200, ack.text)
@@ -54,11 +62,19 @@ test('confirming a late allergy: 404 for another family, 409 for a cancelled lin
     { child_id: 'ch-ava', date: '2026-09-17', item_id: 'chili', qty: 1 },
   ])
   const line = (item) => thu.order.lines.find((l) => l.item_id === item)
-  assert.equal((await call('PUT', '/api/family/children/ch-ava', { token: fam, body: { first_name: 'Ava', class_id: 'room-5', allergies: ['milk'] } })).status, 200)
+  assert.equal(
+    (await call('PUT', '/api/family/children/ch-ava', { token: fam, body: { first_name: 'Ava', class_id: 'room-5', allergies: ['milk'] } }))
+      .status,
+    200,
+  )
 
   const other = await call('POST', `/api/family/lines/${line('mac').id}/ack`, { token: await familyToken('fam-2') })
   assert.equal(other.status, 404)
-  assert.equal((await get('/api/family/orders', fam)).body.lines.find((l) => l.id === line('mac').id).acknowledged, false, 'nothing changed')
+  assert.equal(
+    (await get('/api/family/orders', fam)).body.lines.find((l) => l.id === line('mac').id).acknowledged,
+    false,
+    'nothing changed',
+  )
 
   assert.equal((await call('POST', `/api/family/lines/${line('cookie').id}/cancel`, { token: fam })).status, 200)
   const cancelled = await call('POST', `/api/family/lines/${line('cookie').id}/ack`, { token: fam })
@@ -71,5 +87,9 @@ test('confirming a late allergy: 404 for another family, 409 for a cancelled lin
   assert.deepEqual([nothing.status, nothing.body.code, nothing.body.error], [409, 'bad_state', "There's nothing to confirm on that lunch."])
 
   assert.equal((await call('POST', '/api/family/lines/ln_nope/ack', { token: fam })).status, 404)
-  assert.equal((await call('POST', `/api/family/lines/${line('mac').id}/ack`, { token: await staffToken('admin') })).status, 401, 'a staff token')
+  assert.equal(
+    (await call('POST', `/api/family/lines/${line('mac').id}/ack`, { token: await staffToken('admin') })).status,
+    401,
+    'a staff token',
+  )
 })

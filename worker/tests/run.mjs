@@ -25,8 +25,14 @@ const reporter = process.env.TEST_REPORTER ? [`--test-reporter=${process.env.TES
 const TESTS = path.join(WORKER, 'tests')
 // api-empty runs first, on its own, before anything resets the D1; api-plain runs against a Worker without TEST_MODE.
 const SPECIAL = new Set(['api-empty.test.mjs', 'api-plain.test.mjs'])
-const API_FILES = readdirSync(TESTS).filter((f) => /^api-.+\.test\.mjs$/.test(f) && !SPECIAL.has(f)).sort().map((f) => path.join('tests', f))
-const UNIT_FILES = readdirSync(TESTS).filter((f) => f.endsWith('.test.mjs') && !f.startsWith('api-')).sort().map((f) => path.join('tests', f))
+const API_FILES = readdirSync(TESTS)
+  .filter((f) => /^api-.+\.test\.mjs$/.test(f) && !SPECIAL.has(f))
+  .sort()
+  .map((f) => path.join('tests', f))
+const UNIT_FILES = readdirSync(TESTS)
+  .filter((f) => f.endsWith('.test.mjs') && !f.startsWith('api-'))
+  .sort()
+  .map((f) => path.join('tests', f))
 // A made-up school for the no-test-mode check only (no SAMPLE rows on purpose: that is what the check proves).
 const PLAIN = { school: 'First Setup Check School', admin: 'Setup Check Office', pin: '582714' }
 const grep = opt('--grep')
@@ -34,8 +40,11 @@ const grepArgs = grep ? [`--test-name-pattern=${grep}`] : []
 
 function runNodeTests(files, extra = [], extraEnv = {}) {
   if (!files.length) return 0
-  const r = spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...reporter, ...extra, ...files],
-    { cwd: WORKER, stdio: 'inherit', env: { ...env, ...extraEnv } })
+  const r = spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...reporter, ...extra, ...files], {
+    cwd: WORKER,
+    stdio: 'inherit',
+    env: { ...env, ...extraEnv },
+  })
   return r.status === 0 ? 0 : 1
 }
 
@@ -57,13 +66,28 @@ function freshState(dir) {
 }
 
 async function startWorker(dir, testVars = true) {
-  const dev = spawn('wrangler', ['dev', '--local', '--port', String(PORT), '--inspector-port', String(PORT + 10), '--persist-to', dir,
-    ...(testVars ? ['--var', 'TEST_MODE:1'] : []), '--show-interactive-dev-session=false'],
-  { cwd: WORKER, stdio: ['ignore', 'ignore', 'inherit'], env, detached: true })
+  const dev = spawn(
+    'wrangler',
+    [
+      'dev',
+      '--local',
+      '--port',
+      String(PORT),
+      '--inspector-port',
+      String(PORT + 10),
+      '--persist-to',
+      dir,
+      ...(testVars ? ['--var', 'TEST_MODE:1'] : []),
+      '--show-interactive-dev-session=false',
+    ],
+    { cwd: WORKER, stdio: ['ignore', 'ignore', 'inherit'], env, detached: true },
+  )
   const t0 = Date.now()
   while (!(await answers())) {
     if (dev.exitCode !== null || Date.now() - t0 > 90000) {
-      try { process.kill(-dev.pid, 'SIGTERM') } catch {}
+      try {
+        process.kill(-dev.pid, 'SIGTERM')
+      } catch {}
       return null
     }
     await new Promise((r) => setTimeout(r, 300))
@@ -72,12 +96,16 @@ async function startWorker(dir, testVars = true) {
 }
 
 async function stopWorker(dev) {
-  try { process.kill(-dev.pid, 'SIGTERM') } catch {}
+  try {
+    process.kill(-dev.pid, 'SIGTERM')
+  } catch {}
   // Wait until the port is really free, so the next run cannot talk to this Worker.
   const t0 = Date.now()
   while ((await answers()) && Date.now() - t0 < 20000) await new Promise((r) => setTimeout(r, 200))
   if (await answers()) {
-    try { process.kill(-dev.pid, 'SIGKILL') } catch {}
+    try {
+      process.kill(-dev.pid, 'SIGKILL')
+    } catch {}
     await new Promise((r) => setTimeout(r, 1000))
   }
 }
@@ -132,15 +160,25 @@ if (!flag('--unit-only')) {
     // A real school's start: tools/first-setup.mjs SQL applied to a fresh D1 (the school row and one office PIN, nothing else).
     const sqlFile = path.join(PSTATE, 'first-setup.sql')
     let ok = freshState(PSTATE)
-    ok = ok && spawnSync(process.execPath, ['tools/first-setup.mjs', '--school', PLAIN.school, '--admin', PLAIN.admin, '--pin', PLAIN.pin,
-      '--out', sqlFile], { cwd: WORKER, stdio: 'inherit' }).status === 0
+    ok =
+      ok &&
+      spawnSync(
+        process.execPath,
+        ['tools/first-setup.mjs', '--school', PLAIN.school, '--admin', PLAIN.admin, '--pin', PLAIN.pin, '--out', sqlFile],
+        { cwd: WORKER, stdio: 'inherit' },
+      ).status === 0
     ok = ok && wrangler(['d1', 'execute', 'school-lunch-orders', '--local', '--persist-to', PSTATE, '--file', sqlFile])
     const plain = ok ? await startWorker(PSTATE, false) : null
     if (!plain) {
       console.error('the no-test-mode check could not start')
       failed = 1
     } else {
-      failed |= runNodeTests(['tests/api-plain.test.mjs'], [], { API_BASE: BASE, SETUP_SCHOOL: PLAIN.school, SETUP_ADMIN: PLAIN.admin, SETUP_PIN: PLAIN.pin })
+      failed |= runNodeTests(['tests/api-plain.test.mjs'], [], {
+        API_BASE: BASE,
+        SETUP_SCHOOL: PLAIN.school,
+        SETUP_ADMIN: PLAIN.admin,
+        SETUP_PIN: PLAIN.pin,
+      })
       await stopWorker(plain)
     }
     rmSync(PSTATE, { recursive: true, force: true })

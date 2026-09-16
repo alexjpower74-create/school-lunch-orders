@@ -8,8 +8,12 @@ const ROLES = [
   { pin: PIN.oldford, path: '/teacher/', nav: ['teacher'], name: 'Ms. Oldford (SAMPLE)' },
 ]
 
-test.beforeEach(async ({ context, request }) => { await fresh(context, request) })
-test.afterEach(async ({ context }) => { assertNoThirdParty(context) })
+test.beforeEach(async ({ context, request }) => {
+  await fresh(context, request)
+})
+test.afterEach(async ({ context }) => {
+  assertNoThirdParty(context)
+})
 
 test('PIN sign-in by keypad lands on the right page with the right nav', async ({ page }) => {
   for (const r of ROLES) {
@@ -21,7 +25,9 @@ test('PIN sign-in by keypad lands on the right page with the right nav', async (
     await expect(page.locator('[data-sticky-header] .brand-name')).toHaveText(SCHOOL)
     await expect(page.locator('[data-sticky-header] .sample-badge')).toBeVisible()
     await expect(page.locator('nav#staff-nav a[data-nav]')).toHaveCount(r.nav.length)
-    expect(await page.locator('nav#staff-nav a[data-nav]').evaluateAll((as) => as.map((a) => a.dataset.nav)), `nav for ${r.name}`).toEqual(r.nav)
+    expect(await page.locator('nav#staff-nav a[data-nav]').evaluateAll((as) => as.map((a) => a.dataset.nav)), `nav for ${r.name}`).toEqual(
+      r.nav,
+    )
     await expect(page.locator('#forbidden')).toHaveCount(0)
     await tap(page, page.locator('#staff-sign-out'), 'sign out')
     await expect(page).toHaveURL(/\/staff\/$/)

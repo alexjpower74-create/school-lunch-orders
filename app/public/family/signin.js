@@ -10,7 +10,10 @@ const button = $('sign-in')
 
 // Capitals only, and a dash after the first 4 characters (typing the dash yourself is fine too).
 code.addEventListener('input', (ev) => {
-  const raw = code.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+  const raw = code.value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 8)
   let v = raw.length > 4 ? `${raw.slice(0, 4)}-${raw.slice(4)}` : raw
   if (raw.length === 4 && (ev.inputType || '').startsWith('insert')) v += '-'
   if (v !== code.value) code.value = v
@@ -38,4 +41,7 @@ $('signin-form').addEventListener('submit', async (ev) => {
   }
 })
 
-getInfo().then((info) => renderHeader(info, { home: '/' }), () => {})
+getInfo().then(
+  (info) => renderHeader(info, { home: '/' }),
+  () => {},
+)

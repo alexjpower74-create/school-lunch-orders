@@ -1,7 +1,8 @@
 // JSON answers and the one error shape: { error, code, field? }. Pure (Response is global in Workers and node).
 export const json = (body, status = 200, headers = {}) =>
   new Response(JSON.stringify(body), {
-    status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers },
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers },
   })
 
 export class ApiError extends Error {

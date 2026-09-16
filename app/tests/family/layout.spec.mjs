@@ -2,7 +2,17 @@
 // stepper clear of the cart bar, no sideways scroll, and screenshots of every parent page.
 import { expect, test } from '@playwright/test'
 import {
-  CODE, PIN, expectNoHorizontalScroll, expectTapTarget, fresh, noSchoolViaApi, paymentViaApi, placeOrderViaApi, shot, staffToken, tap,
+  CODE,
+  PIN,
+  expectNoHorizontalScroll,
+  expectTapTarget,
+  fresh,
+  noSchoolViaApi,
+  paymentViaApi,
+  placeOrderViaApi,
+  shot,
+  staffToken,
+  tap,
   useFamilySession,
 } from '../helpers.mjs'
 
@@ -15,7 +25,11 @@ async function all(page, selector, min, label) {
   for (let i = 0; i < n; i++) await expectTapTarget(page, page.locator(selector).nth(i), min, `${label} #${i + 1}`)
 }
 
-test('order page: tap targets, and the last item\'s stepper is not covered by #cart-bar at the bottom of the page', async ({ page, context, request }) => {
+test("order page: tap targets, and the last item's stepper is not covered by #cart-bar at the bottom of the page", async ({
+  page,
+  context,
+  request,
+}) => {
   await useFamilySession(context, request, CODE.liamAva)
   await page.goto('/family/order/')
   await tap(page, page.locator('button.day[data-date="2026-09-17"]'), 'Thu Sep 17')
@@ -40,23 +54,34 @@ test('order page: tap targets, and the last item\'s stepper is not covered by #c
   for (let i = 0; i < 4 && !(await atBottom()); i++) await page.keyboard.press('End')
   await expect.poll(atBottom, { message: 'scrolled to the bottom' }).toBe(true)
   const box = await last.boundingBox()
-  const hit = await last.evaluate((el, [x, y]) => {
-    const t = document.elementFromPoint(x, y)
-    return t === el || el.contains(t) ? '' : t ? t.outerHTML.slice(0, 120) : 'nothing'
-  }, [box.x + box.width / 2, box.y + box.height / 2])
+  const hit = await last.evaluate(
+    (el, [x, y]) => {
+      const t = document.elementFromPoint(x, y)
+      return t === el || el.contains(t) ? '' : t ? t.outerHTML.slice(0, 120) : 'nothing'
+    },
+    [box.x + box.width / 2, box.y + box.height / 2],
+  )
   expect(hit, "the last item's + at the bottom of the page: something is on top").toBe('')
   expect(box.height).toBeGreaterThanOrEqual(56)
   // The bar itself: what you hit at its centre is the bar, the last item's action sits wholly above it, and nothing reads
   // through it (a solid background, or a real backdrop blur).
   const bar = page.locator('#cart-bar')
   const barBox = await bar.boundingBox()
-  expect(await bar.evaluate((el, [x, y]) => el.contains(document.elementFromPoint(x, y)), [barBox.x + barBox.width / 2, barBox.y + barBox.height / 2]),
-    'elementFromPoint at the bar centre is inside #cart-bar').toBe(true)
+  expect(
+    await bar.evaluate(
+      (el, [x, y]) => el.contains(document.elementFromPoint(x, y)),
+      [barBox.x + barBox.width / 2, barBox.y + barBox.height / 2],
+    ),
+    'elementFromPoint at the bar centre is inside #cart-bar',
+  ).toBe(true)
   expect(box.y + box.height, "the last item's action is fully above the bar").toBeLessThanOrEqual(barBox.y)
   const look = await bar.evaluate((el) => {
     const cs = getComputedStyle(el)
     const parts = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number)
-    return { alpha: parts.length >= 4 ? parts[3] : parts.length === 3 ? 1 : 0, blur: /blur/.test(cs.backdropFilter || cs.webkitBackdropFilter || '') }
+    return {
+      alpha: parts.length >= 4 ? parts[3] : parts.length === 3 ? 1 : 0,
+      blur: /blur/.test(cs.backdropFilter || cs.webkitBackdropFilter || ''),
+    }
   })
   expect(look.alpha === 1 || look.blur, `cart bar background is solid (alpha ${look.alpha}) or blurred`).toBe(true)
   await expectTapTarget(page, page.locator('.item summary').first(), 48, 'Ingredients')

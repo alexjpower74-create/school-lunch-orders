@@ -16,7 +16,8 @@ const PAGES = [
 export const $ = (sel, root = document) => root.querySelector(sel)
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 
-const ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5h17a8.5 8.5 0 0 1-17 0Z"/><path d="M9 4.5c-.8 1 .8 2-.1 3M12.5 3.5c-.8 1 .8 2-.1 3M16 4.5c-.8 1 .8 2-.1 3"/></svg>'
+const ICON =
+  '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5h17a8.5 8.5 0 0 1-17 0Z"/><path d="M9 4.5c-.8 1 .8 2-.1 3M12.5 3.5c-.8 1 .8 2-.1 3M16 4.5c-.8 1 .8 2-.1 3"/></svg>'
 
 /** The school name, SAMPLE badge and bowl icon, used by every staff header and the PIN page. */
 export function brand(schoolName = 'School Lunch Orders', sample = false) {
@@ -45,9 +46,16 @@ export function showForbidden(role) {
   forbiddenShown = true
   const home = PAGES.find((p) => p.href === ROLE_HOME[role])
   const main = $('main')
-  main.replaceChildren(h('section', { class: 'card notice', id: 'forbidden', role: 'alert' },
-    h('h1', {}, FORBIDDEN),
-    home ? h('a', { class: 'btn btn-primary', id: 'forbidden-home', href: home.href }, `Go to the ${home.label.toLowerCase()} page`) : null))
+  main.replaceChildren(
+    h(
+      'section',
+      { class: 'card notice', id: 'forbidden', role: 'alert' },
+      h('h1', {}, FORBIDDEN),
+      home
+        ? h('a', { class: 'btn btn-primary', id: 'forbidden-home', href: home.href }, `Go to the ${home.label.toLowerCase()} page`)
+        : null,
+    ),
+  )
 }
 
 /** The API with the staff token. 401 → sign-in page; 403 → the "not for your PIN" screen. Errors still throw. */
@@ -82,15 +90,21 @@ export function clearMessage(el) {
 
 function renderHeader(s, key) {
   const header = $('[data-sticky-header]')
-  const nav = h('nav', { id: 'staff-nav', 'aria-label': 'Staff pages' },
+  const nav = h(
+    'nav',
+    { id: 'staff-nav', 'aria-label': 'Staff pages' },
     PAGES.filter((p) => p.roles.includes(s.role)).map((p) =>
-      h('a', { href: p.href, dataset: { nav: p.key }, 'aria-current': p.key === key ? 'page' : null }, p.label)))
+      h('a', { href: p.href, dataset: { nav: p.key }, 'aria-current': p.key === key ? 'page' : null }, p.label),
+    ),
+  )
   const signOut = h('button', { class: 'btn btn-quiet', id: 'staff-sign-out', type: 'button', onclick: signOutNow }, 'Sign out')
   header.replaceChildren(brand(), h('span', { class: 'staff-who' }, s.staff?.name || ''), nav, signOut)
 }
 
 async function signOutNow() {
-  try { await api('POST', '/api/staff/signout', { auth: 'staff' }) } catch {}
+  try {
+    await api('POST', '/api/staff/signout', { auth: 'staff' })
+  } catch {}
   session.clear('staff')
   location.replace('/staff/')
 }
@@ -140,13 +154,20 @@ export async function downloadCsv(path, fallbackName) {
   const a = h('a', { href: URL.createObjectURL(blob), download: m ? m[1] : fallbackName, hidden: true })
   document.body.append(a)
   a.click()
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove() }, 2000)
+  setTimeout(() => {
+    URL.revokeObjectURL(a.href)
+    a.remove()
+  }, 2000)
 }
 
 /** Disable a button while a request runs. */
 export async function busy(button, fn) {
   if (button) button.disabled = true
-  try { return await fn() } finally { if (button) button.disabled = false }
+  try {
+    return await fn()
+  } finally {
+    if (button) button.disabled = false
+  }
 }
 
 /** "Room 4 · Grade 2" */

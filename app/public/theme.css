@@ -41,21 +41,21 @@
   --warn-text: #fdba74;
 
   /* Data colours */
-  --veg: #86efac;          /* Vegetarian pill */
+  --veg: #86efac; /* Vegetarian pill */
   --on-veg: #052e16;
-  --open: #4ade80;         /* day open for orders */
+  --open: #4ade80; /* day open for orders */
   --on-open: #052e16;
-  --closed: #94a3b8;       /* ordering closed */
+  --closed: #94a3b8; /* ordering closed */
   --on-closed: #0f172a;
-  --no-school: #7dd3fc;    /* holiday, PD day, school closed */
+  --no-school: #7dd3fc; /* holiday, PD day, school closed */
   --on-no-school: #082f49;
-  --owing: #fbbf24;        /* a family owes money */
+  --owing: #fbbf24; /* a family owes money */
   --on-owing: #3a2600;
-  --credit: #4ade80;       /* a family has a credit */
+  --credit: #4ade80; /* a family has a credit */
   --on-credit: #052e16;
-  --paid: #94a3b8;         /* all paid up */
+  --paid: #94a3b8; /* all paid up */
   --on-paid: #0f172a;
-  --delivered: #4ade80;    /* lunch given out */
+  --delivered: #4ade80; /* lunch given out */
   --on-delivered: #052e16;
   --absent: #94a3b8;
   --on-absent: #0f172a;
@@ -63,21 +63,28 @@
   /* Shape and size */
   --radius: 14px;
   --radius-sm: 10px;
-  --tap: 44px;         /* staff and settings controls */
-  --tap-parent: 48px;  /* every control on the parent pages */
-  --tap-big: 56px;     /* Place order, "I understand, add it", quantity steppers, Given out / Absent */
+  --tap: 44px; /* staff and settings controls */
+  --tap-parent: 48px; /* every control on the parent pages */
+  --tap-big: 56px; /* Place order, "I understand, add it", quantity steppers, Given out / Absent */
   --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px rgba(0, 0, 0, 0.35);
   --aurora-opacity: 0.2;
   --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 /* The hidden attribute always wins over a class with its own display (found on Daycare Day Sheet's SAMPLE badge). */
-[hidden] { display: none !important; }
+[hidden] {
+  display: none !important;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   background: var(--ground);
   color: var(--text);
@@ -87,7 +94,10 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-.money, .tabular { font-variant-numeric: tabular-nums; }
+.money,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
 
 /* The SAMPLE badge every screen shows next to the school name while the school is sample. */
 .sample-badge {
@@ -116,10 +126,19 @@ html, body {
   filter: blur(40px);
 }
 
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Print: white sheet, black ink; allergen lines stay bold with a border so they read in black and white. Pages add .no-print
@@ -141,7 +160,18 @@ html, body {
     --on-allergen-solid: #b00000;
     --shadow: none;
   }
-  html, body { background: #ffffff; color: #000000; }
-  .aurora, .no-print { display: none !important; }
-  .sample-badge { color: #000000; background: none; border: 1px solid #000000; }
+  html,
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+  .aurora,
+  .no-print {
+    display: none !important;
+  }
+  .sample-badge {
+    color: #000000;
+    background: none;
+    border: 1px solid #000000;
+  }
 }

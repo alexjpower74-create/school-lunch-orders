@@ -20,48 +20,77 @@ function renderList() {
     list.replaceChildren(h('li', { class: 'line-row muted' }, 'No children yet. Add each child below.'))
     return
   }
-  list.replaceChildren(...state.children.map((c) => {
-    const actions = h('div', { class: 'row' })
-    const error = h('p', { class: 'error row-error', role: 'alert', hidden: true })
-    const showButtons = () => actions.replaceChildren(
-      h('button', { class: 'btn edit-child', type: 'button', onclick: () => startEdit(c) }, 'Edit'),
-      h('button', { class: 'btn warn remove-child', type: 'button', onclick: askRemove }, 'Remove'))
-    function askRemove() {
-      say(error, '')
-      actions.replaceChildren(h('div', { class: 'confirm' },
-        h('p', {}, `Remove ${c.first_name}? Lunches already given out stay in your history.`),
-        h('button', { class: 'btn primary confirm-remove', type: 'button', onclick: doRemove }, 'Yes, remove'),
-        h('button', { class: 'btn keep-child', type: 'button', onclick: showButtons }, 'Keep')))
-    }
-    async function doRemove(ev) {
-      ev.currentTarget.disabled = true
-      try {
-        await familyApi('DELETE', `/api/family/children/${c.id}`)
-        await reload()
-      } catch (e) {
-        showButtons()
-        say(error, e instanceof ApiError ? e.message : 'Something went wrong. Try again.')
+  list.replaceChildren(
+    ...state.children.map((c) => {
+      const actions = h('div', { class: 'row' })
+      const error = h('p', { class: 'error row-error', role: 'alert', hidden: true })
+      const showButtons = () =>
+        actions.replaceChildren(
+          h('button', { class: 'btn edit-child', type: 'button', onclick: () => startEdit(c) }, 'Edit'),
+          h('button', { class: 'btn warn remove-child', type: 'button', onclick: askRemove }, 'Remove'),
+        )
+      function askRemove() {
+        say(error, '')
+        actions.replaceChildren(
+          h(
+            'div',
+            { class: 'confirm' },
+            h('p', {}, `Remove ${c.first_name}? Lunches already given out stay in your history.`),
+            h('button', { class: 'btn primary confirm-remove', type: 'button', onclick: doRemove }, 'Yes, remove'),
+            h('button', { class: 'btn keep-child', type: 'button', onclick: showButtons }, 'Keep'),
+          ),
+        )
       }
-    }
-    showButtons()
-    return h('li', { class: 'child-row line-row', dataset: { child: c.id } },
-      h('div', { class: 'what' },
-        h('h3', {}, c.first_name),
-        h('p', { class: 'where' }, classWords(c)),
-        c.allergies.length
-          ? h('div', { class: 'pills' }, c.allergies.map((k) => h('span', { class: 'pill allergy' }, state.tools.label(k))))
-          : h('p', { class: 'muted small', style: 'margin:0' }, 'No allergies ticked')),
-      actions, error)
-  }))
+      async function doRemove(ev) {
+        ev.currentTarget.disabled = true
+        try {
+          await familyApi('DELETE', `/api/family/children/${c.id}`)
+          await reload()
+        } catch (e) {
+          showButtons()
+          say(error, e instanceof ApiError ? e.message : 'Something went wrong. Try again.')
+        }
+      }
+      showButtons()
+      return h(
+        'li',
+        { class: 'child-row line-row', dataset: { child: c.id } },
+        h(
+          'div',
+          { class: 'what' },
+          h('h3', {}, c.first_name),
+          h('p', { class: 'where' }, classWords(c)),
+          c.allergies.length
+            ? h(
+                'div',
+                { class: 'pills' },
+                c.allergies.map((k) => h('span', { class: 'pill allergy' }, state.tools.label(k))),
+              )
+            : h('p', { class: 'muted small', style: 'margin:0' }, 'No allergies ticked'),
+        ),
+        actions,
+        error,
+      )
+    }),
+  )
 }
 
 function renderForm() {
-  $('class').replaceChildren(h('option', { value: '' }, 'Choose a class'),
-    ...state.classes.map((k) => h('option', { value: k.id }, `${k.name} · ${k.grade}`)))
-  $('allergy-list').replaceChildren(...state.info.allergens.map((a) => h('label', { class: 'check-row' },
-    h('input', { type: 'checkbox', name: 'allergy', value: a.key }),
-    h('span', { class: 'box' }, icon('check')),
-    h('span', {}, a.label))))
+  $('class').replaceChildren(
+    h('option', { value: '' }, 'Choose a class'),
+    ...state.classes.map((k) => h('option', { value: k.id }, `${k.name} · ${k.grade}`)),
+  )
+  $('allergy-list').replaceChildren(
+    ...state.info.allergens.map((a) =>
+      h(
+        'label',
+        { class: 'check-row' },
+        h('input', { type: 'checkbox', name: 'allergy', value: a.key }),
+        h('span', { class: 'box' }, icon('check')),
+        h('span', {}, a.label),
+      ),
+    ),
+  )
   $('child-form').hidden = false
 }
 

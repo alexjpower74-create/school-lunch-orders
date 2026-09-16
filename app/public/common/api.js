@@ -16,13 +16,21 @@ const KEYS = { family: 'school-lunch:family', staff: 'school-lunch:staff' }
 
 export const session = {
   get(kind) {
-    try { return JSON.parse(localStorage.getItem(KEYS[kind]) || 'null') } catch { return null }
+    try {
+      return JSON.parse(localStorage.getItem(KEYS[kind]) || 'null')
+    } catch {
+      return null
+    }
   },
   set(kind, value) {
-    try { localStorage.setItem(KEYS[kind], JSON.stringify(value)) } catch {}
+    try {
+      localStorage.setItem(KEYS[kind], JSON.stringify(value))
+    } catch {}
   },
   clear(kind) {
-    try { localStorage.removeItem(KEYS[kind]) } catch {}
+    try {
+      localStorage.removeItem(KEYS[kind])
+    } catch {}
   },
 }
 

@@ -4,13 +4,15 @@
 // "Saved", so it was replaced. Both runs are in negative-control.log.)
 import { pageNegative } from '../negative-lib.mjs'
 
-process.exit(pageNegative({
-  dir: 'staff',
-  name: 'item-price',
-  why: 'the items form sends Math.round(price / 10) as price_cents, a valid number the Worker stores (3.75 typed → 38 cents)',
-  patches: [{ file: 'admin/admin.js', from: '    price_cents: price,\n', to: '    price_cents: Math.round(price / 10),\n' }],
-  spec: 'settings.spec.mjs',
-  grep: 'a new item saves with price in dollars, allergens, days and max',
-  project: 'chromium-1280',
-  expect: ['the new item row price', 'Pea soup (SAMPLE) · $0.38'],
-}))
+process.exit(
+  pageNegative({
+    dir: 'staff',
+    name: 'item-price',
+    why: 'the items form sends Math.round(price / 10) as price_cents, a valid number the Worker stores (3.75 typed → 38 cents)',
+    patches: [{ file: 'admin/admin.js', from: '    price_cents: price,\n', to: '    price_cents: Math.round(price / 10),\n' }],
+    spec: 'settings.spec.mjs',
+    grep: 'a new item saves with price in dollars, allergens, days and max',
+    project: 'chromium-1280',
+    expect: ['the new item row price', 'Pea soup (SAMPLE) · $0.38'],
+  }),
+)

@@ -5,8 +5,23 @@
 // Runs once per engine (the -1280 projects); the parent and the teacher use 390-wide phone contexts inside it.
 import { expect, test } from '@playwright/test'
 import {
-  api, assertNoThirdParty, bearer, CODE, fresh, keypad, newContext, nl, PIN, placeOrderViaApi, familyToken, paymentViaApi,
-  setNow, shot, staffToken, tap, type,
+  api,
+  assertNoThirdParty,
+  bearer,
+  CODE,
+  fresh,
+  keypad,
+  newContext,
+  nl,
+  PIN,
+  placeOrderViaApi,
+  familyToken,
+  paymentViaApi,
+  setNow,
+  shot,
+  staffToken,
+  tap,
+  type,
 } from '../helpers.mjs'
 
 const THU = '2026-09-17'
@@ -25,8 +40,12 @@ const ITEMS = { mac: 3, apple: 1, milk: 2, chili: 1 }
 const ITEM_COUNT = 7
 const CREDIT = { 'fam-1': 925, 'fam-3': 600, 'fam-2': 475 }
 
+// biome-ignore lint/correctness/noEmptyPattern: Playwright requires the fixtures object destructuring pattern here
 test.beforeEach(async ({}, testInfo) => {
-  test.skip(testInfo.project.name.endsWith('-390'), 'The journey runs once per engine; its phones are 390-wide contexts inside the 1280 project.')
+  test.skip(
+    testInfo.project.name.endsWith('-390'),
+    'The journey runs once per engine; its phones are 390-wide contexts inside the 1280 project.',
+  )
 })
 
 async function staffSignIn(page, pin, landing) {
@@ -35,7 +54,11 @@ async function staffSignIn(page, pin, landing) {
   await expect(page).toHaveURL(new RegExp(`${landing}$`))
 }
 
-test('a parent orders, the kitchen sees it, a storm closure credits it to the cent, the teacher and kitchen see no school', async ({ browser, context, request }, testInfo) => {
+test('a parent orders, the kitchen sees it, a storm closure credits it to the cent, the teacher and kitchen see no school', async ({
+  browser,
+  context,
+  request,
+}, testInfo) => {
   test.setTimeout(180_000)
   await fresh(context, request)
 
@@ -78,11 +101,17 @@ test('a parent orders, the kitchen sees it, a storm closure credits it to the ce
   await shot(p, testInfo, 'journey', '2-parent-placed')
 
   // ---- other families (setup) and the office recording fam-1's e-Transfer ----
-  await placeOrderViaApi(request, await familyToken(request, CODE.emmaJackChloe),
-    [{ child_id: 'ch-jack', date: THU, item_id: 'mac', qty: 1 }, { child_id: 'ch-jack', date: THU, item_id: 'milk', qty: 2 }])
+  await placeOrderViaApi(request, await familyToken(request, CODE.emmaJackChloe), [
+    { child_id: 'ch-jack', date: THU, item_id: 'mac', qty: 1 },
+    { child_id: 'ch-jack', date: THU, item_id: 'milk', qty: 2 },
+  ])
   await placeOrderViaApi(request, await familyToken(request, CODE.noah), [{ child_id: 'ch-noah', date: THU, item_id: 'chili', qty: 1 }])
-  const fam1Lines = (await api(request, 'GET', '/api/family/orders', undefined, bearer(await familyToken(request, CODE.liamAva)))).body.lines
-  expect(fam1Lines.find((l) => l.child_id === 'ch-liam' && l.item_id === 'mac')?.ack_allergens, "Liam's acknowledgement was stored").toEqual(['milk'])
+  const fam1Lines = (await api(request, 'GET', '/api/family/orders', undefined, bearer(await familyToken(request, CODE.liamAva)))).body
+    .lines
+  expect(
+    fam1Lines.find((l) => l.child_id === 'ch-liam' && l.item_id === 'mac')?.ack_allergens,
+    "Liam's acknowledgement was stored",
+  ).toEqual(['milk'])
   expect(fam1Lines.find((l) => l.child_id === 'ch-ava' && l.item_id === 'mac')?.ack_allergens, 'Ava needed none').toEqual([])
   await paymentViaApi(request, await staffToken(request, PIN.admin), { family_id: 'fam-1', amount_cents: 925, method: 'etransfer' })
 
@@ -117,13 +146,19 @@ test('a parent orders, the kitchen sees it, a storm closure credits it to the ce
   await tap(o, o.locator('#add-no-school'), 'Add')
   await expect(o.locator('#no-school-preview')).toHaveText('This cancels 7 items for 3 families and credits $20.00 to their balances.')
   await tap(o, o.locator('#confirm-no-school'), 'Yes, add the no-school day')
-  await expect(o.locator('#no-school-result')).toHaveText('Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $20.00.')
+  await expect(o.locator('#no-school-result')).toHaveText(
+    'Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $20.00.',
+  )
   await shot(o, testInfo, 'journey', '4-closure')
 
   const admin = await staffToken(request, PIN.admin, { now: THU_7AM })
   const { families } = (await api(request, 'GET', '/api/office/families', undefined, bearer(admin), { now: THU_7AM })).body
   const balance = Object.fromEntries(families.map((f) => [f.id, f.balance_cents]))
-  expect(balance, 'each family credited exactly its own Thursday total').toMatchObject({ 'fam-1': 925 - 925 - CREDIT['fam-1'], 'fam-3': 600 - CREDIT['fam-3'], 'fam-2': 475 - CREDIT['fam-2'] })
+  expect(balance, 'each family credited exactly its own Thursday total').toMatchObject({
+    'fam-1': 925 - 925 - CREDIT['fam-1'],
+    'fam-3': 600 - CREDIT['fam-3'],
+    'fam-2': 475 - CREDIT['fam-2'],
+  })
 
   // ---- the parent's phone at 7:30 AM: the credit, to the cent ----
   await setNow(parent, THU_730)

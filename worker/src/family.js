@@ -9,7 +9,7 @@ import { LINE_ORDER, LINE_SELECT, lineOut } from './lines.js'
 import { addDays, dateLabel, isValidDate, longLabel } from './time.js'
 
 export const MAX_CHILDREN = 8
-const NAME_RE = /^\p{L}[\p{L} '\-]*$/u
+const NAME_RE = /^\p{L}[\p{L} '-]*$/u
 
 export async function getFamily(c) {
   const cal = await loadCal(c.db)
@@ -18,8 +18,11 @@ export async function getFamily(c) {
     c.db.prepare('SELECT * FROM classes ORDER BY sort, name'),
   ])
   return json({
-    family: c.family, children: ch.results.map(childOut), classes: cl.results.map(classOut),
-    balance_cents: await balanceOf(c.db, c.family.id), payment_instructions: cal.school.payment_instructions,
+    family: c.family,
+    children: ch.results.map(childOut),
+    classes: cl.results.map(classOut),
+    balance_cents: await balanceOf(c.db, c.family.id),
+    payment_instructions: cal.school.payment_instructions,
   })
 }
 
@@ -47,24 +50,32 @@ const readChild = async (c, id) => childOut(await c.db.prepare(`${CHILD_SELECT} 
 export async function addChild(c) {
   const k = await childInput(c, await readJson(c))
   const n = await c.db.prepare('SELECT COUNT(*) AS n FROM children WHERE family_id = ? AND removed = 0').bind(c.family.id).first()
-  if (n.n >= MAX_CHILDREN) throw conflict('bad_state', `A family can have at most ${MAX_CHILDREN} children. Ask the office if you need more.`)
+  if (n.n >= MAX_CHILDREN)
+    throw conflict('bad_state', `A family can have at most ${MAX_CHILDREN} children. Ask the office if you need more.`)
   const id = randomId('ch')
-  await c.db.prepare('INSERT INTO children (id, family_id, first_name, class_id, allergies, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(id, c.family.id, k.first_name, k.class_id, JSON.stringify(k.allergies), c.nowIso).run()
+  await c.db
+    .prepare('INSERT INTO children (id, family_id, first_name, class_id, allergies, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, c.family.id, k.first_name, k.class_id, JSON.stringify(k.allergies), c.nowIso)
+    .run()
   return json({ child: await readChild(c, id) }, 201)
 }
 
 export async function updateChild(c, { id }) {
   await ownChild(c, id)
   const k = await childInput(c, await readJson(c))
-  await c.db.prepare('UPDATE children SET first_name = ?, class_id = ?, allergies = ? WHERE id = ?')
-    .bind(k.first_name, k.class_id, JSON.stringify(k.allergies), id).run()
+  await c.db
+    .prepare('UPDATE children SET first_name = ?, class_id = ?, allergies = ? WHERE id = ?')
+    .bind(k.first_name, k.class_id, JSON.stringify(k.allergies), id)
+    .run()
   return json({ child: await readChild(c, id) })
 }
 
 export async function removeChild(c, { id }) {
   const ch = await ownChild(c, id)
-  const r = await c.db.prepare("SELECT COUNT(*) AS n FROM lines WHERE child_id = ? AND status = 'active' AND date >= ?").bind(id, c.today).first()
+  const r = await c.db
+    .prepare("SELECT COUNT(*) AS n FROM lines WHERE child_id = ? AND status = 'active' AND date >= ?")
+    .bind(id, c.today)
+    .first()
   if (r.n) throw conflict('bad_state', `${ch.first_name} has lunches ordered for days still to come. Cancel them first.`)
   await c.db.prepare('UPDATE children SET removed = 1 WHERE id = ?').bind(id).run()
   return json({ ok: true })
@@ -89,16 +100,25 @@ export async function familyMenu(c) {
     monday = found ? weekStart(found) : weekStart(weekday(c.today) >= 6 ? addDays(c.today, 7) : c.today)
   }
   const dates = [0, 1, 2, 3, 4].map((i) => addDays(monday, i))
-  const { results: rows } = await c.db.prepare(`SELECT m.date, i.* FROM menu m JOIN items i ON i.id = m.item_id
-    WHERE m.date BETWEEN ? AND ? ORDER BY i.seq`).bind(dates[0], dates[4]).all()
+  const { results: rows } = await c.db
+    .prepare(`SELECT m.date, i.* FROM menu m JOIN items i ON i.id = m.item_id
+    WHERE m.date BETWEEN ? AND ? ORDER BY i.seq`)
+    .bind(dates[0], dates[4])
+    .all()
   const days = dates.map((date) => {
     const items = rows.filter((r) => r.date === date).map(menuItemOut)
     const schoolDay = isSchoolDay(cal, date)
     const at = schoolDay ? cutoffAt(cal, date) : null
     const st = dayStatus(cal, date, { hasMenu: items.length > 0, at, now: c.now })
     return {
-      date, date_label: dateLabel(date), long_label: longLabel(date), status: st.status, status_label: st.status_label,
-      no_school: noSchoolInfo(cal, date), cutoff_at: at ? at.toISOString() : null, cutoff_label: at ? cutoffLabel(cal, date, at, c.now) : null,
+      date,
+      date_label: dateLabel(date),
+      long_label: longLabel(date),
+      status: st.status,
+      status_label: st.status_label,
+      no_school: noSchoolInfo(cal, date),
+      cutoff_at: at ? at.toISOString() : null,
+      cutoff_label: at ? cutoffLabel(cal, date, at, c.now) : null,
       items: st.status === 'no_school' ? [] : items,
     }
   })
@@ -111,8 +131,10 @@ export async function familyOrders(c) {
   const to = c.url.searchParams.get('to') || cal.school.year_end || '9999-12-31'
   if (!isValidDate(from)) throw bad('from', 'Choose a start date.')
   if (!isValidDate(to)) throw bad('to', 'Choose an end date.')
-  const { results } = await c.db.prepare(`${LINE_SELECT} WHERE l.family_id = ? AND l.date BETWEEN ? AND ? ${LINE_ORDER}`)
-    .bind(c.family.id, from, to).all()
+  const { results } = await c.db
+    .prepare(`${LINE_SELECT} WHERE l.family_id = ? AND l.date BETWEEN ? AND ? ${LINE_ORDER}`)
+    .bind(c.family.id, from, to)
+    .all()
   return json({ lines: results.map((r) => lineOut(r, cal, c.now)) })
 }
 

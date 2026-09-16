@@ -30,6 +30,10 @@ test('without TEST_MODE, after tools/first-setup.mjs: the school name with sampl
   assert.equal(r.body.role, 'admin')
   assert.equal(r.body.staff.name, process.env.SETUP_ADMIN)
   const settings = await call('GET', '/api/admin/settings', { token: r.body.token })
-  assert.deepEqual([settings.body.classes.length, settings.body.items.length, settings.body.staff.length], [0, 0, 1], 'nothing else was created')
+  assert.deepEqual(
+    [settings.body.classes.length, settings.body.items.length, settings.body.staff.length],
+    [0, 0, 1],
+    'nothing else was created',
+  )
   assert.equal((await call('POST', '/api/test/reset', { token: r.body.token })).status, 404)
 })

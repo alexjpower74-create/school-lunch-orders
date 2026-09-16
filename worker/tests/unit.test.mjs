@@ -5,7 +5,17 @@ import { test } from 'node:test'
 import { balancePhrase } from '../../app/public/common/ui.js'
 import { acknowledged, allergenWords, cleanAllergenList, conflicts, flagOf } from '../src/allergens.js'
 import {
-  cutoffAt, cutoffDate, cutoffLabel, cutoffRuleLabel, dayStatus, isSchoolDay, makeCal, nextSchoolDay, staffStatus, weekLabel, weekStart,
+  cutoffAt,
+  cutoffDate,
+  cutoffLabel,
+  cutoffRuleLabel,
+  dayStatus,
+  isSchoolDay,
+  makeCal,
+  nextSchoolDay,
+  staffStatus,
+  weekLabel,
+  weekStart,
 } from '../src/calendar.js'
 import { CODE_ALPHABET, formatCode, newCode, normalizeCode } from '../src/codes.js'
 import { amountCell, csvText, textCell } from '../src/csv.js'
@@ -50,7 +60,11 @@ test('cut-off: a closure does not move it; 0 days before is the day itself; the 
   const zero = makeCal({ ...SAMPLE_SCHOOL, cutoff_days_before: 0 }, NO_SCHOOL)
   assert.equal(at('2026-09-17', zero), '2026-09-17T11:30:00.000Z')
   const two = makeCal({ ...SAMPLE_SCHOOL, cutoff_days_before: 2 }, NO_SCHOOL)
-  assert.equal(cutoffDate(two, '2026-10-14'), '2026-10-09', 'Wed Oct 14: two school days before is Tue Oct 13, then Fri Oct 9 (Mon Oct 12 is a holiday)')
+  assert.equal(
+    cutoffDate(two, '2026-10-14'),
+    '2026-10-09',
+    'Wed Oct 14: two school days before is Tue Oct 13, then Fri Oct 9 (Mon Oct 12 is a holiday)',
+  )
 
   const exact = new Date('2026-09-15T11:30:00Z')
   assert.equal(status('2026-09-16', exact), 'closed', 'at exactly cutoff_at it is closed')
@@ -71,11 +85,17 @@ test('cut-off: an afternoon cut-off time and the rule labels', () => {
 test('day status: the first that applies (no_school, no_menu, closed, open) and the staff statuses', () => {
   assert.equal(status('2026-09-19'), 'no_school', 'Saturday')
   assert.equal(dayStatus(cal, '2027-07-05', { hasMenu: true, at: cutoffAt(cal, '2027-07-05'), now: NOW }).status_label, 'No school')
-  assert.equal(dayStatus(cal, '2026-10-23', { hasMenu: false, at: cutoffAt(cal, '2026-10-23'), now: NOW }).status_label, 'PD day',
-    'no-school beats no menu')
+  assert.equal(
+    dayStatus(cal, '2026-10-23', { hasMenu: false, at: cutoffAt(cal, '2026-10-23'), now: NOW }).status_label,
+    'PD day',
+    'no-school beats no menu',
+  )
   assert.equal(status('2026-09-17', NOW, cal, false), 'no_menu')
-  assert.equal(dayStatus(cal, '2026-09-14', { hasMenu: false, at: cutoffAt(cal, '2026-09-14'), now: NOW }).status, 'no_menu',
-    'no menu beats closed')
+  assert.equal(
+    dayStatus(cal, '2026-09-14', { hasMenu: false, at: cutoffAt(cal, '2026-09-14'), now: NOW }).status,
+    'no_menu',
+    'no menu beats closed',
+  )
   assert.equal(status('2026-09-14'), 'closed')
   assert.deepEqual(staffStatus(cal, '2026-09-19'), { status: 'weekend', status_label: 'Weekend' })
   assert.deepEqual(staffStatus(cal, '2026-11-11'), { status: 'no_school', status_label: 'Holiday' })
@@ -122,7 +142,9 @@ test("conflicts: only the child's own allergies, in list order", () => {
 
 test('balance: the sum of entries with voided ones left out, and the phrase each sum gives', () => {
   const entries = [
-    { amount_cents: 1250, voided: false }, { amount_cents: -300, voided: false }, { amount_cents: -950, voided: true },
+    { amount_cents: 1250, voided: false },
+    { amount_cents: -300, voided: false },
+    { amount_cents: -950, voided: true },
   ]
   assert.equal(sumBalance(entries), 950)
   assert.equal(balancePhrase(sumBalance(entries)), 'You owe $9.50')
@@ -139,19 +161,28 @@ test('CSV: quoting and the formula guard', () => {
   assert.equal(textCell('say "hi"'), '"say ""hi"""')
   assert.equal(textCell('two\nlines'), '"two\nlines"')
   assert.equal(textCell('=SUM(A1)'), "'=SUM(A1)")
-  for (const bad of ['+1', '-1', '@x', '\tx']) assert.equal(textCell(bad)[0] === "'" || textCell(bad).startsWith(`"'`), true, JSON.stringify(bad))
+  for (const bad of ['+1', '-1', '@x', '\tx'])
+    assert.equal(textCell(bad)[0] === "'" || textCell(bad).startsWith(`"'`), true, JSON.stringify(bad))
   assert.equal(textCell('\rx'), `"'\rx"`, 'a leading CR is guarded and then quoted')
   assert.equal(textCell('=1,2'), `"'=1,2"`)
   assert.equal(amountCell(1250), '12.50')
   assert.equal(amountCell(-300), '-3.00')
   assert.equal(amountCell(5), '0.05')
   assert.equal(amountCell(0), '0.00')
-  assert.equal(csvText([['a', 'b'], ['1', '2']]), 'a,b\r\n1,2\r\n')
+  assert.equal(
+    csvText([
+      ['a', 'b'],
+      ['1', '2'],
+    ]),
+    'a,b\r\n1,2\r\n',
+  )
 })
 
 test('family code normalisation', () => {
-  for (const s of ['KQ7M-4RTX', 'kq7m-4rtx', 'KQ7M4RTX', 'kq7m4rtx', ' kq7m 4rtx ', 'K-Q-7-M-4-R-T-X']) assert.equal(normalizeCode(s), 'KQ7M4RTX', s)
-  for (const s of ['KQ7M-4RT', 'KQ7M-4RTXX', 'KQ7M-4RT1', 'KQ7O-4RTX', 'KQ7M_4RTX', '', null, 12345678]) assert.equal(normalizeCode(s), null, String(s))
+  for (const s of ['KQ7M-4RTX', 'kq7m-4rtx', 'KQ7M4RTX', 'kq7m4rtx', ' kq7m 4rtx ', 'K-Q-7-M-4-R-T-X'])
+    assert.equal(normalizeCode(s), 'KQ7M4RTX', s)
+  for (const s of ['KQ7M-4RT', 'KQ7M-4RTXX', 'KQ7M-4RT1', 'KQ7O-4RTX', 'KQ7M_4RTX', '', null, 12345678])
+    assert.equal(normalizeCode(s), null, String(s))
   assert.equal(formatCode('KQ7M4RTX'), 'KQ7M-4RTX')
   assert.equal(CODE_ALPHABET.length, 31)
   for (const ch of 'ILO01') assert.equal(CODE_ALPHABET.includes(ch), false, `no look-alike ${ch}`)

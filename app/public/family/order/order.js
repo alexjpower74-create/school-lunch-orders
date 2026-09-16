@@ -1,8 +1,22 @@
 // "/family/order/" Pick a child, a day and items. The red warning and "I understand, add it" are for the selected child's own
 // allergies only. The cart lives in localStorage; nothing is ordered until the cart page's Place order.
 import {
-  $, allergenTools, familyApi, getInfo, h, icon, menuWeek, money, plural, readCart, renderHeader, requireSession, run, sameLine, say,
-  warningText, writeCart,
+  $,
+  allergenTools,
+  familyApi,
+  getInfo,
+  h,
+  icon,
+  menuWeek,
+  money,
+  plural,
+  readCart,
+  renderHeader,
+  requireSession,
+  run,
+  sameLine,
+  warningText,
+  writeCart,
 } from '../family.js'
 
 const s = requireSession()
@@ -53,34 +67,83 @@ function itemCard(d, item, c) {
   const words = state.tools.words(cs)
   const inCart = state.cart.find((l) => sameLine(l, { child_id: c.id, date: d.date, item_id: item.id }))
   const qty = inCart?.qty || 0
-  const already = state.ordered.filter((l) => l.child_id === c.id && l.date === d.date && l.item_id === item.id).reduce((n, l) => n + l.qty, 0)
+  const already = state.ordered
+    .filter((l) => l.child_id === c.id && l.date === d.date && l.item_id === item.id)
+    .reduce((n, l) => n + l.qty, 0)
   const atMax = item.max_per_child !== null && qty + already >= item.max_per_child
 
   let actions = null
   if (d.status === 'open') {
-    const limit = item.max_per_child !== null ? h('p', { class: 'limit' }, atMax ? `That's the most for one day (${item.max_per_child})` : `Up to ${item.max_per_child} a day`) : null
+    const limit =
+      item.max_per_child !== null
+        ? h('p', { class: 'limit' }, atMax ? `That's the most for one day (${item.max_per_child})` : `Up to ${item.max_per_child} a day`)
+        : null
     if (cs.length && !inCart?.allergen_ack) {
-      actions = h('div', { class: 'item-actions' }, limit,
-        atMax ? null : h('button', { class: 'btn big ack', type: 'button', onclick: () => change(c, d, item, inCart ? 0 : 1, true) }, 'I understand, add it'))
+      actions = h(
+        'div',
+        { class: 'item-actions' },
+        limit,
+        atMax
+          ? null
+          : h(
+              'button',
+              { class: 'btn big ack', type: 'button', onclick: () => change(c, d, item, inCart ? 0 : 1, true) },
+              'I understand, add it',
+            ),
+      )
     } else {
-      actions = h('div', { class: 'item-actions' }, limit, h('div', { class: 'stepper' },
-        h('button', { class: 'btn big qty-minus', type: 'button', disabled: qty === 0, 'aria-label': `One less ${item.name} for ${c.first_name}`,
-          onclick: () => change(c, d, item, -1) }, icon('minus')),
-        h('output', { class: 'qty money', 'aria-label': `${item.name} for ${c.first_name}` }, String(qty)),
-        h('button', { class: 'btn big qty-plus', type: 'button', disabled: atMax, 'aria-label': `One more ${item.name} for ${c.first_name}`,
-          onclick: () => change(c, d, item, 1, cs.length > 0) }, icon('plus'))))
+      actions = h(
+        'div',
+        { class: 'item-actions' },
+        limit,
+        h(
+          'div',
+          { class: 'stepper' },
+          h(
+            'button',
+            {
+              class: 'btn big qty-minus',
+              type: 'button',
+              disabled: qty === 0,
+              'aria-label': `One less ${item.name} for ${c.first_name}`,
+              onclick: () => change(c, d, item, -1),
+            },
+            icon('minus'),
+          ),
+          h('output', { class: 'qty money', 'aria-label': `${item.name} for ${c.first_name}` }, String(qty)),
+          h(
+            'button',
+            {
+              class: 'btn big qty-plus',
+              type: 'button',
+              disabled: atMax,
+              'aria-label': `One more ${item.name} for ${c.first_name}`,
+              onclick: () => change(c, d, item, 1, cs.length > 0),
+            },
+            icon('plus'),
+          ),
+        ),
+      )
     }
   }
 
-  return h('article', { class: 'card item', dataset: { item: item.id }, 'data-conflict': cs.length ? 'true' : null },
+  return h(
+    'article',
+    { class: 'card item', dataset: { item: item.id }, 'data-conflict': cs.length ? 'true' : null },
     h('div', { class: 'item-head' }, h('h3', {}, item.name), h('span', { class: 'price money' }, money(item.price_cents))),
-    h('div', { class: 'pills' },
+    h(
+      'div',
+      { class: 'pills' },
       item.vegetarian ? h('span', { class: 'pill veg' }, 'Vegetarian') : null,
-      item.allergens.map((k) => h('span', { class: `pill allergen-pill${cs.includes(k) ? ' match' : ''}`, dataset: { allergen: k } }, state.tools.label(k)))),
+      item.allergens.map((k) =>
+        h('span', { class: `pill allergen-pill${cs.includes(k) ? ' match' : ''}`, dataset: { allergen: k } }, state.tools.label(k)),
+      ),
+    ),
     cs.length ? h('p', { class: 'allergen-warning' }, icon('alert'), h('span', {}, warningText(c.first_name, words, item.name))) : null,
     item.ingredients ? h('details', {}, h('summary', {}, icon('right'), h('span', {}, 'Ingredients')), h('p', {}, item.ingredients)) : null,
     already ? h('p', { class: 'already-ordered' }, `Already ordered for ${c.first_name}: ${already}`) : null,
-    actions)
+    actions,
+  )
 }
 
 function dayStatusWords(d) {
@@ -99,25 +162,57 @@ function renderItems() {
   status.dataset.status = d.status
   status.textContent = dayStatusWords(d)
   if (!d.items.length) {
-    $('items').replaceChildren(h('p', { class: 'muted' }, d.status === 'no_school' ? 'No lunches on this day.' : 'Nothing on the menu yet.'))
+    $('items').replaceChildren(
+      h('p', { class: 'muted' }, d.status === 'no_school' ? 'No lunches on this day.' : 'Nothing on the menu yet.'),
+    )
     return
   }
   $('items').replaceChildren(...d.items.map((item) => itemCard(d, item, c)))
 }
 
 function render() {
-  $('child-tabs').replaceChildren(...state.family.children.map((c) => h('button', {
-    class: 'btn child-tab', type: 'button', dataset: { child: c.id }, 'aria-pressed': String(c.id === state.childId),
-    onclick: () => { state.childId = c.id; render() },
-  }, c.first_name)))
+  $('child-tabs').replaceChildren(
+    ...state.family.children.map((c) =>
+      h(
+        'button',
+        {
+          class: 'btn child-tab',
+          type: 'button',
+          dataset: { child: c.id },
+          'aria-pressed': String(c.id === state.childId),
+          onclick: () => {
+            state.childId = c.id
+            render()
+          },
+        },
+        c.first_name,
+      ),
+    ),
+  )
   $('week-label').textContent = state.week.week_label
-  $('days').replaceChildren(...state.week.days.map((d) => {
-    const [dow, ...rest] = d.date_label.split(' ')
-    return h('button', {
-      class: 'day', type: 'button', dataset: { date: d.date, status: d.status }, 'aria-pressed': String(d.date === state.date),
-      onclick: () => { state.date = d.date; render() },
-    }, h('span', { class: 'dow' }, dow), ' ', h('span', {}, rest.join(' ')), ' ', h('span', { class: 'st' }, DAY_WORDS[d.status]))
-  }))
+  $('days').replaceChildren(
+    ...state.week.days.map((d) => {
+      const [dow, ...rest] = d.date_label.split(' ')
+      return h(
+        'button',
+        {
+          class: 'day',
+          type: 'button',
+          dataset: { date: d.date, status: d.status },
+          'aria-pressed': String(d.date === state.date),
+          onclick: () => {
+            state.date = d.date
+            render()
+          },
+        },
+        h('span', { class: 'dow' }, dow),
+        ' ',
+        h('span', {}, rest.join(' ')),
+        ' ',
+        h('span', { class: 'st' }, DAY_WORDS[d.status]),
+      )
+    }),
+  )
   renderItems()
   renderCartBar()
 }
@@ -156,10 +251,19 @@ async function start() {
 
   $('prev-week').append(icon('left'))
   $('next-week').append(icon('right'))
-  $('prev-week').addEventListener('click', async () => { await showWeek(state.week.prev_week); render() })
-  $('next-week').addEventListener('click', async () => { await showWeek(state.week.next_week); render() })
+  $('prev-week').addEventListener('click', async () => {
+    await showWeek(state.week.prev_week)
+    render()
+  })
+  $('next-week').addEventListener('click', async () => {
+    await showWeek(state.week.next_week)
+    render()
+  })
   addEventListener('storage', (ev) => {
-    if (ev.key === `school-lunch:cart:${family.family.id}`) { state.cart = readCart(family.family.id); render() }
+    if (ev.key === `school-lunch:cart:${family.family.id}`) {
+      state.cart = readCart(family.family.id)
+      render()
+    }
   })
   $('ordering').hidden = false
   render()

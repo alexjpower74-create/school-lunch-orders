@@ -7,8 +7,13 @@ import { parseList } from './text.js'
 export function schoolOut(row) {
   if (!row) return { ...DEFAULT_SCHOOL }
   return {
-    school_name: row.school_name, sample: !!row.sample, payment_instructions: row.payment_instructions,
-    cutoff_days_before: row.cutoff_days_before, cutoff_time: row.cutoff_time, year_start: row.year_start, year_end: row.year_end,
+    school_name: row.school_name,
+    sample: !!row.sample,
+    payment_instructions: row.payment_instructions,
+    cutoff_days_before: row.cutoff_days_before,
+    cutoff_time: row.cutoff_time,
+    year_start: row.year_start,
+    year_end: row.year_end,
   }
 }
 
@@ -26,13 +31,22 @@ export const classOut = (r) => ({ id: r.id, name: r.name, grade: r.grade, sort: 
 export const CHILD_SELECT = `SELECT ch.id, ch.family_id, ch.first_name, ch.class_id, ch.allergies, ch.removed, c.name AS class_name,
   c.grade FROM children ch LEFT JOIN classes c ON c.id = ch.class_id`
 export const childOut = (r) => ({
-  id: r.id, first_name: r.first_name, class_id: r.class_id, class_name: r.class_name ?? '', grade: r.grade ?? '',
+  id: r.id,
+  first_name: r.first_name,
+  class_id: r.class_id,
+  class_name: r.class_name ?? '',
+  grade: r.grade ?? '',
   allergies: cleanAllergenList(parseList(r.allergies)) || [],
 })
 
 export const menuItemOut = (r) => ({
-  id: r.id, name: r.name, price_cents: r.price_cents, ingredients: r.ingredients, allergens: parseList(r.allergens),
-  vegetarian: !!r.vegetarian, max_per_child: r.max_per_child ?? null,
+  id: r.id,
+  name: r.name,
+  price_cents: r.price_cents,
+  ingredients: r.ingredients,
+  allergens: parseList(r.allergens),
+  vegetarian: !!r.vegetarian,
+  max_per_child: r.max_per_child ?? null,
 })
 export const itemOut = (r) => ({ ...menuItemOut(r), days: parseList(r.days), active: !!r.active })
 

@@ -42,7 +42,10 @@ export async function seedDemo(c) {
   // The most recent past school day since year_start gets a storm closure; today and the next 8 school days get orders.
   let past = null
   for (let d = addDays(c.today, -1); cal.school.year_start && d >= cal.school.year_start; d = addDays(d, -1)) {
-    if (withMenu(d)) { past = d; break }
+    if (withMenu(d)) {
+      past = d
+      break
+    }
   }
   const days = []
   for (let d = c.today; days.length < 9 && cal.school.year_end && d <= cal.school.year_end; d = addDays(d, 1)) if (withMenu(d)) days.push(d)
@@ -64,32 +67,80 @@ export async function seedDemo(c) {
     if (!lines.length) continue
     linesByFamily.set(f.id, lines)
     const total = lines.reduce((s, l) => s + l.item.price_cents, 0)
-    stmts.push(db.prepare('INSERT INTO orders (id, family_id, placed_at, total_cents, item_count) VALUES (?, ?, ?, ?, ?)')
-      .bind(orderId, f.id, placedAt, total, lines.length))
+    stmts.push(
+      db
+        .prepare('INSERT INTO orders (id, family_id, placed_at, total_cents, item_count) VALUES (?, ?, ?, ?, ?)')
+        .bind(orderId, f.id, placedAt, total, lines.length),
+    )
     for (const l of lines) {
-      stmts.push(db.prepare(`INSERT INTO lines (id, order_id, family_id, child_id, date, item_id, qty, unit_price_cents, total_cents, ack_allergens,
-        placed_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`).bind(l.id, orderId, f.id, l.child.id, l.date, l.item.id, l.item.price_cents,
-        l.item.price_cents, JSON.stringify(l.ack), placedAt))
+      stmts.push(
+        db
+          .prepare(`INSERT INTO lines (id, order_id, family_id, child_id, date, item_id, qty, unit_price_cents, total_cents, ack_allergens,
+        placed_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`)
+          .bind(
+            l.id,
+            orderId,
+            f.id,
+            l.child.id,
+            l.date,
+            l.item.id,
+            l.item.price_cents,
+            l.item.price_cents,
+            JSON.stringify(l.ack),
+            placedAt,
+          ),
+      )
     }
-    stmts.push(insertEntry(db, { id: randomId('ent'), family_id: f.id, at: placedAt, kind: 'order', amount_cents: total,
-      label: orderLabel(lines.length, lines.map((l) => l.date)) }))
+    stmts.push(
+      insertEntry(db, {
+        id: randomId('ent'),
+        family_id: f.id,
+        at: placedAt,
+        kind: 'order',
+        amount_cents: total,
+        label: orderLabel(
+          lines.length,
+          lines.map((l) => l.date),
+        ),
+      }),
+    )
   }
 
   // Payments: fam-3 sends part in cash here; fam-1 and fam-2 pay by e-Transfer at the end (below); fam-4 has not paid.
   const fam3 = linesByFamily.get('fam-3') || []
   if (fam3.length) {
     const half = Math.round(fam3.reduce((s, l) => s + l.item.price_cents, 0) / 200) * 100
-    stmts.push(insertEntry(db, { id: randomId('ent'), family_id: 'fam-3', at: hoursLater(placedAt, 20), kind: 'payment', amount_cents: -half,
-      label: paymentLabel('cash'), method: 'cash', note: 'SAMPLE envelope' }))
+    stmts.push(
+      insertEntry(db, {
+        id: randomId('ent'),
+        family_id: 'fam-3',
+        at: hoursLater(placedAt, 20),
+        kind: 'payment',
+        amount_cents: -half,
+        label: paymentLabel('cash'),
+        method: 'cash',
+        note: 'SAMPLE envelope',
+      }),
+    )
   }
 
   // One cancellation credit: Jack's last lunch in the list, cancelled the morning after ordering (before its cut-off).
   const jack = fam3.filter((l) => l.child.id === 'ch-jack' && l.date !== past)
   const cancelled = jack[jack.length - 1]
   if (cancelled) {
-    stmts.push(db.prepare("UPDATE lines SET status = 'cancelled', changed_at = ? WHERE id = ?").bind(hoursLater(placedAt, 13), cancelled.id))
-    stmts.push(insertEntry(db, { id: randomId('ent'), family_id: 'fam-3', at: hoursLater(placedAt, 13), kind: 'cancel',
-      amount_cents: -cancelled.item.price_cents, label: cancelLabel(cancelled.item.name, 1, 'Jack', cancelled.date) }))
+    stmts.push(
+      db.prepare("UPDATE lines SET status = 'cancelled', changed_at = ? WHERE id = ?").bind(hoursLater(placedAt, 13), cancelled.id),
+    )
+    stmts.push(
+      insertEntry(db, {
+        id: randomId('ent'),
+        family_id: 'fam-3',
+        at: hoursLater(placedAt, 13),
+        kind: 'cancel',
+        amount_cents: -cancelled.item.price_cents,
+        label: cancelLabel(cancelled.item.name, 1, 'Jack', cancelled.date),
+      }),
+    )
   }
   await db.batch(stmts)
 
@@ -104,8 +155,17 @@ export async function seedDemo(c) {
     await db.batch([
       db.prepare('INSERT INTO no_school (date, kind, note, created_at) VALUES (?, ?, ?, ?)').bind(past, 'closure', note, closedAt),
       db.prepare("UPDATE lines SET status = 'closed', changed_at = ? WHERE date = ? AND status = 'active'").bind(closedAt, past),
-      ...[...credit].map(([familyId, cents]) => insertEntry(db, { id: randomId('ent'), family_id: familyId, at: closedAt, kind: 'closure',
-        amount_cents: -cents, label: closureLabel('closure', past), note })),
+      ...[...credit].map(([familyId, cents]) =>
+        insertEntry(db, {
+          id: randomId('ent'),
+          family_id: familyId,
+          at: closedAt,
+          kind: 'closure',
+          amount_cents: -cents,
+          label: closureLabel('closure', past),
+          note,
+        }),
+      ),
     ])
   }
 
@@ -116,23 +176,51 @@ export async function seedDemo(c) {
   const fam2Owes = await balanceOf(db, 'fam-2')
   const payments = []
   if (fam1Owes > 0) {
-    payments.push(insertEntry(db, { id: randomId('ent'), family_id: 'fam-1', at: paid, kind: 'payment', amount_cents: -((Math.floor(fam1Owes / 1000) + 2) * 1000),
-      label: paymentLabel('etransfer'), method: 'etransfer', note: 'SAMPLE e-Transfer' }))
+    payments.push(
+      insertEntry(db, {
+        id: randomId('ent'),
+        family_id: 'fam-1',
+        at: paid,
+        kind: 'payment',
+        amount_cents: -((Math.floor(fam1Owes / 1000) + 2) * 1000),
+        label: paymentLabel('etransfer'),
+        method: 'etransfer',
+        note: 'SAMPLE e-Transfer',
+      }),
+    )
   }
   if (fam2Owes > 0) {
-    payments.push(insertEntry(db, { id: randomId('ent'), family_id: 'fam-2', at: paid, kind: 'payment', amount_cents: -fam2Owes,
-      label: paymentLabel('etransfer'), method: 'etransfer', note: 'SAMPLE e-Transfer' }))
+    payments.push(
+      insertEntry(db, {
+        id: randomId('ent'),
+        family_id: 'fam-2',
+        at: paid,
+        kind: 'payment',
+        amount_cents: -fam2Owes,
+        label: paymentLabel('etransfer'),
+        method: 'etransfer',
+        note: 'SAMPLE e-Transfer',
+      }),
+    )
   }
   if (payments.length) await db.batch(payments)
 
   // After noon on a school day, about half of Room 4's lunches are already given out.
   if (days[0] === c.today && localParts(c.now).hour >= 12) {
-    const { results } = await db.prepare(`SELECT DISTINCT l.child_id FROM lines l JOIN children ch ON ch.id = l.child_id
-      WHERE l.date = ? AND l.status = 'active' AND ch.class_id = 'room-2' ORDER BY ch.first_name`).bind(c.today).all()
+    const { results } = await db
+      .prepare(`SELECT DISTINCT l.child_id FROM lines l JOIN children ch ON ch.id = l.child_id
+      WHERE l.date = ? AND l.status = 'active' AND ch.class_id = 'room-2' ORDER BY ch.first_name`)
+      .bind(c.today)
+      .all()
     const half = results.slice(0, Math.ceil(results.length / 2))
     if (half.length) {
-      await db.batch(half.map((r) => db.prepare("INSERT INTO deliveries (date, child_id, state, staff_id, at) VALUES (?, ?, 'delivered', 'st-oldford', ?)")
-        .bind(c.today, r.child_id, c.nowIso)))
+      await db.batch(
+        half.map((r) =>
+          db
+            .prepare("INSERT INTO deliveries (date, child_id, state, staff_id, at) VALUES (?, ?, 'delivered', 'st-oldford', ?)")
+            .bind(c.today, r.child_id, c.nowIso),
+        ),
+      )
     }
   }
 

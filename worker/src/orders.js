@@ -56,7 +56,11 @@ export function checkOrder({ lines, children, items, cal, menu, existing, now })
     const item = items.get(l.item_id)
     const already = existing.get(`${l.child_id}|${l.date}|${l.item_id}`) || 0
     if (item.max_per_child !== null && already + l.qty > item.max_per_child) {
-      throw conflict('over_max', `${children.get(l.child_id).first_name} can have at most ${item.max_per_child} of ${item.name} on ${dateLabel(l.date)}.`, { index })
+      throw conflict(
+        'over_max',
+        `${children.get(l.child_id).first_name} can have at most ${item.max_per_child} of ${item.name} on ${dateLabel(l.date)}.`,
+        { index },
+      )
     }
   })
   const needAck = []
@@ -71,9 +75,11 @@ export function checkOrder({ lines, children, items, cal, menu, existing, now })
   })
   if (needAck.length) {
     const f = needAck[0]
-    throw conflict('allergen_ack_required',
+    throw conflict(
+      'allergen_ack_required',
       `${f.first_name} is allergic to ${allergenWords(f.allergens)}. ${f.item_name} contains ${allergenWords(f.allergens)}. Tick "I understand" to order it anyway.`,
-      { lines: needAck })
+      { lines: needAck },
+    )
   }
   return out
 }
@@ -89,8 +95,10 @@ export async function placeOrder(c) {
     c.db.prepare('SELECT id, first_name, allergies FROM children WHERE family_id = ? AND removed = 0').bind(c.family.id),
     c.db.prepare('SELECT id, name, price_cents, allergens, max_per_child FROM items'),
     c.db.prepare('SELECT date, item_id FROM menu WHERE date BETWEEN ? AND ?').bind(lo, hi),
-    c.db.prepare(`SELECT child_id, date, item_id, SUM(qty) AS qty FROM lines WHERE family_id = ? AND status = 'active' AND date BETWEEN ? AND ?
-      GROUP BY child_id, date, item_id`).bind(c.family.id, lo, hi),
+    c.db
+      .prepare(`SELECT child_id, date, item_id, SUM(qty) AS qty FROM lines WHERE family_id = ? AND status = 'active' AND date BETWEEN ? AND ?
+      GROUP BY child_id, date, item_id`)
+      .bind(c.family.id, lo, hi),
   ])
   const lines = checkOrder({
     lines: body.lines,
@@ -106,19 +114,53 @@ export async function placeOrder(c) {
   const total = lines.reduce((s, l) => s + l.qty * l.item.price_cents, 0)
   const itemCount = lines.reduce((s, l) => s + l.qty, 0)
   await c.db.batch([
-    c.db.prepare('INSERT INTO orders (id, family_id, placed_at, total_cents, item_count) VALUES (?, ?, ?, ?, ?)')
+    c.db
+      .prepare('INSERT INTO orders (id, family_id, placed_at, total_cents, item_count) VALUES (?, ?, ?, ?, ?)')
       .bind(orderId, c.family.id, c.nowIso, total, itemCount),
-    ...lines.map((l) => c.db.prepare(`INSERT INTO lines (id, order_id, family_id, child_id, date, item_id, qty, unit_price_cents, total_cents,
-      ack_allergens, placed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(randomId('ln'), orderId, c.family.id, l.child.id, l.date, l.item.id,
-      l.qty, l.item.price_cents, l.qty * l.item.price_cents, JSON.stringify(l.ack_allergens), c.nowIso)),
-    insertEntry(c.db, { id: randomId('ent'), family_id: c.family.id, at: c.nowIso, kind: 'order', amount_cents: total,
-      label: orderLabel(itemCount, lines.map((l) => l.date)) }),
+    ...lines.map((l) =>
+      c.db
+        .prepare(`INSERT INTO lines (id, order_id, family_id, child_id, date, item_id, qty, unit_price_cents, total_cents,
+      ack_allergens, placed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(
+          randomId('ln'),
+          orderId,
+          c.family.id,
+          l.child.id,
+          l.date,
+          l.item.id,
+          l.qty,
+          l.item.price_cents,
+          l.qty * l.item.price_cents,
+          JSON.stringify(l.ack_allergens),
+          c.nowIso,
+        ),
+    ),
+    insertEntry(c.db, {
+      id: randomId('ent'),
+      family_id: c.family.id,
+      at: c.nowIso,
+      kind: 'order',
+      amount_cents: total,
+      label: orderLabel(
+        itemCount,
+        lines.map((l) => l.date),
+      ),
+    }),
   ])
   const { results } = await c.db.prepare(`${LINE_SELECT} WHERE l.order_id = ? ${LINE_ORDER}`).bind(orderId).all()
-  return json({
-    order: { id: orderId, placed_at: c.nowIso, total_cents: total, item_count: itemCount, lines: results.map((r) => lineOut(r, cal, c.now)) },
-    balance_cents: await balanceOf(c.db, c.family.id),
-  }, 201)
+  return json(
+    {
+      order: {
+        id: orderId,
+        placed_at: c.nowIso,
+        total_cents: total,
+        item_count: itemCount,
+        lines: results.map((r) => lineOut(r, cal, c.now)),
+      },
+      balance_cents: await balanceOf(c.db, c.family.id),
+    },
+    201,
+  )
 }
 
 export async function cancelLine(c, { id }) {
@@ -129,8 +171,14 @@ export async function cancelLine(c, { id }) {
   if (isPastCutoff(cutoffAt(cal, r.date), c.now)) throw conflict('cutoff_passed', cutoffMessage(cal, r.date), { date: r.date })
   await c.db.batch([
     c.db.prepare("UPDATE lines SET status = 'cancelled', changed_at = ? WHERE id = ? AND status = 'active'").bind(c.nowIso, id),
-    insertEntry(c.db, { id: randomId('ent'), family_id: r.family_id, at: c.nowIso, kind: 'cancel', amount_cents: -r.total_cents,
-      label: cancelLabel(r.item_name, r.qty, r.first_name, r.date) }),
+    insertEntry(c.db, {
+      id: randomId('ent'),
+      family_id: r.family_id,
+      at: c.nowIso,
+      kind: 'cancel',
+      amount_cents: -r.total_cents,
+      label: cancelLabel(r.item_name, r.qty, r.first_name, r.date),
+    }),
   ])
   const after = await c.db.prepare(`${LINE_SELECT} WHERE l.id = ?`).bind(id).first()
   return json({ line: lineOut(after, cal, c.now), balance_cents: await balanceOf(c.db, c.family.id) })
@@ -146,7 +194,10 @@ export async function ackLine(c, { id }) {
   const cal = await loadCal(c.db)
   const line = lineOut(r, cal, c.now)
   if (!line.conflicts.length) throw conflict('bad_state', "There's nothing to confirm on that lunch.")
-  await c.db.prepare('UPDATE lines SET ack_allergens = ?, changed_at = ? WHERE id = ?').bind(JSON.stringify(line.conflicts), c.nowIso, id).run()
+  await c.db
+    .prepare('UPDATE lines SET ack_allergens = ?, changed_at = ? WHERE id = ?')
+    .bind(JSON.stringify(line.conflicts), c.nowIso, id)
+    .run()
   const after = await c.db.prepare(`${LINE_SELECT} WHERE l.id = ?`).bind(id).first()
   return json({ line: lineOut(after, cal, c.now) })
 }

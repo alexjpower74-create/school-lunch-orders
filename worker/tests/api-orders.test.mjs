@@ -80,7 +80,9 @@ test('allergens: Liam + mac without allergen_ack → 409 allergen_ack_required l
   assert.equal(r.status, 409, r.text)
   assert.equal(r.body.code, 'allergen_ack_required')
   assert.equal(r.body.error, 'Liam is allergic to Milk. Macaroni and cheese contains Milk. Tick "I understand" to order it anyway.')
-  assert.deepEqual(r.body.lines, [{ index: 0, child_id: 'ch-liam', first_name: 'Liam', item_id: 'mac', item_name: 'Macaroni and cheese', allergens: ['milk'] }])
+  assert.deepEqual(r.body.lines, [
+    { index: 0, child_id: 'ch-liam', first_name: 'Liam', item_id: 'mac', item_name: 'Macaroni and cheese', allergens: ['milk'] },
+  ])
   const f = await post(token, [line('ch-liam', '2026-09-17', 'mac', 1, { allergen_ack: false })])
   assert.equal(f.status, 409, 'allergen_ack: false is not an acknowledgement')
   assert.deepEqual((await get('/api/family/orders', token)).body.lines, [])
@@ -105,16 +107,40 @@ test('allergens: Ava (no allergies) + mac on Thu Sep 17 without an ack → 201',
 
 test("allergens: a request mixing Liam's and Ava's mac lists only Liam's line; several allergens are named in list order", async () => {
   const token = await familyToken('fam-1')
-  const r = await post(token, [line('ch-ava', '2026-09-17', 'mac'), line('ch-liam', '2026-09-17', 'mac'), line('ch-liam', '2026-09-17', 'cookie')])
+  const r = await post(token, [
+    line('ch-ava', '2026-09-17', 'mac'),
+    line('ch-liam', '2026-09-17', 'mac'),
+    line('ch-liam', '2026-09-17', 'cookie'),
+  ])
   assert.equal(r.status, 409)
-  assert.deepEqual(r.body.lines.map((l) => [l.index, l.child_id, l.item_id]), [[1, 'ch-liam', 'mac'], [2, 'ch-liam', 'cookie']])
+  assert.deepEqual(
+    r.body.lines.map((l) => [l.index, l.child_id, l.item_id]),
+    [
+      [1, 'ch-liam', 'mac'],
+      [2, 'ch-liam', 'cookie'],
+    ],
+  )
   assert.equal(r.body.error, 'Liam is allergic to Milk. Macaroni and cheese contains Milk. Tick "I understand" to order it anyway.')
   const fam3 = await familyToken('fam-3')
-  assert.equal((await call('PUT', '/api/family/children/ch-chloe', { token: fam3, body: { first_name: 'Chloe', class_id: 'room-1', allergies: ['soy', 'sesame', 'eggs'] } })).status, 200)
+  assert.equal(
+    (
+      await call('PUT', '/api/family/children/ch-chloe', {
+        token: fam3,
+        body: { first_name: 'Chloe', class_id: 'room-1', allergies: ['soy', 'sesame', 'eggs'] },
+      })
+    ).status,
+    200,
+  )
   const two = await post(fam3, [line('ch-chloe', '2026-09-23', 'stirfry')])
-  assert.equal(two.body.error, 'Chloe is allergic to Sesame seeds and Soy. Vegetable stir-fry with rice contains Sesame seeds and Soy. Tick "I understand" to order it anyway.')
+  assert.equal(
+    two.body.error,
+    'Chloe is allergic to Sesame seeds and Soy. Vegetable stir-fry with rice contains Sesame seeds and Soy. Tick "I understand" to order it anyway.',
+  )
   assert.deepEqual(two.body.lines[0].allergens, ['sesame', 'soy'])
-  const ok = await post(fam3, [line('ch-chloe', '2026-09-23', 'stirfry', 1, { allergen_ack: true }), line('ch-jack', '2026-09-23', 'stirfry')])
+  const ok = await post(fam3, [
+    line('ch-chloe', '2026-09-23', 'stirfry', 1, { allergen_ack: true }),
+    line('ch-jack', '2026-09-23', 'stirfry'),
+  ])
   assert.equal(ok.status, 201)
   assert.deepEqual(ok.body.order.lines.find((l) => l.child_id === 'ch-chloe').ack_allergens, ['sesame', 'soy'])
 })
@@ -168,7 +194,10 @@ test('order checks run in the contract order: 400, 404, no_school, not_on_menu, 
   const sat = await post(token, [line('ch-ava', '2026-09-19', 'chili')])
   assert.equal(sat.body.error, "There's no school on Sat Sep 19.")
   assert.equal(sat.body.date, '2026-09-19')
-  assert.equal((await post(token, [line('ch-ava', '2026-09-17', 'fishcakes')])).body.error, "Fish cakes and potatoes isn't on the menu for Thu Sep 17.")
+  assert.equal(
+    (await post(token, [line('ch-ava', '2026-09-17', 'fishcakes')])).body.error,
+    "Fish cakes and potatoes isn't on the menu for Thu Sep 17.",
+  )
   assert.equal((await call('POST', '/api/family/orders', { token, body: { lines: 'milk' } })).status, 400)
   assert.equal((await call('POST', '/api/family/orders', { token })).status, 400)
 })
@@ -186,7 +215,10 @@ test('over_max counts lunches already ordered for that child that day, and a can
   assert.equal(again.status, 201)
   const once = await post(token, [line('ch-liam', '2026-09-17', 'milk', 1, { allergen_ack: true })])
   assert.equal(once.status, 201, 'a second line for the same child, day and item is its own line (1 + 1 = 2)')
-  assert.equal((await get('/api/family/orders', token)).body.lines.filter((l) => l.child_id === 'ch-liam' && l.status === 'active').length, 2)
+  assert.equal(
+    (await get('/api/family/orders', token)).body.lines.filter((l) => l.child_id === 'ch-liam' && l.status === 'active').length,
+    2,
+  )
 })
 
 test('price snapshot: a later price change never changes a placed line', async () => {
@@ -212,11 +244,18 @@ test('price snapshot: a later price change never changes a placed line', async (
 test('ledger labels and amounts: an order across a week and a cancellation', async () => {
   const token = await familyToken('fam-1')
   const week = ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25']
-  const placed = await order(token, [...week.map((d) => line('ch-ava', d, 'apple')), line('ch-liam', '2026-09-17', 'mac', 1, { allergen_ack: true })])
+  const placed = await order(token, [
+    ...week.map((d) => line('ch-ava', d, 'apple')),
+    line('ch-liam', '2026-09-17', 'mac', 1, { allergen_ack: true }),
+  ])
   assert.equal(placed.order.item_count, 6)
   assert.equal(placed.order.total_cents, 5 * 125 + 400)
   assert.equal(placed.balance_cents, 1025)
-  assert.deepEqual(placed.order.lines.map((l) => l.date), ['2026-09-17', ...week], 'lines by date')
+  assert.deepEqual(
+    placed.order.lines.map((l) => l.date),
+    ['2026-09-17', ...week],
+    'lines by date',
+  )
   const ledger = (await get('/api/family/ledger', token)).body
   assert.equal(ledger.entries[0].label, 'Order: 6 items, Thu Sep 17 to Fri Sep 25')
   assert.equal(ledger.entries[0].kind, 'order')
@@ -241,14 +280,27 @@ test('family menu: the default week, day statuses, items for reading when closed
   assert.equal(m.week_label, 'Sep 14 to 18')
   assert.equal(m.prev_week, '2026-09-07')
   assert.equal(m.next_week, '2026-09-21')
-  assert.deepEqual(m.days.map((d) => d.status), ['closed', 'closed', 'closed', 'open', 'open'])
+  assert.deepEqual(
+    m.days.map((d) => d.status),
+    ['closed', 'closed', 'closed', 'open', 'open'],
+  )
   assert.equal(m.days[2].status_label, 'Closed for orders')
   assert.equal(m.days[2].cutoff_label, 'Ordering closed at 9:00 AM Tue Sep 15')
   assert.equal(m.days[3].date_label, 'Thu Sep 17')
   assert.equal(m.days[3].long_label, 'Thursday, September 17')
-  assert.deepEqual(m.days[3].items.map((i) => i.id), ['chili', 'mac', 'milk', 'apple', 'cookie'])
-  assert.deepEqual(m.days[3].items[1], { id: 'mac', name: 'Macaroni and cheese', price_cents: 400, ingredients: 'Wheat macaroni, milk, cheddar cheese, butter',
-    allergens: ['wheat_triticale', 'gluten', 'milk'], vegetarian: true, max_per_child: 1 })
+  assert.deepEqual(
+    m.days[3].items.map((i) => i.id),
+    ['chili', 'mac', 'milk', 'apple', 'cookie'],
+  )
+  assert.deepEqual(m.days[3].items[1], {
+    id: 'mac',
+    name: 'Macaroni and cheese',
+    price_cents: 400,
+    ingredients: 'Wheat macaroni, milk, cheddar cheese, butter',
+    allergens: ['wheat_triticale', 'gluten', 'milk'],
+    vegetarian: true,
+    max_per_child: 1,
+  })
   assert.equal(m.days[0].items.length, 5, 'closed days list their items for reading')
   const friday = await get('/api/family/menu', token, '2026-09-18T12:00:00Z')
   assert.equal(friday.body.week_start, '2026-09-21', 'after Friday 9:00 AM the first open day is next week')

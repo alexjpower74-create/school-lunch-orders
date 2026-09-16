@@ -22,12 +22,31 @@ export const EXPECT_CREDIT = { 'fam-1': 1050, 'fam-2': 600, 'fam-3': 1200, 'fam-
 export const EXPECT_CREDIT_TOTAL = 3425
 
 export async function orderThursday(request) {
-  const place = async (code, lines) => placeOrderViaApi(request, await familyToken(request, code), lines.map(([child_id, item_id, qty, ack]) =>
-    ({ child_id, date: THU, item_id, qty, ...(ack ? { allergen_ack: true } : {}) })))
-  await place(CODE.liamAva, [['ch-liam', 'mac', 1, true], ['ch-ava', 'mac', 1], ['ch-ava', 'apple', 2]])
-  await place(CODE.noah, [['ch-noah', 'chili', 1], ['ch-noah', 'apple', 1]])
-  await place(CODE.emmaJackChloe, [['ch-jack', 'mac', 1], ['ch-jack', 'milk', 2], ['ch-chloe', 'chili', 1], ['ch-emma', 'apple', 1]])
-  await place(CODE.owen, [['ch-owen', 'chili', 1], ['ch-owen', 'cookie', 1]])
+  const place = async (code, lines) =>
+    placeOrderViaApi(
+      request,
+      await familyToken(request, code),
+      lines.map(([child_id, item_id, qty, ack]) => ({ child_id, date: THU, item_id, qty, ...(ack ? { allergen_ack: true } : {}) })),
+    )
+  await place(CODE.liamAva, [
+    ['ch-liam', 'mac', 1, true],
+    ['ch-ava', 'mac', 1],
+    ['ch-ava', 'apple', 2],
+  ])
+  await place(CODE.noah, [
+    ['ch-noah', 'chili', 1],
+    ['ch-noah', 'apple', 1],
+  ])
+  await place(CODE.emmaJackChloe, [
+    ['ch-jack', 'mac', 1],
+    ['ch-jack', 'milk', 2],
+    ['ch-chloe', 'chili', 1],
+    ['ch-emma', 'apple', 1],
+  ])
+  await place(CODE.owen, [
+    ['ch-owen', 'chili', 1],
+    ['ch-owen', 'cookie', 1],
+  ])
 }
 
 /** GET a staff route as the office (setup and cross-checks only). */

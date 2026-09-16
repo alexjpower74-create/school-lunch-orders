@@ -2,12 +2,17 @@
 export const TZ = 'America/St_Johns'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
-  'November', 'December']
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 const partsFormat = new Intl.DateTimeFormat('en-US', {
-  timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
+  timeZone: TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
   hourCycle: 'h23',
 })
 
@@ -73,10 +78,12 @@ export function localInstant(date, hour = 0, minute = 0) {
   if (hour === 24 && minute === 0) return localInstant(addDays(date, 1), 0, 0)
   const [y, m, d] = date.split('-').map(Number)
   const wall = Date.UTC(y, m - 1, d, hour, minute)
-  const hits = [150, 210].map((off) => wall + off * 60000).filter((t) => {
-    const p = localParts(t)
-    return p.date === date && p.hour === hour && p.minute === minute
-  })
+  const hits = [150, 210]
+    .map((off) => wall + off * 60000)
+    .filter((t) => {
+      const p = localParts(t)
+      return p.date === date && p.hour === hour && p.minute === minute
+    })
   if (hits.length) return new Date(Math.min(...hits))
   // In the gap the standard-time offset still reads the wall time as written, which the clock shows one hour later.
   return new Date(wall + 210 * 60000)

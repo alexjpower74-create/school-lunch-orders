@@ -19,10 +19,26 @@ export function lineOut(r, cal, now) {
   const ack = parseList(r.ack_allergens)
   const cs = conflicts(parseList(r.item_allergens), parseList(r.child_allergies))
   return {
-    id: r.id, order_id: r.order_id, child_id: r.child_id, first_name: r.first_name, date: r.date, date_label: dateLabel(r.date),
-    item_id: r.item_id, item_name: r.item_name, qty: r.qty, unit_price_cents: r.unit_price_cents, total_cents: r.total_cents,
-    status: r.status, status_label: LINE_STATUS_LABELS[r.status], ack_allergens: ack, conflicts: cs, acknowledged: acknowledged(cs, ack),
-    can_cancel: r.status === 'active' && !isPastCutoff(at, now), cutoff_at: at.toISOString(), cutoff_label: cutoffLabel(cal, r.date, at, now),
-    delivery: r.delivery || null, placed_at: r.placed_at,
+    id: r.id,
+    order_id: r.order_id,
+    child_id: r.child_id,
+    first_name: r.first_name,
+    date: r.date,
+    date_label: dateLabel(r.date),
+    item_id: r.item_id,
+    item_name: r.item_name,
+    qty: r.qty,
+    unit_price_cents: r.unit_price_cents,
+    total_cents: r.total_cents,
+    status: r.status,
+    status_label: LINE_STATUS_LABELS[r.status],
+    ack_allergens: ack,
+    conflicts: cs,
+    acknowledged: acknowledged(cs, ack),
+    can_cancel: r.status === 'active' && !isPastCutoff(at, now),
+    cutoff_at: at.toISOString(),
+    cutoff_label: cutoffLabel(cal, r.date, at, now),
+    delivery: r.delivery || null,
+    placed_at: r.placed_at,
   }
 }

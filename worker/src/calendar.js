@@ -3,8 +3,13 @@
 import { addDays, clockLabel, dateLabel, localInstant } from './time.js'
 
 export const DEFAULT_SCHOOL = {
-  school_name: '', sample: false, payment_instructions: '', cutoff_days_before: 1, cutoff_time: '09:00',
-  year_start: null, year_end: null,
+  school_name: '',
+  sample: false,
+  payment_instructions: '',
+  cutoff_days_before: 1,
+  cutoff_time: '09:00',
+  year_start: null,
+  year_end: null,
 }
 
 export const KINDS = ['holiday', 'pd_day', 'closure']

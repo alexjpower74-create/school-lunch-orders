@@ -15,3 +15,37 @@ run: npx playwright test tests/journey/journey.spec.mjs --project chromium-1280 
     .negative/journey-closure-credit/results/journey-journey-a-parent-o-9f932-r-and-kitchen-see-no-school-chromium-1280/test-failed-1.png
   1 failed
 RESULT: RED as intended
+
+=== journey negative:closure-credit — 2026-09-16T03:00:34.194Z
+break: the Worker copy credits a closure by unit price and ignores qty (Jack's milk ×2 credited as one)
+patched: worker/src/admin.js
+run: npx playwright test tests/journey/journey.spec.mjs --project chromium-1280 --grep "a parent orders, the kitchen sees it, a storm closure credits it to the cent, the teacher and kitchen see no school" (E2E_PORT 8608, E2E_WORKER_DIR app/.negative/journey-closure-credit/worker)
+  ✘  1 [chromium-1280] › tests/journey/journey.spec.mjs:38:1 › a parent orders, the kitchen sees it, a storm closure credits it to the cent, the teacher and kitchen see no school (16.0s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator:  locator('#no-school-result')
+    Expected: "Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $20.00."
+    Received: "Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $19.00."
+        - unexpected value ""
+           - unexpected value "Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $19.00."
+    .negative/journey-closure-credit/results/journey-journey-a-parent-o-9f932-r-and-kitchen-see-no-school-chromium-1280/test-failed-2.png
+    .negative/journey-closure-credit/results/journey-journey-a-parent-o-9f932-r-and-kitchen-see-no-school-chromium-1280/test-failed-3.png
+    .negative/journey-closure-credit/results/journey-journey-a-parent-o-9f932-r-and-kitchen-see-no-school-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
+
+=== journey negative:closure-credit — 2026-09-16T03:43:46.004Z
+break: the Worker copy credits a closure by unit price and ignores qty (Jack's milk ×2 credited as one)
+patched: worker/src/admin.js
+run: npx playwright test tests/journey/journey.spec.mjs --project chromium-1280 --grep "a parent orders, the kitchen sees it, a storm closure credits it to the cent, the teacher and kitchen see no school" (E2E_PORT 8608, E2E_WORKER_DIR app/.negative/journey-closure-credit/worker)
+  ✘  1 [chromium-1280] › tests/journey/journey.spec.mjs:57:1 › a parent orders, the kitchen sees it, a storm closure credits it to the cent, the teacher and kitchen see no school (12.6s)
+    Error: expect(locator).toHaveText(expected) failed
+    Locator:  locator('#no-school-result')
+    Expected: "Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $20.00."
+    Received: "Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $19.00."
+        - unexpected value ""
+           - unexpected value "Thu Sep 17 is now a no-school day. Cancelled 7 items for 3 families. Credited $19.00."
+    .negative/journey-closure-credit/results/journey-journey-a-parent-o-9f932-r-and-kitchen-see-no-school-chromium-1280/test-failed-2.png
+    .negative/journey-closure-credit/results/journey-journey-a-parent-o-9f932-r-and-kitchen-see-no-school-chromium-1280/test-failed-3.png
+    .negative/journey-closure-credit/results/journey-journey-a-parent-o-9f932-r-and-kitchen-see-no-school-chromium-1280/test-failed-1.png
+  1 failed
+RESULT: RED as intended
